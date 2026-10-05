@@ -12,4 +12,6 @@ public interface IPatient
     Task<string> CancelAppointment(int appointmentId,int userId);
 
     Task<ProfileResponseDto> GetProfile(int userId);
+
+    Task<string> UpdateProfile(ProfileUpdateDto dto,int userId);
 }

@@ -1,5 +1,7 @@
 
 
+using System.ComponentModel.DataAnnotations;
+
 namespace backend.DTOs;
 
 public class PatientAppointmentDto
@@ -35,4 +37,15 @@ public class ProfileResponseDto
     public string Gender {get;set;}=string.Empty;
     public DateOnly DateOfBirth{get;set;}
 
+}
+
+public class ProfileUpdateDto
+{
+    public string? Name{get;set;}
+    public string? PhoneNumber{get;set;}
+    public string? EmergencyContact{get;set;}
+    public string? BloodGroup{get;set;}
+    public string? Gender {get;set;}
+
+    
 }

@@ -111,4 +111,23 @@ public class PatientController :ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,new {message=ex.Message});
         }
     }
+    [HttpPatch("profile")]
+    [Authorize(Roles ="Patient")]
+    public async Task<ActionResult<string>> UpdateProfile([FromBody] ProfileUpdateDto dto)
+    {
+        try
+        {
+           int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!); 
+         var response = await _patientService.UpdateProfile(dto,userId);
+         return Ok(response);
+        }
+        catch(InvalidKeyException ex)
+        {
+            return BadRequest(new {message=ex.Message});
+        }
+        catch(Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,new {message=ex.Message});
+        }
+    }
 }
