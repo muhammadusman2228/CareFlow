@@ -2,10 +2,12 @@
 
 
 using System.Collections.Specialized;
+using System.Linq.Expressions;
 using backend.Data;
 using backend.DTOs;
 using backend.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Security;
 
 namespace backend.Services;
 
@@ -117,4 +119,32 @@ public class PatientService : IPatient
             throw new Exception("Try again later");
         }
     }
+
+    public async Task<ProfileResponseDto> GetProfile(int userId)
+    {
+        try
+        {
+            var patient = await _context.Patient.FirstOrDefaultAsync();
+        if (patient == null)
+        {
+            throw new  InvalidKeyException("Patient does not exists ");
+        } 
+
+        return new ProfileResponseDto
+        {
+            Name=patient.User!.Name,
+            Email=patient.User!.Email,
+            PhoneNumber=patient.PhoneNumber,
+            EmergencyContact=patient.EmergencyContact,
+            BloodGroup=patient.BloodGroup,
+            Gender=patient.Gender,
+            DateOfBirth=patient.DateOfBirth  
+        };
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
+        }
+    }
+    
 }

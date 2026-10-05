@@ -22,3 +22,17 @@ public class PatientPrescriptionsDto
 
     public DateOnly AppointmentDate{get;set;}
 }
+
+public class ProfileResponseDto
+{
+    
+    public string Name{get;set;}=string.Empty;
+    public string Email{get;set;}=string.Empty;
+    public string PhoneNumber{get;set;}=string.Empty;
+
+    public string EmergencyContact {get;set;}=string.Empty;
+    public string BloodGroup{get;set;}=string.Empty;
+    public string Gender {get;set;}=string.Empty;
+    public DateOnly DateOfBirth{get;set;}
+
+}
