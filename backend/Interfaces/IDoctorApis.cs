@@ -15,5 +15,6 @@ public interface IDoctorApis
 
     Task<PrescriptionResponseDto> Prescriptions(PrescriptionsDto dto);
     Task<HistoryResponseDto> MedicalHistory(HistoryDto dto);
+    Task<DoctorDashBoardDto> DoctorDashBoard(int userId);
 
 }

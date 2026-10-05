@@ -5,6 +5,7 @@ using backend.DTOs;
 using backend.Interfaces;
 using backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Security;
 
 
 namespace backend.Services;
@@ -143,4 +144,32 @@ public DoctorApisService(AppDbContext context)
             MedicalHistory=appointments
         };
     }
+
+    public async Task<DoctorDashBoardDto> DoctorDashBoard(int userId)
+    {
+        try
+        {
+            var records=await _context.Doctors.AsNoTracking().Where(d=>d.UserId==userId).Select( doctor=> new DoctorDashBoardDto
+        {
+            TodayAppointments=doctor.Appointments.Count(u=> u.AppointmentDate==DateOnly.FromDateTime(DateTime.UtcNow)),
+            PendingApprovals=doctor.Appointments.Count(a=>a.Status=="Pending"),
+            TodayCompletedCount=doctor.Appointments.Count(a=>a.Status=="Completed" && a.AppointmentDate==DateOnly.FromDateTime(DateTime.UtcNow)),
+            TotalUniquePatients=  doctor.Appointments.Select(a=>a.PatientId).Distinct().Count()
+        }).FirstOrDefaultAsync();
+        if (records is null)
+        {
+            throw new InvalidKeyException("Doctor does not exist");
+        }
+
+        return records;
+        }
+        catch (InvalidKeyException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
+        }
     }
+}

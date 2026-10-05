@@ -109,3 +109,13 @@ public class HistoryResponseListDto
 
     public string Note{get;set;}=string.Empty;
 }
+
+
+
+public class DoctorDashBoardDto{
+
+       public int TodayAppointments{get;set;}
+       public int PendingApprovals{get;set;}
+       public int TodayCompletedCount{get;set;}
+       public int TotalUniquePatients{get;set;} 
+    }

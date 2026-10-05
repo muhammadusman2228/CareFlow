@@ -124,68 +124,78 @@ public class PatientService : IPatient
     {
         try
         {
-            var patient = await _context.Patient.FirstOrDefaultAsync(p=>p.UserId==userId);
-        if (patient == null)
-        {
-            throw new  InvalidKeyException("Patient does not exists ");
-        } 
+            var patient = await _context.Patient
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+            if (patient == null)
+            {
+                throw new InvalidKeyException("Patient does not exists ");
+            } 
 
-        return new ProfileResponseDto
+            return new ProfileResponseDto
+            {
+                Name = patient.User!.Name,
+                Email = patient.User!.Email,
+                PhoneNumber = patient.PhoneNumber,
+                EmergencyContact = patient.EmergencyContact,
+                BloodGroup = patient.BloodGroup,
+                Gender = patient.Gender,
+                DateOfBirth = patient.DateOfBirth  
+            };
+        }
+        catch (InvalidKeyException)
         {
-            Name=patient.User!.Name,
-            Email=patient.User!.Email,
-            PhoneNumber=patient.PhoneNumber,
-            EmergencyContact=patient.EmergencyContact,
-            BloodGroup=patient.BloodGroup,
-            Gender=patient.Gender,
-            DateOfBirth=patient.DateOfBirth  
-        };
+            throw;
         }
         catch (Exception)
         {
             throw new Exception("Try again later");
         }
     }
-    public async Task<string> UpdateProfile(ProfileUpdateDto dto,int userId)
+
+    public async Task<string> UpdateProfile(ProfileUpdateDto dto, int userId)
     {
         try
         {
-              var patient = await _context.Patient.FirstOrDefaultAsync(p=>p.UserId==userId);
+            var patient = await _context.Patient
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId);
 
-        if (patient == null)
-        {
-            throw new InvalidKeyException("Patient does not exists");
+            if (patient == null)
+            {
+                throw new InvalidKeyException("Patient does not exists");
+            }
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+            {
+                patient.User!.Name = dto.Name;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+            {
+                patient.PhoneNumber = dto.PhoneNumber;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.EmergencyContact))
+            {
+                patient.EmergencyContact = dto.EmergencyContact;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.BloodGroup))
+            {
+                patient.BloodGroup = dto.BloodGroup;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.Gender))
+            {
+                patient.Gender = dto.Gender;
+            }
+            await _context.SaveChangesAsync();
+            return "Save Changes successfully";
         }
-        if (!string.IsNullOrWhiteSpace(dto.Name))
+        catch (InvalidKeyException)
         {
-            patient.User!.Name=dto.Name;
-
-        }
-        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
-        {
-            patient.PhoneNumber=dto.PhoneNumber;
-        }
-        if (!string.IsNullOrWhiteSpace(dto.EmergencyContact))
-        {
-            patient.EmergencyContact=dto.EmergencyContact;
-        }
-        if (!string.IsNullOrWhiteSpace(dto.BloodGroup))
-        {
-            patient.BloodGroup=dto.BloodGroup;
-
-        }
-        if (!string.IsNullOrWhiteSpace(dto.Gender))
-        {
-            patient.Gender=dto.Gender;
-        }
-        await _context.SaveChangesAsync();
-        return "Save Changes successfully";
+            throw;
         }
         catch (Exception)
         {
             throw new Exception("Try again later");
         }
-
     }
     
 }

@@ -8,6 +8,7 @@ using backend.DTOs;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Security;
 
 
 
@@ -100,6 +101,25 @@ public class DoctorController : ControllerBase
         catch(Exception)
         {
            return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"}); 
+        }
+    }
+    [HttpGet("doctor-dashboard")]
+    [Authorize(Roles ="Doctor")]
+    public async Task<ActionResult<DoctorDashBoardDto>> Dashboard()
+    {
+        try
+        {
+           int userId=int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+           var response = await _doctorService.DoctorDashBoard(userId);
+           return Ok(response); 
+        }
+        catch(InvalidKeyException ex)
+        {
+            return BadRequest(new {message=ex.Message});
+        }
+        catch(Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,new {message=ex.Message});
         }
     }
 }
