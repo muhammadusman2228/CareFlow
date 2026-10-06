@@ -3,6 +3,7 @@
 
 
 using System.Data;
+using System.Security.Claims;
 using backend.DTOs;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -36,26 +37,30 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPost("booking")]
-    [Authorize(Roles ="Patient")]
-
+    [Authorize(Roles = "Patient")]
     public async Task<ActionResult<ResponseBookingDto>> BookAppointment(RequestBookingDto dto)
     {
         try
         {
-            var response = await _appointmentService.BookAppointment(dto);
-            return CreatedAtAction(nameof(BookAppointment),response);
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var response = await _appointmentService.BookAppointment(dto, userId);
+            return CreatedAtAction(nameof(BookAppointment), response);
         }
-        catch(KeyNotFoundException ex)
+        catch (KeyNotFoundException ex)
         {
-            return BadRequest(new {message=ex.Message});
+            return BadRequest(new { message = ex.Message });
         }
-        catch(DuplicateNameException ex)
+        catch (DuplicateNameException ex)
         {
-            return BadRequest(new {message=ex.Message});
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
         }
     }
 }

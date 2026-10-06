@@ -41,6 +41,10 @@ public class Doctor
 
     public bool IsAvailable { get; set; } = true;
 
+    public TimeOnly ShiftStart { get; set; } = new TimeOnly(9, 0);
+
+    public TimeOnly ShiftEnd { get; set; } = new TimeOnly(17, 0);
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<Appointment> Appointments{get;set;}=new List<Appointment>();

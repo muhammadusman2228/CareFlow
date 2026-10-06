@@ -22,7 +22,7 @@ public class AppointmentService : IAppointment
         {
              var doctors = await _context.Doctors
             .AsNoTracking()
-            .Where(d => d.DepartmentId == departmentId && d.User!.IsVerified)
+            .Where(d => d.DepartmentId == departmentId && d.IsAvailable && d.ShiftStart <= timeSlot && timeSlot < d.ShiftEnd && d.User!.IsVerified)
             .Select(u => new ResponseAppointmentDto
             {
                 Id = u.Id,
@@ -47,7 +47,7 @@ public class AppointmentService : IAppointment
     }
 
 
-    public async Task<ResponseBookingDto> BookAppointment(RequestBookingDto dto)
+    public async Task<ResponseBookingDto> BookAppointment(RequestBookingDto dto, int userId)
     {
         try
         {
@@ -61,11 +61,16 @@ public class AppointmentService : IAppointment
                 throw new KeyNotFoundException("Doctor does not exist or is not verified");
             }
 
+            if (dto.TimeSlot < doctor.ShiftStart || dto.TimeSlot >= doctor.ShiftEnd)
+            {
+                throw new InvalidOperationException("Selected time slot is outside the doctor's shift hours");
+            }
+
             var isAlreadyBooked = await _context.Appointments.AnyAsync(u => 
                 u.DoctorId == dto.DoctorId && 
                 u.AppointmentDate == dto.AppointmentDate && 
                 u.TimeSlot == dto.TimeSlot && 
-                u.Status == "Confirmed");
+                (u.Status == "Confirmed" || u.Status == "Pending"));
 
             if (isAlreadyBooked)
             {
@@ -73,11 +78,11 @@ public class AppointmentService : IAppointment
             }
 
             var patient = await _context.Patient
-                .FirstOrDefaultAsync(p => p.Id == dto.PatientId || p.UserId == dto.PatientId);
+                .FirstOrDefaultAsync(p => p.UserId == userId);
 
             if (patient == null)
             {
-                throw new KeyNotFoundException("Patient does not exist");
+                throw new KeyNotFoundException("Patient profile not found");
             }
 
             var appointment = new Appointment
@@ -108,6 +113,10 @@ public class AppointmentService : IAppointment
             throw;
         }
         catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
         {
             throw;
         }

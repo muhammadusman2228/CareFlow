@@ -44,7 +44,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,new {messsage=ex.Message});
+            return StatusCode(StatusCodes.Status500InternalServerError,new {message=ex.Message});
         }
     }
     [HttpGet("admin")]
@@ -103,6 +103,54 @@ public class AdminController : ControllerBase
         catch (Exception)
         {
             return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
+        }
+    }
+    [HttpGet("audit-logs")]
+    [Authorize(Roles="Admin")]
+    public async   Task<ActionResult<List<AdminLogsDto>>> Logs()
+    {
+        try
+        {
+          var response = await _adminExtra.AdminLogs();
+          return Ok(response);  
+        }
+        catch (Exception)
+        {
+           return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"}); 
+        }
+    }
+
+    [HttpGet("schedules")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<DoctorScheduleResponseDto>>> GetSchedules([FromQuery] DateOnly date)
+    {
+        try
+        {
+            var response = await _adminExtra.GetDoctorSchedules(date);
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
+    [HttpPatch("doctor/{id}/shift")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> UpdateShift([FromRoute] int id, [FromBody] DoctorShiftUpdateDto dto)
+    {
+        try
+        {
+            var message = await _adminExtra.UpdateDoctorShift(id, dto);
+            return Ok(new { message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
         }
     }
 }

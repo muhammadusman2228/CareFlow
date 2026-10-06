@@ -10,4 +10,7 @@ public interface IAdminExtra
 {
     Task<AdminDashboardDto> AdminDashboard ();
     Task<AdminPatientsDto> AdminPatient();
+    Task<List<AdminLogsDto>> AdminLogs();
+    Task<List<DoctorScheduleResponseDto>> GetDoctorSchedules(DateOnly date);
+    Task<string> UpdateDoctorShift(int doctorId, DoctorShiftUpdateDto dto);
 }

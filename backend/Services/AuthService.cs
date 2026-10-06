@@ -160,7 +160,7 @@ public class AuthService : IAuth
   var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
   var creds= new SigningCredentials(key,SecurityAlgorithms.HmacSha256);
 
-  var accessMinutes= Convert.ToDouble(_configuration["JwtSettings:AccessTokenDurationMinutes"??"10"]);
+  var accessMinutes = Convert.ToDouble(_configuration["JwtSettings:AccessTokenDurationMinutes"] ?? "10");
   var accessExpiry = DateTime.UtcNow.AddMinutes(accessMinutes);
 
 var tokenDescriptor= new SecurityTokenDescriptor
@@ -180,7 +180,7 @@ var refreshBytes = new byte[64];
 using var rng = RandomNumberGenerator.Create();
 rng.GetBytes(refreshBytes);
 var refreshToken = Convert.ToBase64String(refreshBytes);
-var refreshDays= Convert.ToDouble(_configuration["JwtSettings:RefreshTokenDurationDays"]??"30");
+var refreshDays = Convert.ToDouble(_configuration["JwtSettings:RefreshTokenDurationDays"] ?? "30");
 var refreshExpiry=DateTime.UtcNow.AddDays(refreshDays);
 
 var session = new Session
@@ -281,7 +281,7 @@ return (responseDto,refreshToken,refreshExpiry);
         var user= await _context.Users.FirstOrDefaultAsync(u=>u.Email.ToLower()==normalMail);
         if (user == null)
         {
-            throw new InvalidCredentialException("Otp is sent successfully");//for security reasons
+            throw new InvalidCredentialException("Otp is sent successfully");
         }
         if (user.IsVerified)
         {
