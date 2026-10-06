@@ -21,6 +21,7 @@ builder.Services.AddScoped<IDoctor,DoctorService>();
 builder.Services.AddScoped<IAppointment,AppointmentService>();
 builder.Services.AddScoped<IDoctorApis,DoctorApisService>();
 builder.Services.AddScoped<IPatient,PatientService>();
+builder.Services.AddScoped<IAdminExtra,AdminExtraService>();
 var connectionStr = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionStr, ServerVersion.AutoDetect(connectionStr)));

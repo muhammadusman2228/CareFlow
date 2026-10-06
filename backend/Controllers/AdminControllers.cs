@@ -17,9 +17,12 @@ public class AdminController : ControllerBase
 {
     
     private readonly IDoctor _doctorService;
-    public AdminController(IDoctor doctorService)
+
+    private readonly IAdminExtra _adminExtra;
+    public AdminController(IDoctor doctorService,IAdminExtra adminExtra)
     {
         _doctorService=doctorService;
+        _adminExtra=adminExtra;
     }
     [HttpPost]
     [Authorize(Roles ="Admin")]
@@ -65,6 +68,36 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _doctorService.FindDoctors();
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
+        }
+    }
+
+    [HttpGet("dashboard")]
+    [Authorize(Roles ="Admin")]
+
+    public async Task<ActionResult<AdminDashboardDto>> Dashboard()
+    {
+        try
+        {
+            var response = await _adminExtra.AdminDashboard();
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
+        }
+    }
+    [HttpGet("patient")]
+    [Authorize(Roles ="Admin")]
+    public async Task<ActionResult<AdminPatientsDto>> Patients()
+    {
+        try
+        {
+            var response = await _adminExtra.AdminPatient();
             return Ok(response);
         }
         catch (Exception)

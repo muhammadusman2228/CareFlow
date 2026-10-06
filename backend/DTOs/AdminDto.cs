@@ -94,3 +94,35 @@ public class FindDoctorResponse
 
     public decimal ConsultationFee{get;set;}
 }
+
+
+public class AdminDashboardDto
+{
+    public int TotalDoctors{get;set;}
+    public int TotalPatients{get;set;}
+    public int TodayAppointments{get;set;}
+
+    public int MonthlyTrends{get;set;}
+
+}
+
+public class AdminPatientsDto
+{
+    public int TotalPatients{get;set;}
+
+    public List<AdminPatientDataDto> Details{get;set;}=new List<AdminPatientDataDto>();
+    
+}
+
+public class AdminPatientDataDto
+{
+    
+    public string Name{get;set;}=string.Empty;
+    public string Email{get;set;}=string.Empty;
+    public DateTime RegistrationDate{get;set;}
+
+    public string PhoneNumber{get;set;}=string.Empty;
+
+    public int VisitCount{get;set;}
+
+}
