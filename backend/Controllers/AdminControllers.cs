@@ -76,6 +76,25 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpGet("doctor/{id}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<FindDoctorResponse>> GetDoctorById([FromRoute] int id)
+    {
+        try
+        {
+            var response = await _doctorService.GetDoctorById(id);
+            if (response == null)
+            {
+                return NotFound(new { message = "Physician record not found" });
+            }
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
     [HttpGet("dashboard")]
     [Authorize(Roles ="Admin")]
 
@@ -126,6 +145,10 @@ public class AdminController : ControllerBase
     {
         try
         {
+            if (date == default)
+            {
+                date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+            }
             var response = await _adminExtra.GetDoctorSchedules(date);
             return Ok(response);
         }
@@ -143,6 +166,25 @@ public class AdminController : ControllerBase
         {
             var message = await _adminExtra.UpdateDoctorShift(id, dto);
             return Ok(new { message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
+    [HttpPatch("doctor/{id}/availability")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> ToggleDoctorAvailability([FromRoute] int id)
+    {
+        try
+        {
+            var isAvailable = await _adminExtra.ToggleDoctorAvailability(id);
+            return Ok(new { isAvailable, message = isAvailable ? "Doctor is now On Duty" : "Doctor is now Off Duty" });
         }
         catch (KeyNotFoundException ex)
         {

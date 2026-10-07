@@ -148,10 +148,10 @@ const AdminDepartments = () => {
                             <Building2 size={22} />
                         </div>
                         <div>
-                            <h1 className="page-title text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                            <h1 className="page-title text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                                 Departments Management
                             </h1>
-                            <p className="page-subtitle text-xs sm:text-sm text-slate-500 font-medium">
+                            <p className="page-subtitle text-sm text-slate-600 font-medium mt-0.5">
                                 Configure clinical units, operational capacities, and staff allocations
                             </p>
                         </div>
@@ -162,7 +162,7 @@ const AdminDepartments = () => {
                     <button
                         type="button"
                         onClick={handleOpenModal}
-                        className="add-department-btn inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-semibold shadow-sm shadow-sky-600/25 transition-all cursor-pointer"
+                        className="add-department-btn inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
                     >
                         <Plus size={18} strokeWidth={2.5} />
                         <span>Add Department</span>
@@ -171,76 +171,76 @@ const AdminDepartments = () => {
             </div>
 
             <div className="kpi-summary-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="kpi-card bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm shadow-slate-200/80 hover:shadow-md transition-all flex items-center gap-4">
-                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Layers size={22} />
                     </div>
                     <div className="kpi-details flex flex-col min-w-0">
-                        <span className="kpi-label text-xs font-semibold text-slate-500">
+                        <span className="kpi-label text-xs sm:text-sm font-semibold text-slate-600">
                             Total Departments
                         </span>
-                        <span className="kpi-value text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="kpi-value text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                             {departments.length}
                         </span>
-                        <span className="kpi-subtext text-[11px] font-medium text-slate-400 mt-0.5">
+                        <span className="kpi-subtext text-xs font-medium text-slate-500 mt-0.5">
                             Active clinical specialties
                         </span>
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm shadow-slate-200/80 hover:shadow-md transition-all flex items-center gap-4">
-                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Users size={22} />
                     </div>
                     <div className="kpi-details flex flex-col min-w-0">
-                        <span className="kpi-label text-xs font-semibold text-slate-500">
+                        <span className="kpi-label text-xs sm:text-sm font-semibold text-slate-600">
                             Total Specialists
                         </span>
-                        <span className="kpi-value text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="kpi-value text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                             {totalSpecialists}
                         </span>
-                        <span className="kpi-subtext text-[11px] font-medium text-emerald-600 mt-0.5">
+                        <span className="kpi-subtext text-xs font-medium text-slate-500 mt-0.5">
                             Assigned doctors across units
                         </span>
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm shadow-slate-200/80 hover:shadow-md transition-all flex items-center gap-4">
-                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Activity size={22} />
                     </div>
                     <div className="kpi-details flex flex-col min-w-0">
-                        <span className="kpi-label text-xs font-semibold text-slate-500">
+                        <span className="kpi-label text-xs sm:text-sm font-semibold text-slate-600">
                             Avg Staffing Ratio
                         </span>
-                        <span className="kpi-value text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="kpi-value text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                             {averageDoctors}
                         </span>
-                        <span className="kpi-subtext text-[11px] font-medium text-slate-400 mt-0.5">
+                        <span className="kpi-subtext text-xs font-medium text-slate-500 mt-0.5">
                             Physicians per department
                         </span>
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm shadow-slate-200/80 hover:shadow-md transition-all flex items-center gap-4">
-                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <ShieldCheck size={22} />
                     </div>
                     <div className="kpi-details flex flex-col min-w-0">
-                        <span className="kpi-label text-xs font-semibold text-slate-500">
+                        <span className="kpi-label text-xs sm:text-sm font-semibold text-slate-600">
                             System Status
                         </span>
-                        <span className="kpi-value text-2xl font-extrabold text-emerald-600 tracking-tight">
+                        <span className="kpi-value text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                             100%
                         </span>
-                        <span className="kpi-subtext text-[11px] font-medium text-slate-400 mt-0.5">
+                        <span className="kpi-subtext text-xs font-medium text-slate-500 mt-0.5">
                             All departments operational
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div className="toolbar-section flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-sm shadow-slate-200/80">
+            <div className="toolbar-section flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-xl border border-slate-200/80 p-3 sm:p-4 shadow-sm shadow-slate-200/80">
                 <div className="search-box relative flex items-center flex-1 max-w-md border border-slate-300 rounded-xl px-3 py-2 bg-white shadow-xs focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/10 transition-all">
                     <Search size={18} className="text-slate-400 shrink-0 mr-2.5" />
                     <input
@@ -275,7 +275,7 @@ const AdminDepartments = () => {
                     {[1, 2, 3, 4, 5, 6].map(item => (
                         <div 
                             key={item}
-                            className="skeleton-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm shadow-slate-200/80 animate-pulse flex flex-col gap-4"
+                            className="skeleton-card bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm shadow-slate-200/80 animate-pulse flex flex-col gap-4"
                         >
                             <div className="skeleton-top flex items-center justify-between">
                                 <div className="w-12 h-12 rounded-xl bg-slate-200" />
@@ -291,8 +291,8 @@ const AdminDepartments = () => {
                     ))}
                 </div>
             ) : filteredDepartments.length === 0 ? (
-                <div className="empty-state-card bg-white rounded-2xl border-2 border-dashed border-slate-200 p-12 text-center shadow-sm shadow-slate-200/80 flex flex-col items-center justify-center">
-                    <div className="empty-icon-box w-16 h-16 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mb-3 shadow-xs">
+                <div className="empty-state-card bg-white rounded-xl border-2 border-dashed border-slate-200 p-12 text-center shadow-sm shadow-slate-200/80 flex flex-col items-center justify-center">
+                    <div className="empty-icon-box w-16 h-16 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mb-3 shadow-xs">
                         <Building2 size={32} />
                     </div>
                     <h3 className="empty-title text-base font-bold text-slate-800">
@@ -327,7 +327,7 @@ const AdminDepartments = () => {
                     {filteredDepartments.map((dept) => (
                         <div 
                             key={dept.id}
-                            className="department-card bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm shadow-slate-200/80 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
+                            className="department-card bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-sm shadow-slate-200/80 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
                         >
                             <div className="card-top-content flex flex-col gap-3.5">
                                 <div className="card-header flex items-center justify-between">
@@ -366,7 +366,7 @@ const AdminDepartments = () => {
 
             {isModalOpen && (
                 <div className="modal-backdrop fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="modal-container bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="modal-container bg-white rounded-xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
                         
                         <div className="modal-header px-6 py-4.5 border-b border-slate-100 flex items-center justify-between">
                             <div className="header-titles flex flex-col">
@@ -391,7 +391,7 @@ const AdminDepartments = () => {
 
                         {successDepartment ? (
                             <div className="department-success-card p-6 sm:p-8 flex flex-col items-center text-center">
-                                <div className="success-icon-box w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-xs">
+                                <div className="success-icon-box w-16 h-16 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-xs">
                                     <CheckCircle2 size={36} />
                                 </div>
 
@@ -402,7 +402,7 @@ const AdminDepartments = () => {
                                     The clinical unit has been activated and is ready to host physician schedules and patient bookings.
                                 </p>
 
-                                <div className="department-details-box w-full bg-slate-50 border border-slate-200/80 rounded-2xl p-4 my-5 flex flex-col gap-2.5 text-left text-xs">
+                                <div className="department-details-box w-full bg-slate-50 border border-slate-200/80 rounded-xl p-4 my-5 flex flex-col gap-2.5 text-left text-xs">
                                     <div className="detail-row flex items-center justify-between">
                                         <span className="text-slate-500 font-medium">Department Title:</span>
                                         <span className="text-sky-700 font-bold capitalize">{successDepartment.name}</span>

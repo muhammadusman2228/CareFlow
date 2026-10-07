@@ -28,14 +28,14 @@ public class DoctorApisService : IDoctorApis
             }
 
             var appointments = await _context.Appointments.AsNoTracking()
-                .OrderBy(u => u.AppointmentDate)
+                .Where(u => u.DoctorId == doctor.Id)
+                .OrderByDescending(u => u.AppointmentDate)
                 .ThenBy(a => a.TimeSlot)
-                .Where(u => u.DoctorId == doctor.Id && u.AppointmentDate >= DateOnly.FromDateTime(DateTime.UtcNow))
                 .Select(u => new DoctorAppointmentsDto
                 {
                     AppointmentId = u.Id,
                     PatientId = u.PatientId,
-                    PatientName = u.Patient!.User!.Name,
+                    PatientName = u.Patient != null && u.Patient.User != null ? u.Patient.User.Name : "Patient",
                     AppointmentDate = u.AppointmentDate,
                     TimeSlot = u.TimeSlot,
                     Symptoms = u.Symptoms,
@@ -114,6 +114,11 @@ public class DoctorApisService : IDoctorApis
             if (appointment == null)
             {
                 throw new InvalidDataException("Appointment does not exist or does not belong to you");
+            }
+
+            if (appointment.Status == "Cancelled")
+            {
+                throw new InvalidOperationException("Cannot prescribe medicine for a cancelled appointment");
             }
 
             var transaction = await _context.Database.BeginTransactionAsync();
@@ -226,20 +231,36 @@ public class DoctorApisService : IDoctorApis
     {
         try
         {
-            var records = await _context.Doctors.AsNoTracking().Where(d => d.UserId == userId).Select(doctor => new DoctorDashBoardDto
-            {
-                TodayAppointments = doctor.Appointments.Count(u => u.AppointmentDate == DateOnly.FromDateTime(DateTime.UtcNow)),
-                PendingApprovals = doctor.Appointments.Count(a => a.Status == "Pending"),
-                TodayCompletedCount = doctor.Appointments.Count(a => a.Status == "Completed" && a.AppointmentDate == DateOnly.FromDateTime(DateTime.UtcNow)),
-                TotalUniquePatients = doctor.Appointments.Select(a => a.PatientId).Distinct().Count()
-            }).FirstOrDefaultAsync();
-
-            if (records is null)
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+            if (doctor == null)
             {
                 throw new InvalidKeyException("Doctor does not exist");
             }
 
-            return records;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var todayAppointments = await _context.Appointments
+                .CountAsync(u => u.DoctorId == doctor.Id && u.AppointmentDate == today);
+
+            var pendingApprovals = await _context.Appointments
+                .CountAsync(a => a.DoctorId == doctor.Id && a.Status == "Pending");
+
+            var todayCompletedCount = await _context.Appointments
+                .CountAsync(a => a.DoctorId == doctor.Id && a.Status == "Completed" && a.AppointmentDate == today);
+
+            var totalUniquePatients = await _context.Appointments
+                .Where(a => a.DoctorId == doctor.Id)
+                .Select(a => a.PatientId)
+                .Distinct()
+                .CountAsync();
+
+            return new DoctorDashBoardDto
+            {
+                TodayAppointments = todayAppointments,
+                PendingApprovals = pendingApprovals,
+                TodayCompletedCount = todayCompletedCount,
+                TotalUniquePatients = totalUniquePatients
+            };
         }
         catch (InvalidKeyException)
         {

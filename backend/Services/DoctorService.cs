@@ -143,11 +143,41 @@ public class DoctorService : IDoctor
             {
                 Id = u.Id,
                 Name = u.User!.Name,
+                DepartmentId = u.DepartmentId,
                 DepartmentName = u.Department!.Name,
                 Specialization = u.Specialization,
-                ConsultationFee = u.ConsultationFee
+                Qualifications = u.Qualifications,
+                ExperienceYears = u.ExperienceYears,
+                ConsultationFee = u.ConsultationFee,
+                ShiftStart = u.ShiftStart,
+                ShiftEnd = u.ShiftEnd
             }).ToListAsync();
             return doctors;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try Again Later");
+        }
+    }
+
+    public async Task<FindDoctorResponse?> GetDoctorById(int id)
+    {
+        try
+        {
+            var doctor = await _context.Doctors.AsNoTracking().Where(u => u.Id == id && u.User!.IsVerified).Select(u => new FindDoctorResponse
+            {
+                Id = u.Id,
+                Name = u.User!.Name,
+                DepartmentId = u.DepartmentId,
+                DepartmentName = u.Department!.Name,
+                Specialization = u.Specialization,
+                Qualifications = u.Qualifications,
+                ExperienceYears = u.ExperienceYears,
+                ConsultationFee = u.ConsultationFee,
+                ShiftStart = u.ShiftStart,
+                ShiftEnd = u.ShiftEnd
+            }).FirstOrDefaultAsync();
+            return doctor;
         }
         catch (Exception)
         {

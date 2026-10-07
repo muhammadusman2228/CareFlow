@@ -72,9 +72,14 @@ public class FindDoctorResponse
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public string Specialization { get; set; } = string.Empty;
+    public string Qualifications { get; set; } = string.Empty;
+    public int ExperienceYears { get; set; }
     public decimal ConsultationFee { get; set; }
+    public TimeOnly ShiftStart { get; set; }
+    public TimeOnly ShiftEnd { get; set; }
 }
 
 public class AdminDashboardDto
@@ -88,6 +93,7 @@ public class AdminDashboardDto
     public int CompletedAppointments { get; set; }
     public int CancelledAppointments { get; set; }
     public int MonthlyTrends { get; set; }
+    public List<int> WeeklyCompletedTrends { get; set; } = new List<int>();
     public List<DepartmentWorkloadDto> DepartmentWorkload { get; set; } = new List<DepartmentWorkloadDto>();
     public List<RecentActivityDto> RecentActivities { get; set; } = new List<RecentActivityDto>();
 }

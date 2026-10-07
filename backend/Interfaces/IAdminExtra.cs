@@ -13,4 +13,5 @@ public interface IAdminExtra
     Task<List<AdminLogsDto>> AdminLogs();
     Task<List<DoctorScheduleResponseDto>> GetDoctorSchedules(DateOnly date);
     Task<string> UpdateDoctorShift(int doctorId, DoctorShiftUpdateDto dto);
+    Task<bool> ToggleDoctorAvailability(int doctorId);
 }

@@ -72,6 +72,10 @@ public class DoctorController : ControllerBase
             var response = await _doctorService.Prescriptions(dto, userId);
             return CreatedAtAction(nameof(Prescriptions), response);
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (InvalidDataException ex)
         {
             return BadRequest(new { message = ex.Message });

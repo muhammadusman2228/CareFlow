@@ -32,7 +32,7 @@ const [isProfileOpen, setIsProfileOpen] = useState(false)
 const handleLogout = async () => {
     try {
         await axios.post('/auth/logout')
-    } catch {console.log()
+    } catch {
     } finally {
         setAuth({})
         navigate('/login', { replace: true })
@@ -123,8 +123,6 @@ const handleLogout = async () => {
     </div>
 
     <div className="flex items-center gap-3 sm:gap-5 ml-4">
-        
-
         <div className="relative">
             <button
                 onClick={() => setIsProfileOpen(prev => !prev)}

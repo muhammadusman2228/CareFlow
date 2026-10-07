@@ -22,8 +22,9 @@ public class AdminExtraService : IAdminExtra
     {
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+            var nowPkt = DateTime.UtcNow.AddHours(5);
+            var today = DateOnly.FromDateTime(nowPkt);
+            var oneMonthAgo = nowPkt.AddMonths(-1);
 
             var totalDoctors = await _context.Doctors.CountAsync(d => d.User!.IsVerified);
             var totalPatients = await _context.Patient.CountAsync(p => p.User!.IsVerified);
@@ -39,18 +40,32 @@ public class AdminExtraService : IAdminExtra
             var completed = await _context.Appointments.CountAsync(a => a.Status == "Completed");
             var cancelled = await _context.Appointments.CountAsync(a => a.Status == "Cancelled");
 
+            var weeklyCompleted = new List<int>();
+            for (int i = 6; i >= 0; i--)
+            {
+                var d = today.AddDays(-i);
+                var startUtc = d.ToDateTime(TimeOnly.MinValue).AddHours(-5);
+                var endUtc = d.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
+                var presCount = await _context.Prescriptions.CountAsync(p => p.CreatedAt >= startUtc && p.CreatedAt <= endUtc);
+                var otherCount = await _context.Appointments.CountAsync(a => a.AppointmentDate == d && a.Status == "Completed" && !_context.Prescriptions.Any(p => p.AppointmentId == a.Id));
+                weeklyCompleted.Add(presCount + otherCount);
+            }
+
             var departmentWorkload = await _context.Departments.AsNoTracking().Select(d => new DepartmentWorkloadDto
             {
                 DepartmentName = d.Name,
-                AppointmentCount = d.Doctors.SelectMany(doc => doc.Appointments).Count()
+                AppointmentCount = d.Doctors.SelectMany(doc => doc.Appointments.Where(a => a.AppointmentDate == today && a.Status == "Confirmed")).Count()
             }).ToListAsync();
 
+            var todayStartUtc = today.ToDateTime(TimeOnly.MinValue).AddHours(-5);
+            var todayEndUtc = today.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
             var recentActivities = await _context.Appointments.AsNoTracking()
+                .Where(a => a.CreatedAt >= todayStartUtc && a.CreatedAt <= todayEndUtc)
                 .OrderByDescending(a => a.CreatedAt)
-                .Take(6)
+                .Take(10)
                 .Select(a => new RecentActivityDto
                 {
-                    Time = a.CreatedAt.ToString("hh:mm tt"),
+                    Time = a.CreatedAt.AddHours(5).ToString("hh:mm tt"),
                     User = a.Patient!.User!.Name,
                     Action = a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : "Requested Appointment")),
                     Module = "Appointments",
@@ -69,6 +84,7 @@ public class AdminExtraService : IAdminExtra
                 CompletedAppointments = completed,
                 CancelledAppointments = cancelled,
                 MonthlyTrends = monthlyTrends,
+                WeeklyCompletedTrends = weeklyCompleted,
                 DepartmentWorkload = departmentWorkload,
                 RecentActivities = recentActivities
             };
@@ -172,6 +188,30 @@ public class AdminExtraService : IAdminExtra
             }
 
             return "Doctor shift updated successfully";
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
+        }
+    }
+
+    public async Task<bool> ToggleDoctorAvailability(int doctorId)
+    {
+        try
+        {
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId);
+            if (doctor == null)
+            {
+                throw new KeyNotFoundException("Doctor does not exist");
+            }
+
+            doctor.IsAvailable = !doctor.IsAvailable;
+            await _context.SaveChangesAsync();
+            return doctor.IsAvailable;
         }
         catch (KeyNotFoundException)
         {

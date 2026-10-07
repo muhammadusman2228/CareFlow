@@ -1,21 +1,23 @@
-
-
-
+import { PhoneCall } from 'lucide-react'
 import Bottom from './Bottom.Home'
 import Upper from './Upper.Home'
 
-
-const Hero=()=>{
-    return(
-         <div className="hero w-full flex mt-3 flex-col bg-slate-50 px-[8%]">
-               <Upper/>
-                
-               <Bottom/>
-                    <div className="emeergency-helpline absolute bottom-1 right-[2%] z-20 flex items-center gap-2.5 bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-full shadow-lg shadow-sky-600/30 hover:-translate-y-0.5 transition-all cursor-pointer ">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone-call preview-icon"><path d="M13 2a9 9 0 0 1 9 9"/><path d="M13 6a5 5 0 0 1 5 5"/><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg>
-                    <p className='text-xs sm:text-sm font-semibold tracking-wide'> 24/7 Emergency Hotline: 1-8000-CARE-NOW</p>
-                    </div>
+const Hero = () => {
+    return (
+        <div className="hero w-full flex mt-6 flex-col bg-slate-50/80 px-[6%] lg:px-[8%] py-8 rounded-3xl border border-slate-200/60 max-w-7xl mx-auto relative">
+            <Upper />
+            <div className="mt-12">
+                <Bottom />
             </div>
+            <a 
+                href="tel:1-8000-CARE-NOW"
+                className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-sky-600 hover:bg-sky-700 text-white px-5 py-3 rounded-full shadow-xl shadow-sky-600/30 hover:-translate-y-0.5 transition-all cursor-pointer"
+            >
+                <PhoneCall size={18} className="text-white animate-pulse" />
+                <span className="text-xs sm:text-sm font-bold tracking-wide">24/7 Hotline: 1-8000-CARE-NOW</span>
+            </a>
+        </div>
     )
 }
+
 export default Hero

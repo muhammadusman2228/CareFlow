@@ -11,4 +11,5 @@ public interface IDoctor
     Task<DrRegResponseDto> RegisterDoctor(DrRegRequestDto dto);
     Task<List<AdminDoctorResponse>> GetDoctorsAdmin();
     Task<List<FindDoctorResponse>> FindDoctors();
+    Task<FindDoctorResponse?> GetDoctorById(int id);
 }
