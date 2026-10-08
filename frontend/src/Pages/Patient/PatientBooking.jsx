@@ -55,6 +55,22 @@ const generateDoctorSlots = (shiftStart, shiftEnd) => {
     ]
 }
 
+const isPastSlot = (slotValue, dateStr) => {
+    const now = new Date()
+    const todayPktStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(now)
+    if (dateStr < todayPktStr) return true
+    if (dateStr > todayPktStr) return false
+
+    const pktTimeStr = new Intl.DateTimeFormat('en-GB', { 
+        timeZone: 'Asia/Karachi', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: false 
+    }).format(now)
+    return slotValue <= pktTimeStr
+}
+
 const PatientBooking = () => {
     const axiosPrivate = useAxiosPrivate()
     const navigate = useNavigate()
@@ -69,11 +85,32 @@ const PatientBooking = () => {
     const [selectedDate, setSelectedDate] = useState(todayStr)
 
     const [selectedDoctor, setSelectedDoctor] = useState(null)
+    const [bookedSlots, setBookedSlots] = useState([])
     const [selectedSlot, setSelectedSlot] = useState(null)
     const [symptoms, setSymptoms] = useState('')
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingError, setBookingError] = useState(null)
     const [bookingSuccess, setBookingSuccess] = useState(false)
+
+    useEffect(() => {
+        if (!selectedDoctor || !selectedDate) return
+        const fetchBooked = async () => {
+            try {
+                const res = await axios.get(`/Appointment/booked-slots?doctorId=${selectedDoctor.id}&date=${selectedDate}`)
+                setBookedSlots(Array.isArray(res.data) ? res.data : [])
+            } catch {
+                setBookedSlots([])
+            }
+        }
+        fetchBooked()
+    }, [selectedDoctor, selectedDate])
+
+    useEffect(() => {
+        if (!selectedDoctor) return
+        const allSlots = generateDoctorSlots(selectedDoctor.shiftStart, selectedDoctor.shiftEnd)
+        const firstAvailable = allSlots.find(s => !bookedSlots.includes(s.value) && !isPastSlot(s.value, selectedDate))
+        setSelectedSlot(firstAvailable || null)
+    }, [selectedDate, bookedSlots, selectedDoctor])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -103,9 +140,10 @@ const PatientBooking = () => {
     })
 
     const handleOpenModal = (doc, slot) => {
-        const docSlots = generateDoctorSlots(doc.shiftStart, doc.shiftEnd)
         setSelectedDoctor(doc)
-        setSelectedSlot(slot || docSlots[0])
+        if (slot && !isPastSlot(slot.value, selectedDate)) {
+            setSelectedSlot(slot)
+        }
         setSymptoms('')
         setBookingError(null)
         setBookingSuccess(false)
@@ -298,21 +336,38 @@ const PatientBooking = () => {
                                     <div className="flex flex-col gap-1.5">
                                         <span className="text-slate-500 font-semibold">Select Time Slot:</span>
                                         <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto pr-1">
-                                            {generateDoctorSlots(selectedDoctor.shiftStart, selectedDoctor.shiftEnd).map(slot => (
-                                                <button
-                                                    key={slot.value}
-                                                    type="button"
-                                                    onClick={() => setSelectedSlot(slot)}
-                                                    className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-all border text-center ${
-                                                        selectedSlot?.value === slot.value
-                                                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    {slot.label}
-                                                </button>
-                                            ))}
+                                            {generateDoctorSlots(selectedDoctor.shiftStart, selectedDoctor.shiftEnd).map(slot => {
+                                                const isBooked = bookedSlots.includes(slot.value)
+                                                const isPast = isPastSlot(slot.value, selectedDate)
+                                                const isUnavailable = isBooked || isPast
+                                                const isSelected = selectedSlot?.value === slot.value
+                                                return (
+                                                    <button
+                                                        key={slot.value}
+                                                        type="button"
+                                                        disabled={isUnavailable}
+                                                        onClick={() => setSelectedSlot(slot)}
+                                                        className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-all border flex flex-col items-center justify-center text-center ${
+                                                            isUnavailable
+                                                                ? 'opacity-75 cursor-not-allowed bg-slate-100/80 text-slate-400 border-slate-200'
+                                                                : isSelected
+                                                                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs cursor-pointer'
+                                                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 cursor-pointer'
+                                                        }`}
+                                                        title={isBooked ? 'Slot already booked' : isPast ? 'Time has passed' : 'Available'}
+                                                    >
+                                                        <span>{slot.label}</span>
+                                                        {isBooked && <span className="text-[8px] font-semibold text-slate-500">Booked</span>}
+                                                        {isPast && !isBooked && <span className="text-[8px] font-medium text-slate-400">Passed</span>}
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
+                                        {!selectedSlot && (
+                                            <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 p-2 rounded-lg mt-1">
+                                                No consultation slots available for this date. Please pick a future date.
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
@@ -345,7 +400,7 @@ const PatientBooking = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={bookingLoading || bookingSuccess}
+                                    disabled={bookingLoading || bookingSuccess || !selectedSlot}
                                     className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                                 >
                                     <CheckCircle2 size={15} />

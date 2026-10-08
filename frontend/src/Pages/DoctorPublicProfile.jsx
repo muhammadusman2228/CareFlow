@@ -63,6 +63,22 @@ const generateDoctorSlots = (shiftStart, shiftEnd) => {
     ]
 }
 
+const isPastSlot = (slotValue, dateStr) => {
+    const now = new Date()
+    const todayPktStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(now)
+    if (dateStr < todayPktStr) return true
+    if (dateStr > todayPktStr) return false
+
+    const pktTimeStr = new Intl.DateTimeFormat('en-GB', { 
+        timeZone: 'Asia/Karachi', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: false 
+    }).format(now)
+    return slotValue <= pktTimeStr
+}
+
 const DoctorPublicProfile = () => {
     const { id } = useParams()
     const navigate = useNavigate()
@@ -75,11 +91,32 @@ const DoctorPublicProfile = () => {
 
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     const [selectedDate, setSelectedDate] = useState(todayStr)
+    const [bookedSlots, setBookedSlots] = useState([])
     const [selectedSlot, setSelectedSlot] = useState(null)
     const [symptoms, setSymptoms] = useState('')
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingError, setBookingError] = useState(null)
     const [bookingSuccess, setBookingSuccess] = useState(false)
+
+    useEffect(() => {
+        if (!id || !selectedDate) return
+        const fetchBookedSlots = async () => {
+            try {
+                const res = await axios.get(`/Appointment/booked-slots?doctorId=${id}&date=${selectedDate}`)
+                setBookedSlots(Array.isArray(res.data) ? res.data : [])
+            } catch {
+                setBookedSlots([])
+            }
+        }
+        fetchBookedSlots()
+    }, [id, selectedDate])
+
+    useEffect(() => {
+        if (!doctor) return
+        const allSlots = generateDoctorSlots(doctor.shiftStart, doctor.shiftEnd)
+        const firstAvailable = allSlots.find(s => !bookedSlots.includes(s.value) && !isPastSlot(s.value, selectedDate))
+        setSelectedSlot(firstAvailable || null)
+    }, [selectedDate, bookedSlots, doctor])
 
     useEffect(() => {
         const fetchDoctor = async () => {
@@ -89,10 +126,6 @@ const DoctorPublicProfile = () => {
                 const res = await axios.get(`/Admin/doctor/${id}`)
                 if (res.data) {
                     setDoctor(res.data)
-                    const slots = generateDoctorSlots(res.data.shiftStart, res.data.shiftEnd)
-                    if (slots.length > 0) {
-                        setSelectedSlot(slots[0])
-                    }
                 } else {
                     setError('Physician record not found')
                 }
@@ -103,8 +136,6 @@ const DoctorPublicProfile = () => {
                         const matched = fallbackRes.data.find(d => String(d.id) === String(id))
                         if (matched) {
                             setDoctor(matched)
-                            const slots = generateDoctorSlots(matched.shiftStart, matched.shiftEnd)
-                            if (slots.length > 0) setSelectedSlot(slots[0])
                         } else {
                             setError('Physician record not found')
                         }
@@ -371,23 +402,37 @@ const DoctorPublicProfile = () => {
                                         </label>
                                         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
                                             {availableSlots.map((slot) => {
+                                                const isBooked = bookedSlots.includes(slot.value)
+                                                const isPast = isPastSlot(slot.value, selectedDate)
+                                                const isUnavailable = isBooked || isPast
                                                 const isSelected = selectedSlot?.value === slot.value
                                                 return (
                                                     <button
                                                         key={slot.value}
                                                         type="button"
+                                                        disabled={isUnavailable}
                                                         onClick={() => setSelectedSlot(slot)}
-                                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                                                            isSelected
-                                                                ? 'bg-sky-600 text-white border-sky-600 shadow-2xs'
-                                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center ${
+                                                            isUnavailable
+                                                                ? 'opacity-75 cursor-not-allowed bg-slate-100/80 text-slate-400 border-slate-200'
+                                                                : isSelected
+                                                                    ? 'bg-sky-600 text-white border-sky-600 shadow-2xs cursor-pointer'
+                                                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer'
                                                         }`}
+                                                        title={isBooked ? 'Slot already booked' : isPast ? 'Time has passed' : 'Available'}
                                                     >
-                                                        {slot.label}
+                                                        <span>{slot.label}</span>
+                                                        {isBooked && <span className="text-[9px] font-semibold tracking-tight text-slate-500">Booked</span>}
+                                                        {isPast && !isBooked && <span className="text-[9px] font-medium tracking-tight text-slate-400">Passed</span>}
                                                     </button>
                                                 )
                                             })}
                                         </div>
+                                        {!selectedSlot && (
+                                            <p className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 p-2 rounded-lg mt-1">
+                                                No consultation slots available for this date. Please pick a future date.
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col gap-1.5">
@@ -420,7 +465,7 @@ const DoctorPublicProfile = () => {
 
                                     <button
                                         type="submit"
-                                        disabled={bookingLoading || bookingSuccess}
+                                        disabled={bookingLoading || bookingSuccess || !selectedSlot}
                                         className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
                                         {bookingLoading ? (

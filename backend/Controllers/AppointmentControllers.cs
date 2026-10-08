@@ -36,6 +36,21 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    [HttpGet("booked-slots")]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<string>>> GetBookedSlots([FromQuery] int doctorId, [FromQuery] DateOnly date)
+    {
+        try
+        {
+            var slots = await _appointmentService.GetBookedSlots(doctorId, date);
+            return Ok(slots);
+        }
+        catch
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
     [HttpPost("booking")]
     [Authorize(Roles = "Patient")]
     public async Task<ActionResult<ResponseBookingDto>> BookAppointment(RequestBookingDto dto)

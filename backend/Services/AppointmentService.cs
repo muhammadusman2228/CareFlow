@@ -34,7 +34,7 @@ public class AppointmentService : IAppointment
                     a.DoctorId == u.Id && 
                     a.AppointmentDate == date && 
                     a.TimeSlot == timeSlot && 
-                    a.Status == "Confirmed")
+                    (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
             })
             .ToListAsync();
 
@@ -51,6 +51,20 @@ public class AppointmentService : IAppointment
     {
         try
         {
+            var nowPkt = DateTime.UtcNow.AddHours(5);
+            var todayPkt = DateOnly.FromDateTime(nowPkt);
+            var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
+
+            if (dto.AppointmentDate < todayPkt)
+            {
+                throw new InvalidOperationException("Cannot book an appointment for a past date");
+            }
+
+            if (dto.AppointmentDate == todayPkt && dto.TimeSlot <= nowTimePkt)
+            {
+                throw new InvalidOperationException("Cannot book an appointment for a time slot that has already passed");
+            }
+
             var doctor = await _context.Doctors
                 .Include(d => d.User)
                 .Include(d => d.Department)
@@ -70,7 +84,7 @@ public class AppointmentService : IAppointment
                 u.DoctorId == dto.DoctorId && 
                 u.AppointmentDate == dto.AppointmentDate && 
                 u.TimeSlot == dto.TimeSlot && 
-                (u.Status == "Confirmed" || u.Status == "Pending"));
+                (u.Status == "Confirmed" || u.Status == "Pending" || u.Status == "Completed"));
 
             if (isAlreadyBooked)
             {
@@ -123,6 +137,27 @@ public class AppointmentService : IAppointment
         catch (Exception)
         {
             throw new Exception("Try again later");
+        }
+    }
+
+    public async Task<List<string>> GetBookedSlots(int doctorId, DateOnly date)
+    {
+        try
+        {
+            var bookedSlots = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => a.DoctorId == doctorId && 
+                            a.AppointmentDate == date && 
+                            (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
+                .Select(a => a.TimeSlot.ToString("HH:mm:ss"))
+                .Distinct()
+                .ToListAsync();
+
+            return bookedSlots;
+        }
+        catch
+        {
+            throw;
         }
     }
 }

@@ -34,7 +34,7 @@ public class AdminExtraService : IAdminExtra
 
             var totalDoctors = await _context.Doctors.CountAsync(d => d.User!.IsVerified);
             var totalPatients = await _context.Patient.CountAsync(p => p.User!.IsVerified);
-            var todayAppointments = await _context.Appointments.CountAsync(a => a.AppointmentDate == today && a.Status == "Confirmed");
+            var todayAppointments = await _context.Appointments.CountAsync(a => a.AppointmentDate == today && a.Status != "Cancelled");
             var monthlyTrends = await _context.Patient.CountAsync(p => p.User!.CreatedAt >= oneMonthAgo);
 
             var dailyRevenue = await _context.Appointments
