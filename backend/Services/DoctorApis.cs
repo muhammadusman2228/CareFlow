@@ -27,6 +27,16 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Doctor does not exist");
             }
 
+            var nowPkt = DateTime.UtcNow.AddHours(5);
+            var todayPkt = DateOnly.FromDateTime(nowPkt);
+            var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
+
+            await _context.Appointments
+                .Where(u => u.DoctorId == doctor.Id && 
+                            (u.Status == "Pending" || u.Status == "Confirmed") && 
+                            (u.AppointmentDate < todayPkt || (u.AppointmentDate == todayPkt && u.TimeSlot < nowTimePkt)))
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
+
             var appointments = await _context.Appointments.AsNoTracking()
                 .Where(u => u.DoctorId == doctor.Id)
                 .OrderByDescending(u => u.AppointmentDate)
@@ -61,19 +71,34 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Doctor does not exist");
             }
 
-            if (dto.Status != "Confirmed" && dto.Status != "Completed" && dto.Status != "Cancelled")
+            if (dto.Status != "Confirmed" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
             {
                 throw new InvalidOperationException("Invalid appointment status");
             }
 
-            var appointment = await _context.Appointments
-                .Where(a => a.Id == dto.AppointmentId && a.DoctorId == doctor.Id)
-                .ExecuteUpdateAsync(setter => setter.SetProperty(a => a.Status, dto.Status));
-
-            if (appointment == 0)
+            var existingAppointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == dto.AppointmentId && a.DoctorId == doctor.Id);
+            if (existingAppointment == null)
             {
                 throw new InvalidOperationException("Appointment not found or does not belong to you");
             }
+
+            if (existingAppointment.Status == "Missed" && dto.Status != "Missed")
+            {
+                throw new InvalidOperationException("Cannot change the status of a missed appointment");
+            }
+
+            if (existingAppointment.Status == "Cancelled" && dto.Status != "Cancelled")
+            {
+                throw new InvalidOperationException("Cannot change the status of a cancelled appointment");
+            }
+
+            if (existingAppointment.Status == "Completed")
+            {
+                throw new InvalidOperationException("Cannot change the status of a completed appointment");
+            }
+
+            existingAppointment.Status = dto.Status;
+            await _context.SaveChangesAsync();
 
             return new AppointmentStatusResponseDto
             {
@@ -116,9 +141,9 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Appointment does not exist or does not belong to you");
             }
 
-            if (appointment.Status == "Cancelled")
+            if (appointment.Status == "Cancelled" || appointment.Status == "Missed")
             {
-                throw new InvalidOperationException("Cannot prescribe medicine for a cancelled appointment");
+                throw new InvalidOperationException("Cannot prescribe medicine for a cancelled or missed appointment");
             }
 
             var transaction = await _context.Database.BeginTransactionAsync();

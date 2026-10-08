@@ -65,7 +65,22 @@ const DoctorAppointments = () => {
         return matchesTab && matchesSearch
     })
 
-    const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled']
+    const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Missed']
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'Confirmed':
+                return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            case 'Completed':
+                return 'bg-sky-50 text-sky-700 border border-sky-200'
+            case 'Cancelled':
+                return 'bg-rose-50 text-rose-700 border border-rose-200'
+            case 'Missed':
+                return 'bg-amber-50 text-amber-700 border border-amber-200'
+            default:
+                return 'bg-slate-100 text-slate-700 border border-slate-200'
+        }
+    }
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -169,7 +184,7 @@ const DoctorAppointments = () => {
                                                 {appt.symptoms || 'Routine checkup / general review'}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusBadge(appt.status)}`}>
                                                     {appt.status}
                                                 </span>
                                             </td>
@@ -204,13 +219,23 @@ const DoctorAppointments = () => {
                                                     )}
 
                                                     {appt.status === 'Confirmed' && (
-                                                        <button
-                                                            onClick={() => setActiveAppointment(appt)}
-                                                            className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
-                                                        >
-                                                            <FileText size={13} />
-                                                            <span>Prescribe</span>
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={() => setActiveAppointment(appt)}
+                                                                className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                                                            >
+                                                                <FileText size={13} />
+                                                                <span>Prescribe</span>
+                                                            </button>
+                                                            <button
+                                                                disabled={isProcessing}
+                                                                onClick={() => handleUpdateStatus(appt.appointmentId, 'Missed')}
+                                                                className="px-2.5 py-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-semibold transition-colors disabled:opacity-50"
+                                                                title="Mark as Missed (No-Show)"
+                                                            >
+                                                                No Show
+                                                            </button>
+                                                        </>
                                                     )}
 
                                                     {appt.status === 'Completed' && (
@@ -222,6 +247,12 @@ const DoctorAppointments = () => {
                                                     {appt.status === 'Cancelled' && (
                                                         <span className="text-xs font-semibold text-slate-400 pr-1">
                                                             Cancelled
+                                                        </span>
+                                                    )}
+
+                                                    {appt.status === 'Missed' && (
+                                                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                                                            Missed
                                                         </span>
                                                     )}
                                                 </div>

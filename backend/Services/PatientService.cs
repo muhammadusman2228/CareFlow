@@ -30,6 +30,16 @@ public class PatientService : IPatient
             throw new InvalidDataException("Patient did not exists");
         }
 
+        var nowPkt = DateTime.UtcNow.AddHours(5);
+        var todayPkt = DateOnly.FromDateTime(nowPkt);
+        var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
+
+        await _context.Appointments
+            .Where(a => a.PatientId == patient.Id && 
+                        (a.Status == "Pending" || a.Status == "Confirmed") && 
+                        (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
+
         var list=await _context.Appointments.AsNoTracking().OrderBy(a=>a.AppointmentDate).Where(a=>a.PatientId==patient.Id).Select(u=>new PatientAppointmentDto
         {
            AppointmentId=u.Id,
@@ -92,7 +102,15 @@ public class PatientService : IPatient
                 throw new UnauthorizedAccessException("You are not authorized to cancel this appointment");
             }
 
-            if (appointment.AppointmentDate < DateOnly.FromDateTime(DateTime.UtcNow) || appointment.Status == "Completed" || appointment.Status == "Cancelled")
+            var nowPkt = DateTime.UtcNow.AddHours(5);
+            var todayPkt = DateOnly.FromDateTime(nowPkt);
+            var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
+
+            if (appointment.AppointmentDate < todayPkt || 
+                (appointment.AppointmentDate == todayPkt && appointment.TimeSlot < nowTimePkt) || 
+                appointment.Status == "Completed" || 
+                appointment.Status == "Cancelled" || 
+                appointment.Status == "Missed")
             {
                 throw new InvalidOperationException("Unable to cancel the appointment");
             }

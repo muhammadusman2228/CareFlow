@@ -92,6 +92,7 @@ public class AdminDashboardDto
     public int ConfirmedAppointments { get; set; }
     public int CompletedAppointments { get; set; }
     public int CancelledAppointments { get; set; }
+    public int MissedAppointments { get; set; }
     public int MonthlyTrends { get; set; }
     public List<int> WeeklyCompletedTrends { get; set; } = new List<int>();
     public List<DepartmentWorkloadDto> DepartmentWorkload { get; set; } = new List<DepartmentWorkloadDto>();

@@ -24,7 +24,13 @@ public class AdminExtraService : IAdminExtra
         {
             var nowPkt = DateTime.UtcNow.AddHours(5);
             var today = DateOnly.FromDateTime(nowPkt);
+            var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
             var oneMonthAgo = nowPkt.AddMonths(-1);
+
+            await _context.Appointments
+                .Where(a => (a.Status == "Pending" || a.Status == "Confirmed") && 
+                            (a.AppointmentDate < today || (a.AppointmentDate == today && a.TimeSlot < nowTimePkt)))
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
             var totalDoctors = await _context.Doctors.CountAsync(d => d.User!.IsVerified);
             var totalPatients = await _context.Patient.CountAsync(p => p.User!.IsVerified);
@@ -39,6 +45,7 @@ public class AdminExtraService : IAdminExtra
             var confirmed = await _context.Appointments.CountAsync(a => a.Status == "Confirmed");
             var completed = await _context.Appointments.CountAsync(a => a.Status == "Completed");
             var cancelled = await _context.Appointments.CountAsync(a => a.Status == "Cancelled");
+            var missed = await _context.Appointments.CountAsync(a => a.Status == "Missed");
 
             var weeklyCompleted = new List<int>();
             for (int i = 6; i >= 0; i--)
@@ -67,9 +74,9 @@ public class AdminExtraService : IAdminExtra
                 {
                     Time = a.CreatedAt.AddHours(5).ToString("hh:mm tt"),
                     User = a.Patient!.User!.Name,
-                    Action = a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : "Requested Appointment")),
+                    Action = a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : (a.Status == "Missed" ? "Missed Appointment" : "Requested Appointment"))),
                     Module = "Appointments",
-                    Status = a.Status == "Pending" ? "Pending" : "Success"
+                    Status = a.Status == "Pending" ? "Pending" : (a.Status == "Missed" ? "Missed" : "Success")
                 })
                 .ToListAsync();
 
@@ -83,6 +90,7 @@ public class AdminExtraService : IAdminExtra
                 ConfirmedAppointments = confirmed,
                 CompletedAppointments = completed,
                 CancelledAppointments = cancelled,
+                MissedAppointments = missed,
                 MonthlyTrends = monthlyTrends,
                 WeeklyCompletedTrends = weeklyCompleted,
                 DepartmentWorkload = departmentWorkload,
