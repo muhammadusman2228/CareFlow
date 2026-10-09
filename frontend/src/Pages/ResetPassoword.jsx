@@ -35,6 +35,8 @@ const ResetPassword=()=>{
         } catch (error) {
             if (!error?.response) {
                 setErrorMsg("Maintenance is going on. Try again after some time")
+            } else if (error?.response?.status === 429) {
+                setErrorMsg(error.response?.data?.message || "Too many attempts. Please try again after 15 minutes.")
             } else if (error?.response?.status === 400 || error?.response?.status === 401) {
                 setErrorMsg(error.response?.data?.message || "Invalid or expired reset code")
             } else {

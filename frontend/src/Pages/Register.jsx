@@ -53,7 +53,10 @@ const navigate=useNavigate()
   if(!error?.response){
     setErrorMsg("Maintenace is going on. Try again after some time ")
   }
-else if (error?.response.status===409){
+  else if (error?.response.status===429){
+    setErrorMsg(error.response?.data?.message || "Too many attempts. Please try again after 15 minutes.")
+  }
+  else if (error?.response.status===409){
     setErrorMsg("This email is already taken ")
   }
   else{

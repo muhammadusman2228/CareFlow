@@ -64,6 +64,9 @@ const Login=()=>{
            if(!err?.response){
             setErrorMsg("Try Again after someTime")
            }
+           else if(err?.response?.status===429){
+            setErrorMsg(err.response?.data?.message || "Too many attempts. Please try again after 15 minutes.")
+           }
            else if(err?.response?.status===401 || err?.response?.status===400)
            { setErrorMsg("Invalid Credentails. Please register with correct Credentials")}
            else{

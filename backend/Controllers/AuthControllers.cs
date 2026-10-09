@@ -8,14 +8,14 @@ using backend.DTOs;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
-
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
 
@@ -111,7 +111,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh-token")]
-    
+    [DisableRateLimiting]
     public async Task<ActionResult<AccessTokenDtos>> refreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
@@ -132,7 +132,9 @@ public class AuthController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
         }
     }
+
     [HttpPost("logout")]
+    [DisableRateLimiting]
     public async Task<ActionResult> logout()
     {
         try
@@ -157,7 +159,9 @@ public class AuthController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,new {message="Try again later"});
         }
     }
+
     [HttpPost("logout-all")]
+    [DisableRateLimiting]
     public async Task<ActionResult> logoutAll()
     {
         try
