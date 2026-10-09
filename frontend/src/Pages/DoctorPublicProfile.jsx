@@ -341,10 +341,17 @@ const DoctorPublicProfile = () => {
                                         <MapPin size={14} className="text-slate-400" />
                                         <span>CareFlow Central Hospital, Floor 3</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <PhoneCall size={14} className="text-slate-400" />
-                                        <span>Ext. #{doctor.id + 100}</span>
-                                    </div>
+                                    {doctor.assistantPhone ? (
+                                        <a href={`tel:${doctor.assistantPhone}`} className="flex items-center gap-2 text-slate-700 hover:text-slate-950 font-bold">
+                                            <PhoneCall size={14} className="text-slate-500" />
+                                            <span>Assistant: {doctor.assistantPhone}</span>
+                                        </a>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <PhoneCall size={14} className="text-slate-400" />
+                                            <span>Ext. #{doctor.id + 100}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -481,6 +488,30 @@ const DoctorPublicProfile = () => {
                                     </button>
                                 </form>
                             </div>
+
+                            {doctor.assistantPhone && (
+                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm flex flex-col gap-3.5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                            <PhoneCall size={18} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h3 className="text-sm font-bold text-slate-900">Assisted Phone Booking</h3>
+                                            <p className="text-xs font-semibold text-slate-500">Call assistant to reserve a slot directly</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                                        Patients unable to register online or seeking urgent walk-in appointments can call clinical assistant {doctor.assistantName ? <span className="font-bold text-slate-900">{doctor.assistantName}</span> : 'on duty'} to schedule directly.
+                                    </p>
+                                    <a 
+                                        href={`tel:${doctor.assistantPhone}`}
+                                        className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs transition-colors border border-slate-300"
+                                    >
+                                        <PhoneCall size={14} />
+                                        <span>Call Assistant: {doctor.assistantPhone}</span>
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

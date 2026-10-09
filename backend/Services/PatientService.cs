@@ -40,7 +40,7 @@ public class PatientService : IPatient
                         (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
-        var list=await _context.Appointments.AsNoTracking().OrderBy(a=>a.AppointmentDate).Where(a=>a.PatientId==patient.Id).Select(u=>new PatientAppointmentDto
+        var list=await _context.Appointments.AsNoTracking().Where(a=>a.PatientId==patient.Id).OrderByDescending(a=>a.AppointmentDate).ThenByDescending(a=>a.TimeSlot).ThenByDescending(a=>a.Id).Select(u=>new PatientAppointmentDto
         {
            AppointmentId=u.Id,
            DoctorName=u.Doctor!.User!.Name,

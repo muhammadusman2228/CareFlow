@@ -8,7 +8,8 @@ import {
     FileText, 
     RefreshCw, 
     FolderClock,
-    AlertCircle
+    AlertCircle,
+    Stethoscope
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import DoctorPrescriptionModal from './DoctorPrescriptionModal'
@@ -65,22 +66,7 @@ const DoctorAppointments = () => {
         return matchesTab && matchesSearch
     })
 
-    const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Missed']
-
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'Confirmed':
-                return 'bg-slate-100 text-slate-800 border border-slate-300'
-            case 'Completed':
-                return 'bg-slate-100 text-slate-700 border border-slate-200'
-            case 'Cancelled':
-                return 'bg-slate-100 text-slate-500 border border-slate-200'
-            case 'Missed':
-                return 'bg-slate-100 text-slate-500 border border-slate-200'
-            default:
-                return 'bg-slate-100 text-slate-700 border border-slate-200'
-        }
-    }
+    const tabs = ['All', 'CheckedIn', 'Confirmed', 'Pending', 'Completed', 'Cancelled', 'Missed']
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -108,7 +94,7 @@ const DoctorAppointments = () => {
 
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
                         {tabs.map((tab) => {
                             const count = tab === 'All' ? appointments.length : appointments.filter(a => a.status === tab).length
                             const isActive = selectedTab === tab
@@ -184,8 +170,16 @@ const DoctorAppointments = () => {
                                                 {appt.symptoms || 'Routine checkup / general review'}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusBadge(appt.status)}`}>
-                                                    {appt.status}
+                                                <span className={`text-xs font-semibold ${
+                                                    appt.status === 'CheckedIn'
+                                                        ? 'text-slate-950 font-bold'
+                                                        : appt.status === 'Confirmed'
+                                                        ? 'text-slate-800'
+                                                        : appt.status === 'Completed'
+                                                        ? 'text-slate-600'
+                                                        : 'text-slate-500'
+                                                }`}>
+                                                    {appt.status === 'CheckedIn' ? 'Checked In' : appt.status}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4 text-right">
@@ -197,6 +191,16 @@ const DoctorAppointments = () => {
                                                     >
                                                         <FolderClock size={15} />
                                                     </button>
+
+                                                    {appt.status === 'CheckedIn' && (
+                                                        <button
+                                                            onClick={() => setActiveAppointment(appt)}
+                                                            className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                                                        >
+                                                            <Stethoscope size={13} />
+                                                            <span>Start Consultation</span>
+                                                        </button>
+                                                    )}
 
                                                     {appt.status === 'Pending' && (
                                                         <>

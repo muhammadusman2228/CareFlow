@@ -32,5 +32,7 @@ namespace backend.Models
 
        public virtual Doctor? Doctor{get;set;}
 
+       public virtual Assistant? Assistant{get;set;}
+
     }
 }

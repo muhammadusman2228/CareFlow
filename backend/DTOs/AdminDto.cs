@@ -80,6 +80,8 @@ public class FindDoctorResponse
     public decimal ConsultationFee { get; set; }
     public TimeOnly ShiftStart { get; set; }
     public TimeOnly ShiftEnd { get; set; }
+    public string? AssistantName { get; set; }
+    public string? AssistantPhone { get; set; }
 }
 
 public class AdminDashboardDto

@@ -1,28 +1,24 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { 
-    LayoutDashboard, 
-    CalendarDays, 
-    FileText, 
-    FolderClock, 
-    HelpCircle,
-    Search,
-    Menu,
-    ChevronDown,
-    LogOut,
-    Stethoscope,
-    Users
+    Activity, 
+    FlaskConical, 
+    HelpCircle, 
+    Search, 
+    Menu, 
+    ChevronDown, 
+    LogOut, 
+    UserCheck,
+    ClipboardList,
+    Clock
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
 
-const DoctorDashBoard = () => {
+const AssistantDashboard = () => {
     const navItems = [
-        { name: 'Overview', path: '/doctor/dashboard', icon: LayoutDashboard, end: true },
-        { name: 'Consultations', path: '/doctor/dashboard/appointments', icon: CalendarDays },
-        { name: 'Prescriptions', path: '/doctor/dashboard/prescriptions', icon: FileText },
-        { name: 'My Assistants', path: '/doctor/dashboard/assistants', icon: Users },
-        { name: 'Patient Records', path: '/doctor/dashboard/records', icon: FolderClock },
+        { name: 'Patient Triage & Vitals', path: '/assistant/dashboard', icon: Activity, end: true },
+        { name: 'Diagnostic Lab Desk', path: '/assistant/dashboard/labs', icon: FlaskConical },
     ]
 
     const { auth, setAuth } = useAuth()
@@ -55,18 +51,18 @@ const DoctorDashBoard = () => {
             `}>
                 <div className="flex flex-col">
                     <div className="h-18 px-6 flex items-center gap-3 border-b border-slate-100 overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30">
+                        <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0 shadow-xs">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="3" strokeLinecap="round" />
                             </svg>
                         </div>
                         {isSidebarOpen && (
                             <div className="flex flex-col">
-                                <span className="text-lg font-bold tracking-tight text-slate-900 leading-tight">
+                                <span className="text-base font-bold tracking-tight text-slate-900 truncate">
                                     CareFlow
                                 </span>
-                                <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
-                                    Physician Portal
+                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    Clinical Assistant
                                 </span>
                             </div>
                         )}
@@ -83,7 +79,7 @@ const DoctorDashBoard = () => {
                                     className={({ isActive }) => `
                                         flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all
                                         ${isActive 
-                                            ? 'bg-sky-50 text-sky-600 font-semibold shadow-xs' 
+                                            ? 'bg-slate-100 text-slate-950 font-semibold shadow-xs' 
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                                         }
                                         ${!isSidebarOpen && 'justify-center px-0'}
@@ -101,66 +97,62 @@ const DoctorDashBoard = () => {
                 </div>
 
                 <div className="p-4 border-t border-slate-100 flex flex-col gap-2">
-                    <button 
-                        className={`flex items-center gap-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors ${!isSidebarOpen && 'justify-center'}`}
-                        title={!isSidebarOpen ? "Clinical Guidelines" : undefined}
-                    >
-                        <HelpCircle size={16} className="shrink-0" />
-                        {isSidebarOpen && <span>Clinical Guidelines</span>}
-                    </button>
+                    <div className={`flex items-center gap-2 text-xs font-medium text-slate-500 ${!isSidebarOpen && 'justify-center'}`}>
+                        <Clock size={15} className="shrink-0 text-slate-400" />
+                        {isSidebarOpen && <span className="font-mono text-[11px]">PKT (UTC+5) Shift</span>}
+                    </div>
                     {isSidebarOpen && (
                         <span className="text-[11px] font-medium text-slate-400 pl-0.5">
-                            CareFlow v2.6.1
+                            CareFlow Hospital v2.6.1
                         </span>
                     )}
                 </div>
             </aside>
 
-            <div className="flex-1 h-full flex flex-col overflow-hidden min-w-0">
-                <header className="h-18 w-full bg-white border-b border-slate-300/80 px-4 sm:px-8 flex items-center justify-between shrink-0 z-20">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
-                        <button
-                            onClick={() => setIsSidebarOpen(prev => !prev)}
-                            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Toggle Sidebar"
+            <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+                <header className="h-18 bg-white border-b border-slate-300/80 px-4 sm:px-8 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
                         >
                             <Menu size={20} />
                         </button>
-
-                        <div className="hidden sm:flex items-center text-xs font-semibold text-slate-500">
-                            <span>{todayDateFormatted}</span>
+                        <div className="hidden md:flex flex-col">
+                            <span className="text-xs font-semibold text-slate-500">{todayDateFormatted}</span>
+                            <span className="text-xs font-bold text-slate-900">Patient Triage & Medical Orders Desk</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 sm:gap-5 ml-4">
+                    <div className="flex items-center gap-3">
                         <div className="relative">
-                            <button
-                                onClick={() => setIsProfileOpen(prev => !prev)}
-                                className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                            <button 
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200"
                             >
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-linear-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0">
-                                    {(auth?.user || "D").charAt(0).toUpperCase()}
+                                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                                    {auth.user ? auth.user.substring(0, 2).toUpperCase() : 'AS'}
                                 </div>
-                                <div className="hidden md:flex flex-col text-left">
+                                <div className="hidden sm:flex flex-col text-left">
                                     <span className="text-xs font-bold text-slate-900 leading-tight">
-                                        Dr. {auth?.user || "Physician"}
+                                        {auth.user || 'Clinical Assistant'}
                                     </span>
-                                    <span className="text-[11px] font-medium text-slate-500 leading-tight">
-                                        Active Duty
+                                    <span className="text-[10px] font-medium text-slate-500">
+                                        Medical Assistant
                                     </span>
                                 </div>
-                                <ChevronDown size={15} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown size={14} className="text-slate-400" />
                             </button>
 
                             {isProfileOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                                    <div className="px-4 py-2 border-b border-slate-100 md:hidden">
-                                        <p className="text-xs font-bold text-slate-900">{auth?.user || "Doctor"}</p>
-                                        <p className="text-[10px] text-slate-500">Physician</p>
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1.5 z-50">
+                                    <div className="px-3.5 py-2 border-b border-slate-100">
+                                        <p className="text-xs font-bold text-slate-900 truncate">{auth.user}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Duty: Triage & Labs</p>
                                     </div>
-                                    <button
+                                    <button 
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
                                     >
                                         <LogOut size={14} />
                                         <span>Sign out</span>
@@ -171,7 +163,7 @@ const DoctorDashBoard = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 w-full overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100">
                     <Outlet />
                 </main>
             </div>
@@ -179,4 +171,4 @@ const DoctorDashBoard = () => {
     )
 }
 
-export default DoctorDashBoard
+export default AssistantDashboard

@@ -10,6 +10,8 @@ const GuestRoute = () => {
             ? '/doctor/dashboard' 
             : role === 'admin' 
             ? '/admin/dashboard' 
+            : role === 'assistant'
+            ? '/assistant/dashboard'
             : '/patient/dashboard'
 
         return <Navigate to={destination} replace />

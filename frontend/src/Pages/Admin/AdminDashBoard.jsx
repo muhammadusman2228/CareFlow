@@ -6,6 +6,7 @@ import {
     Building2, 
     CalendarDays, 
     Users, 
+    UserCheck,
     ClipboardList, 
     HelpCircle,
     Search,
@@ -19,6 +20,7 @@ const AdminDashBoard = () => {
     const navItems = [
     { name: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard, end: true },
     { name: 'Doctors Management', path: '/admin/dashboard/doctors', icon: Stethoscope },
+    { name: 'Assistants', path: '/admin/dashboard/assistants', icon: UserCheck },
     { name: 'Departments', path: '/admin/dashboard/departments', icon: Building2 },
     { name: 'Schedules & Shifts', path: '/admin/dashboard/schedules', icon: CalendarDays },
     { name: 'Patients', path: '/admin/dashboard/patients', icon: Users },
@@ -39,7 +41,7 @@ const handleLogout = async () => {
     }
 }
     return (
-        <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
+        <div className="flex h-screen w-full bg-slate-100 overflow-hidden font-sans">
           <aside className={`
     ${isSidebarOpen ? 'w-64' : 'w-20'}
     h-full bg-white border-r border-slate-300/80 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out
@@ -160,7 +162,7 @@ const handleLogout = async () => {
         </div>
     </div>
 </header>
-                <main className="flex-1 w-full overflow-y-auto bg-slate-50/70 p-6 sm:p-8">
+                <main className="flex-1 w-full overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
 
                    <Outlet/>
                 </main>

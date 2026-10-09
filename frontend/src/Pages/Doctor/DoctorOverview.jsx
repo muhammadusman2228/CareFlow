@@ -56,22 +56,7 @@ const DoctorOverview = () => {
     const todayDateStr = new Date().toISOString().split('T')[0]
     const todaysAppointments = appointments.filter(a => a.appointmentDate === todayDateStr || true)
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'Confirmed':
-                return 'bg-slate-100 text-slate-800 border border-slate-300'
-            case 'Completed':
-                return 'bg-slate-100 text-slate-700 border border-slate-200'
-            case 'Cancelled':
-                return 'bg-slate-100 text-slate-500 border border-slate-200'
-            case 'Missed':
-                return 'bg-slate-100 text-slate-500 border border-slate-200'
-            default:
-                return 'bg-slate-100 text-slate-700 border border-slate-200'
-        }
-    }
-
-    const nextPatient = appointments.find(a => a.status === 'Confirmed' || a.status === 'Pending')
+    const nextPatient = appointments.find(a => a.status === 'CheckedIn' || a.status === 'Confirmed' || a.status === 'Pending')
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -167,8 +152,16 @@ const DoctorOverview = () => {
                                                 {appt.symptoms || 'General routine consultation'}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusBadge(appt.status)}`}>
-                                                    {appt.status}
+                                                <span className={`text-xs font-semibold ${
+                                                    appt.status === 'CheckedIn'
+                                                        ? 'text-slate-950 font-bold'
+                                                        : appt.status === 'Confirmed'
+                                                        ? 'text-slate-800'
+                                                        : appt.status === 'Completed'
+                                                        ? 'text-slate-600'
+                                                        : 'text-slate-500'
+                                                }`}>
+                                                    {appt.status === 'CheckedIn' ? 'Checked In' : appt.status}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4 text-right">
@@ -238,7 +231,7 @@ const DoctorOverview = () => {
                                     <h4 className="text-base font-bold text-slate-900">{nextPatient.patientName}</h4>
                                     <p className="text-xs font-semibold text-slate-600 mt-0.5">{nextPatient.timeSlot} • Today</p>
                                 </div>
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-semibold text-slate-700 w-fit">
+                                <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 w-fit">
                                     <Clock size={13} />
                                     <span>Scheduled Slot</span>
                                 </div>

@@ -150,7 +150,9 @@ public class DoctorService : IDoctor
                 ExperienceYears = u.ExperienceYears,
                 ConsultationFee = u.ConsultationFee,
                 ShiftStart = u.ShiftStart,
-                ShiftEnd = u.ShiftEnd
+                ShiftEnd = u.ShiftEnd,
+                AssistantName = u.Assistants.Where(a => a.IsActive).Select(a => a.User!.Name).FirstOrDefault(),
+                AssistantPhone = u.Assistants.Where(a => a.IsActive).Select(a => a.PhoneNumber).FirstOrDefault()
             }).ToListAsync();
             return doctors;
         }
@@ -175,7 +177,9 @@ public class DoctorService : IDoctor
                 ExperienceYears = u.ExperienceYears,
                 ConsultationFee = u.ConsultationFee,
                 ShiftStart = u.ShiftStart,
-                ShiftEnd = u.ShiftEnd
+                ShiftEnd = u.ShiftEnd,
+                AssistantName = u.Assistants.Where(a => a.IsActive).Select(a => a.User!.Name).FirstOrDefault(),
+                AssistantPhone = u.Assistants.Where(a => a.IsActive).Select(a => a.PhoneNumber).FirstOrDefault()
             }).FirstOrDefaultAsync();
             return doctor;
         }

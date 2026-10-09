@@ -44,6 +44,7 @@ const Login=()=>{
  const isFromAllowed = from && (
      (userRole === 'admin' && from.startsWith('/admin')) ||
      (userRole === 'doctor' && from.startsWith('/doctor')) ||
+     (userRole === 'assistant' && from.startsWith('/assistant')) ||
      (userRole === 'patient' && from.startsWith('/patient'))
  )
 
@@ -53,6 +54,8 @@ const Login=()=>{
      navigate('/admin/dashboard', { replace: true })
  } else if (userRole === 'doctor') {
      navigate('/doctor/dashboard', { replace: true })
+ } else if (userRole === 'assistant') {
+     navigate('/assistant/dashboard', { replace: true })
  } else {
      navigate('/patient/dashboard', { replace: true })
  }

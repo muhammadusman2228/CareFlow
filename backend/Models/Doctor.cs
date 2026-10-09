@@ -49,4 +49,6 @@ public class Doctor
 
     public virtual ICollection<Appointment> Appointments{get;set;}=new List<Appointment>();
     public virtual ICollection<Prescriptions> Prescriptions{get;set;}=new List<Prescriptions>();
+    public virtual ICollection<Assistant> Assistants { get; set; } = new List<Assistant>();
+    public virtual ICollection<Labs> LabOrders { get; set; } = new List<Labs>();
 }

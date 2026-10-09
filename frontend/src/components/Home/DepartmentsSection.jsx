@@ -65,7 +65,7 @@ const DepartmentsSection = ({ onSelectDepartment }) => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                    <span>{departments.length || 10} Units Operating</span>
+                    <span>{loading ? '...' : `${departments.length} Units Operating`}</span>
                 </div>
             </div>
 
@@ -93,7 +93,7 @@ const DepartmentsSection = ({ onSelectDepartment }) => {
                             <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                                     <Users size={14} className="text-slate-400" />
-                                    <span>{dept.doctorCounts || 10} Specialists</span>
+                                    <span>{dept.doctorCounts ?? 0} Specialists</span>
                                 </span>
                                 <span className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 group-hover:text-sky-700">
                                     <span>View Doctors</span>

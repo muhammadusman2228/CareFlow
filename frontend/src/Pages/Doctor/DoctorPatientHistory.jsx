@@ -23,6 +23,7 @@ const DoctorPatientHistory = () => {
     const [patientList, setPatientList] = useState([])
     const [selectedPatientId, setSelectedPatientId] = useState(patientIdParam || '')
     const [historyData, setHistoryData] = useState(null)
+    const [labHistory, setLabHistory] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -57,11 +58,25 @@ const DoctorPatientHistory = () => {
             try {
                 setLoading(true)
                 setError(null)
-                const res = await axiosPrivate.get(`/Doctor/medical-history/${selectedPatientId}`)
-                setHistoryData(res.data)
+                const [medRes, labRes] = await Promise.allSettled([
+                    axiosPrivate.get(`/Doctor/medical-history/${selectedPatientId}`),
+                    axiosPrivate.get(`/Assistant/patient-lab-history/${selectedPatientId}`)
+                ])
+                if (medRes.status === 'fulfilled') {
+                    setHistoryData(medRes.value.data)
+                } else {
+                    setHistoryData(null)
+                    setError(medRes.reason?.response?.data?.message || 'Unable to retrieve medical history for this patient.')
+                }
+                if (labRes.status === 'fulfilled' && Array.isArray(labRes.value.data)) {
+                    setLabHistory(labRes.value.data)
+                } else {
+                    setLabHistory([])
+                }
             } catch (err) {
                 setHistoryData(null)
-                setError(err.response?.data?.message || 'Unable to retrieve medical history for this patient.')
+                setLabHistory([])
+                setError('Unable to retrieve records.')
             } finally {
                 setLoading(false)
             }
@@ -236,6 +251,60 @@ const DoctorPatientHistory = () => {
                                 ))}
                             </div>
                         )}
+
+                        <div className="border-t border-slate-100 pt-6 flex flex-col gap-4">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Diagnostic Laboratory History</h3>
+                                <p className="text-xs text-slate-500">Historical pathology specimens and laboratory reports across all visits</p>
+                            </div>
+
+                            {labHistory.length === 0 ? (
+                                <p className="text-xs text-slate-500 py-3">No laboratory tests recorded for this patient.</p>
+                            ) : (
+                                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600">
+                                            <tr>
+                                                <th className="py-2.5 px-3">Date</th>
+                                                <th className="py-2.5 px-3">Test Name</th>
+                                                <th className="py-2.5 px-3">Consultant</th>
+                                                <th className="py-2.5 px-3">Status</th>
+                                                <th className="py-2.5 px-3">Laboratory Findings</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {labHistory.map((test) => (
+                                                <tr key={test.id} className="hover:bg-slate-50/50">
+                                                    <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">
+                                                        {new Date(test.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="py-2.5 px-3 font-semibold text-slate-900">{test.testName}</td>
+                                                    <td className="py-2.5 px-3 text-slate-700">Dr. {test.doctorName}</td>
+                                                    <td className="py-2.5 px-3">
+                                                        <span className={`text-xs font-semibold ${
+                                                            test.status === 'Completed'
+                                                                ? 'text-slate-950 font-bold'
+                                                                : test.status === 'Sample Collected'
+                                                                ? 'text-slate-800'
+                                                                : 'text-slate-500'
+                                                        }`}>
+                                                            {test.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-2.5 px-3 text-slate-900">
+                                                        {test.resultsSummary ? (
+                                                            <span className="font-mono text-[11px]">{test.resultsSummary}</span>
+                                                        ) : (
+                                                            <span className="text-slate-400 italic">No findings recorded</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             ) : (

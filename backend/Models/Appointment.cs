@@ -41,6 +41,7 @@ public class Appointment
 
   
     public virtual Prescriptions? Prescriptions{get;set;}=null;
+    public virtual PatientVitals? Vitals { get; set; } = null;
+    public virtual ICollection<Labs> LabOrders { get; set; } = new List<Labs>();
     public DateTime CreatedAt{get;set;}=DateTime.UtcNow;
-
 }

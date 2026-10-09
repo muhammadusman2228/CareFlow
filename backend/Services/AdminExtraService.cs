@@ -66,19 +66,88 @@ public class AdminExtraService : IAdminExtra
 
             var todayStartUtc = today.ToDateTime(TimeOnly.MinValue).AddHours(-5);
             var todayEndUtc = today.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
-            var recentActivities = await _context.Appointments.AsNoTracking()
+
+            var apptActivities = await _context.Appointments.AsNoTracking()
                 .Where(a => a.CreatedAt >= todayStartUtc && a.CreatedAt <= todayEndUtc)
-                .OrderByDescending(a => a.CreatedAt)
-                .Take(10)
-                .Select(a => new RecentActivityDto
+                .Select(a => new
                 {
+                    Timestamp = a.CreatedAt,
                     Time = a.CreatedAt.AddHours(5).ToString("hh:mm tt"),
-                    User = a.Patient!.User!.Name,
-                    Action = a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : (a.Status == "Missed" ? "Missed Appointment" : "Requested Appointment"))),
-                    Module = "Appointments",
+                    User = a.Patient != null && a.Patient.User != null ? a.Patient.User.Name : "Patient",
+                    Action = a.Status == "CheckedIn" ? "Checked-In at Triage" : (a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : (a.Status == "Missed" ? "Missed Appointment" : "Requested Appointment")))),
+                    Module = a.Status == "CheckedIn" ? "Triage" : "Appointments",
                     Status = a.Status == "Pending" ? "Pending" : (a.Status == "Missed" ? "Missed" : "Success")
                 })
                 .ToListAsync();
+
+            var vitalsActivities = await _context.PatientVitals.AsNoTracking()
+                .Where(v => v.RecordedAt >= todayStartUtc && v.RecordedAt <= todayEndUtc)
+                .Select(v => new
+                {
+                    Timestamp = v.RecordedAt,
+                    Time = v.RecordedAt.AddHours(5).ToString("hh:mm tt"),
+                    User = v.Assistant != null && v.Assistant.User != null ? v.Assistant.User.Name : "Assistant",
+                    Action = "Recorded Patient Triage Vitals",
+                    Module = "Triage / Vitals",
+                    Status = "Success"
+                })
+                .ToListAsync();
+
+            var labActivities = await _context.Labs.AsNoTracking()
+                .Where(l => l.CreatedAt >= todayStartUtc && l.CreatedAt <= todayEndUtc)
+                .Select(l => new
+                {
+                    Timestamp = l.CreatedAt,
+                    Time = l.CreatedAt.AddHours(5).ToString("hh:mm tt"),
+                    User = l.Doctor != null && l.Doctor.User != null ? l.Doctor.User.Name : "Doctor",
+                    Action = "Ordered Lab: " + l.TestName,
+                    Module = "Laboratory",
+                    Status = l.Status
+                })
+                .ToListAsync();
+
+            var completedLabActivities = await _context.Labs.AsNoTracking()
+                .Where(l => l.CompletedAt != null && l.CompletedAt.Value >= todayStartUtc && l.CompletedAt.Value <= todayEndUtc)
+                .Select(l => new
+                {
+                    Timestamp = l.CompletedAt!.Value,
+                    Time = l.CompletedAt!.Value.AddHours(5).ToString("hh:mm tt"),
+                    User = l.Patient != null && l.Patient.User != null ? l.Patient.User.Name : "Patient",
+                    Action = "Completed Lab: " + l.TestName,
+                    Module = "Laboratory",
+                    Status = "Completed"
+                })
+                .ToListAsync();
+
+            var assistantRegActivities = await _context.Assistants.AsNoTracking()
+                .Where(ast => ast.CreatedAt >= todayStartUtc && ast.CreatedAt <= todayEndUtc)
+                .Select(ast => new
+                {
+                    Timestamp = ast.CreatedAt,
+                    Time = ast.CreatedAt.AddHours(5).ToString("hh:mm tt"),
+                    User = ast.User != null ? ast.User.Name : "Assistant",
+                    Action = "Assistant Registered",
+                    Module = "Staff",
+                    Status = "Active"
+                })
+                .ToListAsync();
+
+            var recentActivities = apptActivities
+                .Concat(vitalsActivities)
+                .Concat(labActivities)
+                .Concat(completedLabActivities)
+                .Concat(assistantRegActivities)
+                .OrderByDescending(x => x.Timestamp)
+                .Take(25)
+                .Select(x => new RecentActivityDto
+                {
+                    Time = x.Time,
+                    User = x.User,
+                    Action = x.Action,
+                    Module = x.Module,
+                    Status = x.Status
+                })
+                .ToList();
 
             return new AdminDashboardDto
             {

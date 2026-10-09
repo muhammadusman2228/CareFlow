@@ -40,7 +40,8 @@ public class DoctorApisService : IDoctorApis
             var appointments = await _context.Appointments.AsNoTracking()
                 .Where(u => u.DoctorId == doctor.Id)
                 .OrderByDescending(u => u.AppointmentDate)
-                .ThenBy(a => a.TimeSlot)
+                .ThenByDescending(a => a.TimeSlot)
+                .ThenByDescending(u => u.Id)
                 .Select(u => new DoctorAppointmentsDto
                 {
                     AppointmentId = u.Id,
@@ -71,7 +72,7 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Doctor does not exist");
             }
 
-            if (dto.Status != "Confirmed" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
+            if (dto.Status != "Confirmed" && dto.Status != "CheckedIn" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
             {
                 throw new InvalidOperationException("Invalid appointment status");
             }
@@ -209,7 +210,7 @@ public class DoctorApisService : IDoctorApis
             var hasActiveAppointment = await _context.Appointments.AnyAsync(a => 
                 a.DoctorId == doctor.Id && 
                 a.PatientId == patient.Id && 
-                (a.Status == "Confirmed" || a.Status == "Pending"));
+                (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn"));
 
             if (!hasActiveAppointment)
             {
@@ -217,7 +218,7 @@ public class DoctorApisService : IDoctorApis
             }
 
             var appointments = await _context.Appointments.AsNoTracking()
-                .OrderBy(u => u.AppointmentDate)
+                .OrderByDescending(u => u.AppointmentDate)
                 .Where(a => a.PatientId == patient.Id && a.Status == "Completed")
                 .Select(a => new HistoryResponseListDto
                 {

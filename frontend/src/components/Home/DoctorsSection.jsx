@@ -8,7 +8,8 @@ import {
     Calendar, 
     ChevronRight, 
     Building2, 
-    Loader2 
+    Loader2,
+    PhoneCall
 } from 'lucide-react'
 import axios from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
@@ -146,6 +147,21 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
                 </div>
             </div>
 
+            <div className="mb-6 p-4 bg-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <PhoneCall size={15} />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm">Assisted Phone & Walk-In Reservations</span>
+                        <span className="text-[11px] text-slate-500 font-medium">Elderly or non-tech-savvy patients can call the doctor's clinical assistant hotline directly to book.</span>
+                    </div>
+                </div>
+                <span className="text-[11px] font-bold text-slate-700 bg-white px-3 py-1 rounded-lg border border-slate-300 self-start sm:self-auto shrink-0">
+                    Triage Dispatch Active
+                </span>
+            </div>
+
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
@@ -208,17 +224,30 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
                                 </div>
                             </div>
 
-                            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-xs font-semibold text-slate-600">
-                                    Available
-                                </span>
-                                <button
-                                    onClick={() => handleViewDoctor(doc.id)}
-                                    className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                                >
-                                    <span>Book</span>
-                                    <ChevronRight size={13} />
-                                </button>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+                                {doc.assistantPhone && (
+                                    <a
+                                        href={`tel:${doc.assistantPhone}`}
+                                        title={`Call Assistant ${doc.assistantName ? `(${doc.assistantName})` : ''} for phone booking`}
+                                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs transition-colors border border-slate-200 shadow-2xs"
+                                    >
+                                        <PhoneCall size={13} className="text-slate-700 shrink-0" />
+                                        <span className="truncate">Call Assistant: {doc.assistantPhone}</span>
+                                    </a>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-slate-600">
+                                        Available
+                                    </span>
+                                    <button
+                                        onClick={() => handleViewDoctor(doc.id)}
+                                        className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+                                    >
+                                        <span>Book Online</span>
+                                        <ChevronRight size={13} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

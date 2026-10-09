@@ -19,13 +19,18 @@ import DoctorOverview from "./Pages/Doctor/DoctorOverview"
 import DoctorAppointments from "./Pages/Doctor/DoctorAppointments"
 import DoctorPrescriptions from "./Pages/Doctor/DoctorPrescriptions"
 import DoctorPatientHistory from "./Pages/Doctor/DoctorPatientHistory"
+import DoctorAssistants from "./Pages/Doctor/DoctorAssistants"
 import AdminDashBoard from "./Pages/Admin/AdminDashBoard"
 import AdminOverview from "./Pages/Admin/AdminOverview"
 import AdminDoctors from "./Pages/Admin/AdminDoctors"
+import AdminAssistants from "./Pages/Admin/AdminAssistants"
 import AdminDepartments from "./Pages/Admin/AdminDepartments"
 import AdminSchedules from "./Pages/Admin/AdminSchedules"
 import AdminPatients from "./Pages/Admin/AdminPatients"
 import AdminAuditLogs from "./Pages/Admin/AdminAuditLogs"
+import AssistantDashboard from "./Pages/Assistant/AssistantDashboard"
+import AssistantTriageQueue from "./Pages/Assistant/AssistantTriageQueue"
+import AssistantLabDesk from "./Pages/Assistant/AssistantLabDesk"
 import DoctorPublicProfile from "./Pages/DoctorPublicProfile"
 
 const App = () => {
@@ -59,7 +64,15 @@ const App = () => {
                     <Route index element={<DoctorOverview />} />
                     <Route path="appointments" element={<DoctorAppointments />} />
                     <Route path="prescriptions" element={<DoctorPrescriptions />} />
+                    <Route path="assistants" element={<DoctorAssistants />} />
                     <Route path="records" element={<DoctorPatientHistory />} />
+                </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['Assistant']} />}>
+                <Route path="/assistant/dashboard" element={<AssistantDashboard />}>
+                    <Route index element={<AssistantTriageQueue />} />
+                    <Route path="labs" element={<AssistantLabDesk />} />
                 </Route>
             </Route>
 
@@ -67,6 +80,7 @@ const App = () => {
                 <Route path="/admin/dashboard" element={<AdminDashBoard />}>
                     <Route index element={<AdminOverview />} />
                     <Route path="doctors" element={<AdminDoctors />} />
+                    <Route path="assistants" element={<AdminAssistants />} />
                     <Route path="departments" element={<AdminDepartments />} />
                     <Route path="schedules" element={<AdminSchedules />} />
                     <Route path="patients" element={<AdminPatients />} />
