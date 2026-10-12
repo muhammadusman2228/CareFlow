@@ -10,12 +10,14 @@ import {
     Eye
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const PatientPrescriptions = () => {
     const axiosPrivate = useAxiosPrivate()
     const [prescriptions, setPrescriptions] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+    const [page, setPage] = useState(1)
     const [selectedRx, setSelectedRx] = useState(null)
 
     const fetchPrescriptions = async () => {
@@ -32,6 +34,10 @@ const PatientPrescriptions = () => {
     useEffect(() => {
         fetchPrescriptions()
     }, [])
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
 
     const filtered = prescriptions.filter(p =>
         p.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -64,6 +70,7 @@ const PatientPrescriptions = () => {
                     <Search size={15} className="text-slate-400 shrink-0" />
                     <input
                         type="text"
+                        maxLength={100}
                         placeholder="Search prescription by doctor, diagnosis, or medication..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -84,65 +91,76 @@ const PatientPrescriptions = () => {
                     <p className="text-xs text-slate-500">Consultation prescriptions will appear here once issued by your doctor.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {filtered.map((rx, idx) => (
-                        <div
-                            key={idx}
-                            className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
-                        >
-                            <div className="p-5 flex flex-col gap-4">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <span className="text-xs font-bold text-slate-900 tracking-wide">#RX-{3800 + idx}</span>
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                                        <Calendar size={13} />
-                                        <span>{rx.appointmentDate}</span>
+                <div className="flex flex-col gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {filtered.slice((page - 1) * 20, page * 20).map((rx, idx) => (
+                            <div
+                                key={idx}
+                                className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
+                            >
+                                <div className="p-5 flex flex-col gap-4">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <span className="text-xs font-bold text-slate-400 font-mono tracking-wide">
+                                            #{(page - 1) * 20 + idx + 1}
+                                        </span>
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                                            <Calendar size={13} />
+                                            <span>{rx.appointmentDate}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
+                                            Rx
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h3 className="text-sm font-bold text-slate-900">{rx.doctorName}</h3>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs font-semibold text-slate-500">Diagnosis:</span>
+                                        <span className="text-sm font-bold text-slate-900">{rx.title}</span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                                        <span className="text-xs font-semibold text-slate-500">Clinical Instructions:</span>
+                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{rx.note}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
-                                        Rx
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h3 className="text-sm font-bold text-slate-900">{rx.doctorName}</h3>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-xs font-semibold text-slate-500">Diagnosis:</span>
-                                    <span className="text-sm font-bold text-slate-900">{rx.title}</span>
-                                </div>
-
-                                <div className="flex flex-col gap-1 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                                    <span className="text-xs font-semibold text-slate-500">Clinical Instructions:</span>
-                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{rx.note}</p>
+                                <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3">
+                                    <button
+                                        onClick={() => setSelectedRx(rx)}
+                                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
+                                    >
+                                        <Eye size={13} />
+                                        <span>View Slip</span>
+                                    </button>
+                                    <button
+                                        onClick={() => window.print()}
+                                        className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
+                                    >
+                                        <Printer size={13} />
+                                        <span>Print Rx</span>
+                                    </button>
                                 </div>
                             </div>
+                        ))}
+                    </div>
 
-                            <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3">
-                                <button
-                                    onClick={() => setSelectedRx(rx)}
-                                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
-                                >
-                                    <Eye size={13} />
-                                    <span>View Slip</span>
-                                </button>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
-                                >
-                                    <Printer size={13} />
-                                    <span>Print Rx</span>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                    <Pagination
+                        currentPage={page}
+                        totalItems={filtered.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
 
             {selectedRx && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-md overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h3 className="text-base font-bold text-slate-900">Official Clinical Prescription</h3>

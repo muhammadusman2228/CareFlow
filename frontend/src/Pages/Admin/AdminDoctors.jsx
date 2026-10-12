@@ -23,6 +23,7 @@ import {
     Calendar
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AdminDoctors = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -32,7 +33,11 @@ const AdminDoctors = () => {
     const [departments, setDepartments] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedDepartmentId, setSelectedDepartmentId] = useState('ALL')
+    const [page, setPage] = useState(1)
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
 
     const [showPassword, setShowPassword] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -98,7 +103,19 @@ const AdminDoctors = () => {
     }, [])
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target
+        let { name, value } = e.target
+        if (name === 'name') {
+            value = value.replace(/[^a-zA-Z\s.'-]/g, '')
+        } else if (name === 'phone') {
+            value = value.replace(/[^\d+]/g, '')
+        } else if (name === 'licenseNumber') {
+            value = value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase()
+        } else if (name === 'experienceYears') {
+            value = value.replace(/\D/g, '')
+            if (value && parseInt(value, 10) > 70) value = '70'
+        } else if (name === 'consultationFee') {
+            if (value && parseFloat(value) > 99999) value = '99999'
+        }
         setFormData(prev => ({ ...prev, [name]: value }))
         if (errorMessage) setErrorMessage('')
     }
@@ -132,19 +149,40 @@ const AdminDoctors = () => {
         e.preventDefault()
         setErrorMessage('')
 
-        if (!formData.name.trim()) {
-            setErrorMessage('Doctor name is required.')
+        const trimmedName = formData.name.trim()
+        if (!trimmedName || trimmedName.length < 2) {
+            setErrorMessage('Doctor name is required and must contain at least 2 characters.')
             return
         }
 
-        if (!formData.email.trim()) {
+        if (!/^[a-zA-Z\s.'-]+$/.test(trimmedName)) {
+            setErrorMessage('Doctor name can only contain letters, spaces, dots, and hyphens.')
+            return
+        }
+
+        const trimmedEmail = formData.email.trim()
+        if (!trimmedEmail) {
             setErrorMessage('Official email is required.')
+            return
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(trimmedEmail)) {
+            setErrorMessage('Please enter a valid official email address.')
             return
         }
 
         if (!formData.password || formData.password.length < 8) {
             setErrorMessage('Password must be at least 8 characters long.')
             return
+        }
+
+        if (formData.phone) {
+            const cleanPhone = formData.phone.trim()
+            if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+                setErrorMessage('Phone number must be between 10 and 15 digits.')
+                return
+            }
         }
 
         if (!formData.departmentId) {
@@ -162,37 +200,38 @@ const AdminDoctors = () => {
             return
         }
 
-        if (!formData.licenseNumber.trim()) {
-            setErrorMessage('Medical license number is required.')
+        const trimmedLicense = formData.licenseNumber.trim()
+        if (!trimmedLicense || trimmedLicense.length < 3) {
+            setErrorMessage('Valid medical license number is required (min 3 characters).')
             return
         }
 
         const exp = parseInt(formData.experienceYears, 10)
-        if (isNaN(exp) || exp < 0) {
-            setErrorMessage('Please enter valid experience years.')
+        if (isNaN(exp) || exp < 0 || exp > 70) {
+            setErrorMessage('Please enter valid experience years (between 0 and 70).')
             return
         }
 
         const fee = parseFloat(formData.consultationFee)
-        if (isNaN(fee) || fee < 0) {
-            setErrorMessage('Please enter a valid consultation fee.')
+        if (isNaN(fee) || fee < 0 || fee > 99999) {
+            setErrorMessage('Please enter a valid consultation fee (up to $99,999).')
             return
         }
 
         setIsSubmitting(true)
         try {
-            const formattedName = formData.name.trim().startsWith('Dr.') 
-                ? formData.name.trim() 
-                : `Dr. ${formData.name.trim()}`
+            const formattedName = trimmedName.startsWith('Dr.') 
+                ? trimmedName 
+                : `Dr. ${trimmedName}`
 
             const payload = {
                 name: formattedName,
-                email: formData.email.trim(),
+                email: trimmedEmail,
                 password: formData.password,
                 departmentId: parseInt(formData.departmentId, 10),
                 specialization: formData.specialization.trim(),
                 qualifications: formData.qualifications.trim(),
-                licenseNumber: formData.licenseNumber.trim(),
+                licenseNumber: trimmedLicense,
                 experienceYears: exp,
                 consultationFee: fee
             }
@@ -252,15 +291,14 @@ const AdminDoctors = () => {
     }
 
     const filteredDoctors = doctors.filter(doc => {
-        const matchesDept = selectedDepartmentId === 'ALL' || doc.departmentId?.toString() === selectedDepartmentId.toString()
         const q = searchQuery.toLowerCase()
-        const matchesSearch = 
+        return (
             (doc.name || '').toLowerCase().includes(q) ||
             (doc.specialization || '').toLowerCase().includes(q) ||
             (doc.departmentName || '').toLowerCase().includes(q) ||
             (doc.email || '').toLowerCase().includes(q) ||
             (doc.licenseNumber || '').toLowerCase().includes(q)
-        return matchesDept && matchesSearch
+        )
     })
 
     if (viewMode === 'add') {
@@ -420,6 +458,7 @@ const AdminDoctors = () => {
                                     <input
                                         type="email"
                                         name="email"
+                                        maxLength={100}
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         placeholder="e.g., doctor@careflow.com"
@@ -436,6 +475,7 @@ const AdminDoctors = () => {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             name="password"
+                                            maxLength={50}
                                             value={formData.password}
                                             onChange={handleInputChange}
                                             placeholder="••••••••••"
@@ -462,6 +502,7 @@ const AdminDoctors = () => {
                                     <input
                                         type="tel"
                                         name="phone"
+                                        maxLength={15}
                                         value={formData.phone}
                                         onChange={handleInputChange}
                                         placeholder="e.g. 03124122906"
@@ -486,6 +527,7 @@ const AdminDoctors = () => {
                                         <input
                                             type="text"
                                             name="name"
+                                            maxLength={50}
                                             value={formData.name}
                                             onChange={handleInputChange}
                                             placeholder="Full Name"
@@ -508,9 +550,9 @@ const AdminDoctors = () => {
                                     >
                                         <option value="" disabled>Select Department</option>
                                         {departments.map(dept => (
-                                            <option key={dept.id} value={dept.id}>
-                                                {dept.name}
-                                            </option>
+                                             <option key={dept.id} value={dept.id}>
+                                                 {dept.name}
+                                             </option>
                                         ))}
                                     </select>
                                 </div>
@@ -523,6 +565,7 @@ const AdminDoctors = () => {
                                         <input
                                             type="text"
                                             name="specialization"
+                                            maxLength={60}
                                             value={formData.specialization}
                                             onChange={handleInputChange}
                                             placeholder="e.g., Cardiology"
@@ -538,6 +581,7 @@ const AdminDoctors = () => {
                                         <input
                                             type="text"
                                             name="qualifications"
+                                            maxLength={60}
                                             value={formData.qualifications}
                                             onChange={handleInputChange}
                                             placeholder="e.g., MBBS, MD"
@@ -554,6 +598,7 @@ const AdminDoctors = () => {
                                     <input
                                         type="text"
                                         name="licenseNumber"
+                                        maxLength={30}
                                         value={formData.licenseNumber}
                                         onChange={handleInputChange}
                                         placeholder="e.g., ML-123456"
@@ -570,7 +615,8 @@ const AdminDoctors = () => {
                                         <input
                                             type="number"
                                             min="0"
-                                            max="60"
+                                            max="70"
+                                            maxLength={2}
                                             name="experienceYears"
                                             value={formData.experienceYears}
                                             onChange={handleInputChange}
@@ -594,6 +640,7 @@ const AdminDoctors = () => {
                                             <input
                                                 type="number"
                                                 min="0"
+                                                max="99999"
                                                 step="0.01"
                                                 name="consultationFee"
                                                 value={formData.consultationFee}
@@ -738,30 +785,16 @@ const AdminDoctors = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="relative flex-1 w-full">
-                    <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search doctor by name, email, license number, specialization..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-500 bg-white focus:outline-none focus:border-sky-500 shadow-sm"
-                    />
-                </div>
-
-                <select
-                    value={selectedDepartmentId}
-                    onChange={(e) => setSelectedDepartmentId(e.target.value)}
-                    className="w-full sm:w-56 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium text-slate-800 bg-white focus:outline-none focus:border-sky-500 shadow-sm shrink-0"
-                >
-                    <option value="ALL">All Departments</option>
-                    {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>
-                            {dept.name}
-                        </option>
-                    ))}
-                </select>
+            <div className="relative w-full">
+                <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                    type="text"
+                    maxLength={100}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search doctor by name, email, license number, specialization, department..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-500 bg-white focus:outline-none focus:border-sky-500 shadow-sm"
+                />
             </div>
 
             {isLoading ? (
@@ -791,55 +824,69 @@ const AdminDoctors = () => {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredDoctors.map(doc => (
-                        <div
-                            key={doc.id}
-                            className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 font-bold text-sm shrink-0">
-                                        {(doc.name || 'D').charAt(0).toUpperCase()}
+                <div className="flex flex-col gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredDoctors.slice((page - 1) * 20, page * 20).map((doc, index) => (
+                            <div
+                                key={doc.id}
+                                className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 font-bold text-sm shrink-0">
+                                            {(doc.name || 'D').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                                                {doc.name}
+                                            </h3>
+                                            <span className="text-xs sm:text-sm font-semibold text-slate-600 truncate">
+                                                {doc.specialization || 'Specialist'}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                                            {doc.name}
-                                        </h3>
-                                        <span className="text-xs sm:text-sm font-semibold text-slate-600 truncate">
-                                            {doc.specialization || 'Specialist'}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                            #{(page - 1) * 20 + index + 1}
+                                        </span>
+                                        <span className="text-xs sm:text-sm font-semibold text-slate-600">
+                                            {doc.isAvailable ? 'Available' : 'Off-duty'}
                                         </span>
                                     </div>
                                 </div>
-                                <span className="text-xs sm:text-sm font-semibold text-slate-600 shrink-0">
-                                    {doc.isAvailable ? 'Available' : 'Off-duty'}
-                                </span>
-                            </div>
 
-                            <div className="flex flex-col gap-2 text-xs sm:text-sm text-slate-700 pt-3 border-t border-slate-100">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500 font-medium">Department:</span>
-                                    <span className="font-semibold text-slate-900">{doc.departmentName}</span>
+                                <div className="flex flex-col gap-2 text-xs sm:text-sm text-slate-700 pt-3 border-t border-slate-100">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 font-medium">Department:</span>
+                                        <span className="font-semibold text-slate-900">{doc.departmentName}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 font-medium">License:</span>
+                                        <span className="font-mono text-slate-800 text-xs font-semibold">{doc.licenseNumber}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 font-medium">Experience:</span>
+                                        <span className="font-semibold text-slate-900">{doc.experienceYears} Years</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 font-medium">Consultation Fee:</span>
+                                        <span className="font-extrabold text-slate-900">${Number(doc.consultationFee).toFixed(2)}</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500 font-medium">License:</span>
-                                    <span className="font-mono text-slate-800 text-xs font-semibold">{doc.licenseNumber}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500 font-medium">Experience:</span>
-                                    <span className="font-semibold text-slate-900">{doc.experienceYears} Years</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500 font-medium">Consultation Fee:</span>
-                                    <span className="font-extrabold text-slate-900">${Number(doc.consultationFee).toFixed(2)}</span>
-                                </div>
-                            </div>
 
-                            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 font-mono">
-                                <span className="truncate">{doc.email}</span>
+                                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 font-mono">
+                                    <span className="truncate">{doc.email}</span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+
+                    <Pagination
+                        currentPage={page}
+                        totalItems={filteredDoctors.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
         </div>

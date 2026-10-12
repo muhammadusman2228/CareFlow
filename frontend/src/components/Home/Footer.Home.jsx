@@ -11,8 +11,8 @@ const Footer = () => {
 
     return (
         <footer className="w-full bg-slate-900 text-slate-400 text-xs border-t border-slate-800">
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-800">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 py-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-10 border-b border-slate-800">
                     <div className="flex flex-col gap-3 md:col-span-1">
                         <AppLogo isWhite={true} />
                         <p className="text-slate-400 text-xs leading-relaxed mt-1">

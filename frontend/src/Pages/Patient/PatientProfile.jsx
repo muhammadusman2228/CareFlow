@@ -8,7 +8,8 @@ import {
     Calendar, 
     CheckCircle2, 
     Save, 
-    RefreshCw 
+    RefreshCw,
+    Lock
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 
@@ -74,11 +75,16 @@ const PatientProfile = () => {
                 name: formData.name.trim(),
                 phoneNumber: formData.phoneNumber.trim(),
                 emergencyContact: formData.emergencyContact.trim(),
-                bloodGroup: formData.bloodGroup,
-                gender: formData.gender
+                bloodGroup: profile.bloodGroup,
+                gender: profile.gender
             })
             setMessage({ type: 'success', text: 'Profile updated successfully.' })
-            setProfile(prev => ({ ...prev, ...formData }))
+            setProfile(prev => ({ 
+                ...prev, 
+                name: formData.name.trim(),
+                phoneNumber: formData.phoneNumber.trim(),
+                emergencyContact: formData.emergencyContact.trim()
+            }))
         } catch (err) {
             setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update profile.' })
         } finally {
@@ -181,38 +187,39 @@ const PatientProfile = () => {
                                     <input
                                         type="text"
                                         required
+                                        maxLength={50}
                                         value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.replace(/[^a-zA-Z\s.]/g, '') }))}
                                         className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 transition-all"
                                     />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-slate-800">Gender</label>
-                                    <select
-                                        value={formData.gender}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                                        className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 transition-all"
-                                    >
-                                        <option value="">Select Gender</option>
-                                        {GENDERS.map(g => (
-                                            <option key={g} value={g}>{g}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-slate-800">Gender</label>
+                                       
+                                    </div>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        disabled
+                                        value={profile.gender || 'Not specified'}
+                                        className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100/80 text-xs font-semibold text-slate-700 cursor-not-allowed select-none"
+                                    />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-slate-800">Blood Group</label>
-                                    <select
-                                        value={formData.bloodGroup}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, bloodGroup: e.target.value }))}
-                                        className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 transition-all"
-                                    >
-                                        <option value="">Select Blood Group</option>
-                                        {BLOOD_GROUPS.map(bg => (
-                                            <option key={bg} value={bg}>{bg}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-slate-800">Blood Group</label>
+                                       
+                                    </div>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        disabled
+                                        value={profile.bloodGroup || 'Not specified'}
+                                        className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100/80 text-xs font-bold text-slate-700 font-mono cursor-not-allowed select-none"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -230,9 +237,10 @@ const PatientProfile = () => {
                                         <Phone size={15} className="absolute left-3.5 top-3 text-slate-400" />
                                         <input
                                             type="tel"
+                                            maxLength={15}
                                             placeholder="Enter phone number"
                                             value={formData.phoneNumber}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^0-9+\s-]/g, '') }))}
                                             className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 transition-all"
                                         />
                                     </div>
@@ -244,6 +252,7 @@ const PatientProfile = () => {
                                         <AlertCircle size={15} className="absolute left-3.5 top-3 text-slate-400" />
                                         <input
                                             type="text"
+                                            maxLength={60}
                                             placeholder="Contact name and phone"
                                             value={formData.emergencyContact}
                                             onChange={(e) => setFormData(prev => ({ ...prev, emergencyContact: e.target.value }))}

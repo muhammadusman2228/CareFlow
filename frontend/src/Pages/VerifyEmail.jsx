@@ -44,11 +44,11 @@ const VerifyEmail=()=>{
         }
     }
     return(
-<div className="parent grid grid-cols-1 lg:grid-cols-12 w-full h-screen bg-slate-50 overflow-hidden">
+<div className="parent grid grid-cols-1 lg:grid-cols-12 w-full min-h-screen bg-slate-50 overflow-y-auto">
     <div className="pic hidden lg:flex lg:col-span-5 relative w-full h-full bg-slate-100 overflow-hidden items-center justify-center">
         <img className="w-full h-full object-cover object-center" src={img} alt="Verify Email Image" />
     </div>
-   <div className="main col-span-1 lg:col-span-7 w-full h-full flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden">
+   <div className="main col-span-1 lg:col-span-7 w-full min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 py-8 sm:py-12">
      <div className="group relative w-full max-w-110 p-0.5 rounded-2xl overflow-hidden shadow-2xl shadow-slate-900/15 transition-all duration-300 ease-out hover:scale-[1.015] hover:-translate-y-1 hover:shadow-sky-500/20">
         <div className="absolute -inset-full bg-[conic-gradient(from_0deg,transparent_0_300deg,#38bdf8_360deg)] animate-[spin_4s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="form relative w-full bg-white rounded-[14px] p-6 sm:p-8 flex flex-col gap-4 shadow-2xl shadow-slate-900/10">
@@ -71,6 +71,8 @@ const VerifyEmail=()=>{
                     <label htmlFor="email" className="text-xs sm:text-sm font-semibold text-slate-800">Email Address</label>
                     <input 
                         type="email" 
+                        required
+                        maxLength={100}
                         placeholder="Enter your email" 
                         id="email" 
                         name="email"

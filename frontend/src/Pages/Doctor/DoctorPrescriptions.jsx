@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { FileText, Search, Printer, RefreshCw, Calendar, User } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const DoctorPrescriptions = () => {
     const axiosPrivate = useAxiosPrivate()
     const [appointments, setAppointments] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+    const [page, setPage] = useState(1)
     const [selectedPrescription, setSelectedPrescription] = useState(null)
 
     const fetchAppointments = async () => {
@@ -24,6 +26,10 @@ const DoctorPrescriptions = () => {
     useEffect(() => {
         fetchAppointments()
     }, [])
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
 
     const filtered = appointments.filter(a =>
         a.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,6 +59,7 @@ const DoctorPrescriptions = () => {
                         <Search size={15} className="text-slate-400 shrink-0" />
                         <input
                             type="text"
+                            maxLength={100}
                             placeholder="Search by patient or symptoms..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -62,9 +69,10 @@ const DoctorPrescriptions = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[650px]">
                         <thead>
                             <tr className="border-b border-slate-100 bg-slate-50/75">
+                                <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider w-12">#</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Patient</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Date & Time</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Symptoms Recorded</th>
@@ -75,17 +83,19 @@ const DoctorPrescriptions = () => {
                         <tbody className="divide-y divide-slate-100">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
+                                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
                                         No completed consultations or prescriptions found.
                                     </td>
                                 </tr>
                             ) : (
-                                filtered.map((appt) => (
+                                filtered.slice((page - 1) * 20, page * 20).map((appt, index) => (
                                     <tr key={appt.appointmentId} className="hover:bg-slate-50/60 transition-colors">
+                                        <td className="px-5 py-4 font-bold text-slate-400 font-mono text-xs">
+                                            {(page - 1) * 20 + index + 1}
+                                        </td>
                                         <td className="px-5 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-900">{appt.patientName}</span>
-                                                <span className="text-xs font-medium text-slate-500">#CF-0{appt.patientId}</span>
                                             </div>
                                         </td>
                                         <td className="px-5 py-4">
@@ -117,11 +127,18 @@ const DoctorPrescriptions = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={page}
+                    totalItems={filtered.length}
+                    pageSize={20}
+                    onPageChange={setPage}
+                />
             </div>
 
             {selectedPrescription && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-lg overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h3 className="text-base font-bold text-slate-900">Official Consultation Record</h3>

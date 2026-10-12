@@ -13,6 +13,7 @@ import {
     Activity
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AdminPatients = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -22,6 +23,11 @@ const AdminPatients = () => {
     const [errorMessage, setErrorMessage] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedPatient, setSelectedPatient] = useState(null)
+    const [page, setPage] = useState(1)
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
 
     const fetchPatients = async () => {
         setIsLoading(true)
@@ -119,6 +125,7 @@ const AdminPatients = () => {
                 <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                     type="text"
+                    maxLength={100}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search patient by name, email, or phone number..."
@@ -149,9 +156,10 @@ const AdminPatients = () => {
             ) : (
                 <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[650px]">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    <th className="py-3.5 px-5">#</th>
                                     <th className="py-3.5 px-5">Patient Name</th>
                                     <th className="py-3.5 px-5">Contact Details</th>
                                     <th className="py-3.5 px-5">Registration Date</th>
@@ -160,60 +168,73 @@ const AdminPatients = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-medium text-slate-800">
-                                {filteredPatients.map((patient, index) => (
-                                    <tr key={index} className="hover:bg-slate-50/70 transition-colors">
-                                        <td className="py-4 px-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0">
-                                                    {(patient.name || 'P').charAt(0).toUpperCase()}
-                                                </div>
-                                                <span className="font-bold text-slate-900 text-sm">
-                                                    {patient.name}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-1.5 text-slate-700">
-                                                    <Mail size={13} className="text-slate-500 shrink-0" />
-                                                    <span className="font-mono text-xs">{patient.email}</span>
-                                                </div>
-                                                {patient.phoneNumber && (
-                                                    <div className="flex items-center gap-1.5 text-slate-600">
-                                                        <Phone size={13} className="text-slate-500 shrink-0" />
-                                                        <span className="text-xs">{patient.phoneNumber}</span>
+                                {filteredPatients.slice((page - 1) * 20, page * 20).map((patient, index) => {
+                                    const serialNumber = (page - 1) * 20 + index + 1
+                                    return (
+                                        <tr key={index} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-4 px-5 font-mono text-xs font-bold text-slate-600">
+                                                {serialNumber}
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                                        {(patient.name || 'P').charAt(0).toUpperCase()}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-5 text-slate-700 font-medium">
-                                            <span>{formatRegistrationDate(patient.registrationDate)}</span>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <span className="text-xs sm:text-sm font-bold text-slate-900">
-                                                {patient.visitCount} visits
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-5 text-right">
-                                            <button
-                                                onClick={() => setSelectedPatient(patient)}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 transition-colors cursor-pointer shadow-2xs"
-                                            >
-                                                <Eye size={13} />
-                                                View Details
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    <span className="font-bold text-slate-900 text-sm">
+                                                        {patient.name}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1.5 text-slate-700">
+                                                        <Mail size={13} className="text-slate-500 shrink-0" />
+                                                        <span className="font-mono text-xs">{patient.email}</span>
+                                                    </div>
+                                                    {patient.phoneNumber && (
+                                                        <div className="flex items-center gap-1.5 text-slate-600">
+                                                            <Phone size={13} className="text-slate-500 shrink-0" />
+                                                            <span className="text-xs">{patient.phoneNumber}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-5 text-slate-700 font-medium">
+                                                <span>{formatRegistrationDate(patient.registrationDate)}</span>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <span className="text-xs sm:text-sm font-bold text-slate-900">
+                                                    {patient.visitCount} visits
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-5 text-right">
+                                                <button
+                                                    onClick={() => setSelectedPatient(patient)}
+                                                    className="p-1.5 text-slate-400 hover:text-sky-600 transition-colors cursor-pointer inline-flex items-center justify-center rounded-lg"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={17} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
+
+                    <Pagination
+                        currentPage={page}
+                        totalItems={filteredPatients.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
 
             {selectedPatient && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h2 className="text-sm font-bold text-slate-900">
                                 Patient Details

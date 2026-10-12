@@ -2,10 +2,10 @@ import doctorImage from '../../assets/doctorImage.png'
 
 const Right = () => {
     return (
-        <div className="right relative w-full max-w-md mx-auto flex justify-center lg:col-span-5">
+        <div className="right relative w-full max-w-xs sm:max-w-md mx-auto flex justify-center lg:col-span-5">
             <img className="w-auto h-72 rounded-3xl object-contain shadow-2xl" src={doctorImage} alt="Specialist Physician" />
             
-            <div className="box1 absolute -top-3 -left-3 sm:-left-6 bg-white px-3.5 py-2 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex items-center gap-3 z-30">
+            <div className="box1 absolute -top-3 left-0 sm:-left-6 bg-white px-3 sm:px-3.5 py-2 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex items-center gap-2.5 sm:gap-3 z-30">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check preview-icon">
                     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
                     <path d="m9 12 2 2 4-4" />
@@ -16,7 +16,7 @@ const Right = () => {
                 </div>
             </div>
 
-            <div className="box2 absolute top-6 -right-4 sm:-right-6 bg-white px-4 py-2.5 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex items-center gap-3 z-10">
+            <div className="box2 absolute top-6 right-0 sm:-right-6 bg-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex items-center gap-2.5 sm:gap-3 z-10">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock preview-icon">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
@@ -27,7 +27,7 @@ const Right = () => {
                 </div>
             </div>
 
-            <div className="box3 absolute bottom-8 -right-4 sm:-right-6 bg-white px-4 py-2.5 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex flex-col items-center gap-2 z-10">
+            <div className="box3 absolute bottom-8 right-0 sm:-right-6 bg-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 flex flex-col items-center gap-2 z-10">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="30" 

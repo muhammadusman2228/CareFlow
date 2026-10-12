@@ -12,6 +12,7 @@ import {
     Stethoscope
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const PatientAppointments = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -21,6 +22,7 @@ const PatientAppointments = () => {
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedTab, setSelectedTab] = useState('All')
+    const [page, setPage] = useState(1)
     const [cancelAppointmentId, setCancelAppointmentId] = useState(null)
     const [cancelling, setCancelling] = useState(false)
     const [message, setMessage] = useState(null)
@@ -39,6 +41,10 @@ const PatientAppointments = () => {
     useEffect(() => {
         fetchAppointments()
     }, [])
+
+    useEffect(() => {
+        setPage(1)
+    }, [selectedTab, searchQuery])
 
     const handleConfirmCancel = async () => {
         if (!cancelAppointmentId) return
@@ -137,6 +143,7 @@ const PatientAppointments = () => {
                         <Search size={15} className="text-slate-400 shrink-0" />
                         <input
                             type="text"
+                            maxLength={100}
                             placeholder="Filter by doctor or department..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -146,9 +153,10 @@ const PatientAppointments = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full min-w-[700px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-100 bg-slate-50/75">
+                                <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider w-12">#</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Physician</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Department</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Schedule</th>
@@ -159,13 +167,16 @@ const PatientAppointments = () => {
                         <tbody className="divide-y divide-slate-100">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
+                                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
                                         No appointments match this filter.
                                     </td>
                                 </tr>
                             ) : (
-                                filtered.map((appt) => (
+                                filtered.slice((page - 1) * 20, page * 20).map((appt, index) => (
                                     <tr key={appt.appointmentId} className="hover:bg-slate-50/60 transition-colors">
+                                        <td className="px-5 py-4 font-bold text-slate-400 font-mono text-xs">
+                                            {(page - 1) * 20 + index + 1}
+                                        </td>
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
@@ -227,6 +238,13 @@ const PatientAppointments = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={page}
+                    totalItems={filtered.length}
+                    pageSize={20}
+                    onPageChange={setPage}
+                />
             </div>
 
             {cancelAppointmentId && (

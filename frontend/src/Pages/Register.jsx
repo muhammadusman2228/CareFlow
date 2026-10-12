@@ -70,7 +70,7 @@ const navigate=useNavigate()
   };
 
   return (
-    <div className="register grid grid-cols-1 lg:grid-cols-12 w-full h-screen bg-slate-50 overflow-hidden">
+    <div className="register grid grid-cols-1 lg:grid-cols-12 w-full min-h-screen bg-slate-50 overflow-y-auto">
       <div className="pic hidden lg:flex lg:col-span-5 xl:col-span-5 relative w-full h-full bg-slate-100 overflow-hidden items-center justify-center">
         <img
           className="w-full h-full object-cover object-center"
@@ -79,7 +79,7 @@ const navigate=useNavigate()
         />
       </div>
 
-      <div className="form col-span-1 lg:col-span-7 xl:col-span-7 h-full w-full flex justify-center items-center p-3 sm:p-5 overflow-hidden">
+      <div className="form col-span-1 lg:col-span-7 xl:col-span-7 min-h-screen w-full flex justify-center items-center p-3 sm:p-6 lg:p-8 py-8 sm:py-12">
         <div className="group relative w-full max-w-170 p-0.5 rounded-2xl border-2 border-slate-200 overflow-hidden shadow-2xl shadow-slate-900/15 transition-all duration-300 ease-out hover:scale-[1.01] hover:-translate-y-1 hover:shadow-sky-500/20">
           <div className="absolute -inset-full bg-[conic-gradient(from_0deg,transparent_0_300deg,#38bdf8_360deg)] animate-[spin_4s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="registerDiv relative w-full bg-white rounded-[14px] p-6 sm:p-7 flex flex-col shadow-2xl shadow-slate-900/10">
@@ -112,6 +112,7 @@ const navigate=useNavigate()
                   id="fullName"
                   name="fullName"
                   type="text"
+                  maxLength={50}
                   value={formData.fullName}
                   onChange={handleChange}
                   className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all placeholder:text-slate-400"
@@ -146,6 +147,7 @@ const navigate=useNavigate()
                   id="email"
                   name="email"
                   type="email"
+                  maxLength={100}
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all placeholder:text-slate-400"
@@ -219,6 +221,7 @@ const navigate=useNavigate()
                   name="password"
                   value={formData.password}
                   type="password"
+                  maxLength={50}
                   onChange={handleChange}
                   className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all placeholder:text-slate-400"
                 />
@@ -262,6 +265,7 @@ const navigate=useNavigate()
                   id="number"
                   name="number"
                   type="text"
+                  maxLength={15}
                   value={formData.number}
                   onChange={handleChange}
                   className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all placeholder:text-slate-400"
@@ -281,10 +285,11 @@ const navigate=useNavigate()
                   id="EmergencyContact"
                   name="EmergencyContact"
                   type="text"
+                  maxLength={60}
                   className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all placeholder:text-slate-400"
                 />
               </div>
-              <div className="sm:col-span-2 flex items-center justify-between gap-4 mt-1">
+              <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-1">
                 <label
                   className="flex items-center gap-2 cursor-pointer select-none"
                   htmlFor="terms"
@@ -305,14 +310,14 @@ const navigate=useNavigate()
                 <button
                   type="submit"
                   disabled={!formData.terms ||loading}
-                  className="py-2.5 px-6 font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-md shadow-sky-600/20 hover:shadow-lg transition-all text-xs sm:text-sm cursor-pointer shrink-0"
+                  className="py-2.5 px-6 font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-md shadow-sky-600/20 hover:shadow-lg transition-all text-xs sm:text-sm cursor-pointer shrink-0 w-full sm:w-auto"
                 >
                   Create Patient Account
                 </button>
               </div>
             </form>
 
-            <div className="flex justify-between items-center text-xs text-slate-500 mt-3 pt-2.5 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500 mt-3 pt-2.5 border-t border-slate-100">
               <span>
                 Already have an account?{" "}
                 <Link to="/login" className="text-sky-600 font-semibold">

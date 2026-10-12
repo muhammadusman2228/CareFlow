@@ -2,7 +2,7 @@
 
 const Bottom=()=>{
     return(
- <div className="bottom grid grid-cols-1 lg:grid-cols-4 gap-6">
+ <div className="bottom grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="cardiology flex flex-col bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
                       <svg 
   xmlns="http://www.w3.org/2000/svg" 

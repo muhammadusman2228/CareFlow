@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import axios from '../../api/axios'
+import Pagination from '../../components/common/Pagination'
 
 const generateDoctorSlots = (shiftStart, shiftEnd) => {
     if (!shiftStart || !shiftEnd) {
@@ -80,6 +81,7 @@ const PatientBooking = () => {
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedDepartment, setSelectedDepartment] = useState('All')
+    const [page, setPage] = useState(1)
     
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     const [selectedDate, setSelectedDate] = useState(todayStr)
@@ -91,6 +93,10 @@ const PatientBooking = () => {
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingError, setBookingError] = useState(null)
     const [bookingSuccess, setBookingSuccess] = useState(false)
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery, selectedDepartment])
 
     useEffect(() => {
         if (!selectedDoctor || !selectedDate) return
@@ -187,6 +193,7 @@ const PatientBooking = () => {
                     <Search size={16} className="text-slate-400 shrink-0" />
                     <input
                         type="text"
+                        maxLength={100}
                         placeholder="Search doctor by name, specialty..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -194,7 +201,7 @@ const PatientBooking = () => {
                     />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200">
                         <Filter size={15} className="text-slate-400 shrink-0" />
                         <select
@@ -234,60 +241,72 @@ const PatientBooking = () => {
                     <p className="text-xs text-slate-500">Try modifying your search or department filter.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {filteredDoctors.map((doc) => {
-                        const doctorSlots = generateDoctorSlots(doc.shiftStart, doc.shiftEnd)
-                        return (
-                            <div
-                                key={doc.id}
-                                className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
-                            >
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-lg shadow-2xs mb-3">
-                                        {doc.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
-                                    </div>
-                                    <h3 className="text-base font-bold text-slate-900">{doc.name}</h3>
-                                    <span className="text-xs font-semibold text-slate-600 mt-0.5">{doc.departmentName}</span>
-                                    <span className="text-[11px] font-medium text-slate-500">{doc.specialization}</span>
+                <div className="flex flex-col gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        {filteredDoctors.slice((page - 1) * 20, page * 20).map((doc, idx) => {
+                            const doctorSlots = generateDoctorSlots(doc.shiftStart, doc.shiftEnd)
+                            return (
+                                <div
+                                    key={doc.id}
+                                    className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4 relative"
+                                >
+                                    <span className="absolute top-3.5 right-3.5 text-xs font-mono font-bold text-slate-400">
+                                        #{(page - 1) * 20 + idx + 1}
+                                    </span>
+                                    <div className="flex flex-col items-center text-center">
+                                        <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-lg shadow-2xs mb-3">
+                                            {doc.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
+                                        </div>
+                                        <h3 className="text-base font-bold text-slate-900">{doc.name}</h3>
+                                        <span className="text-xs font-semibold text-slate-600 mt-0.5">{doc.departmentName}</span>
+                                        <span className="text-[11px] font-medium text-slate-500">{doc.specialization}</span>
 
-                                    <div className="mt-3 px-3 py-1 rounded-md bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800">
-                                        Fee: ${doc.consultationFee?.toFixed(2) || '40.00'}
+                                        <div className="mt-3 px-3 py-1 rounded-md bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800">
+                                            Fee: ${doc.consultationFee?.toFixed(2) || '40.00'}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                                            <span className="uppercase tracking-wider">Available Slots</span>
+                                            <span className="text-[10px] font-medium text-slate-400">Shift: {doc.shiftStart?.substring(0, 5)} - {doc.shiftEnd?.substring(0, 5)}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            {doctorSlots.slice(0, 4).map((slot) => (
+                                                <button
+                                                    key={slot.value}
+                                                    onClick={() => handleOpenModal(doc, slot)}
+                                                    className="px-2 py-1.5 rounded-lg border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 text-[11px] font-semibold text-slate-700 transition-all text-center cursor-pointer"
+                                                >
+                                                    {slot.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleOpenModal(doc, doctorSlots[0])}
+                                            className="w-full mt-2 px-3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-all text-center cursor-pointer"
+                                        >
+                                            Book Consultation
+                                        </button>
                                     </div>
                                 </div>
+                            )
+                        })}
+                    </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
-                                        <span className="uppercase tracking-wider">Available Slots</span>
-                                        <span className="text-[10px] font-medium text-slate-400">Shift: {doc.shiftStart?.substring(0, 5)} - {doc.shiftEnd?.substring(0, 5)}</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-1.5">
-                                        {doctorSlots.slice(0, 4).map((slot) => (
-                                            <button
-                                                key={slot.value}
-                                                onClick={() => handleOpenModal(doc, slot)}
-                                                className="px-2 py-1.5 rounded-lg border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 text-[11px] font-semibold text-slate-700 transition-all text-center cursor-pointer"
-                                            >
-                                                {slot.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <button
-                                        onClick={() => handleOpenModal(doc, doctorSlots[0])}
-                                        className="w-full mt-2 px-3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-all text-center cursor-pointer"
-                                    >
-                                        Book Consultation
-                                    </button>
-                                </div>
-                            </div>
-                        )
-                    })}
+                    <Pagination
+                        currentPage={page}
+                        totalItems={filteredDoctors.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
 
             {selectedDoctor && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-md overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200/90 w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h3 className="text-base font-bold text-slate-900">Confirm Appointment Booking</h3>
@@ -383,6 +402,7 @@ const PatientBooking = () => {
                                 </label>
                                 <textarea
                                     rows={3}
+                                    maxLength={500}
                                     placeholder="Enter symptoms, reasons for this visit, or specific questions..."
                                     value={symptoms}
                                     onChange={(e) => setSymptoms(e.target.value)}

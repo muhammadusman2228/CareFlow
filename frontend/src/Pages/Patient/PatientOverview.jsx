@@ -185,7 +185,7 @@ const PatientOverview = () => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr className="border-b border-slate-100 bg-slate-50/75">
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Doctor</th>

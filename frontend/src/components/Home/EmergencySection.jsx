@@ -2,8 +2,8 @@ import { PhoneCall, Ambulance, MapPin, Clock } from 'lucide-react'
 
 const EmergencySection = () => {
     return (
-        <section id="emergency" className="py-16 px-6 lg:px-16 max-w-7xl mx-auto w-full">
-            <div className="bg-slate-900 rounded-3xl p-8 sm:p-12 text-white border border-slate-800 shadow-xl">
+        <section id="emergency" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full">
+            <div className="bg-slate-900 rounded-3xl p-6 sm:p-10 lg:p-12 text-white border border-slate-800 shadow-xl">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                     <div className="flex flex-col gap-2 max-w-2xl">
                         <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
@@ -28,7 +28,7 @@ const EmergencySection = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 pt-8 border-t border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10 pt-8 border-t border-slate-800">
                     <div className="flex items-center gap-3.5">
                         <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-sky-400 shrink-0">
                             <Ambulance size={18} />

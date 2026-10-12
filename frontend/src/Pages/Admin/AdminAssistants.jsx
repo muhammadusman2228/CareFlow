@@ -23,6 +23,7 @@ import {
     Phone
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AdminAssistants = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -33,7 +34,11 @@ const AdminAssistants = () => {
     const [doctors, setDoctors] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
-    const [departmentFilter, setDepartmentFilter] = useState('ALL')
+    const [page, setPage] = useState(1)
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
 
     const [selectedAssistant, setSelectedAssistant] = useState(null)
     const [showPassword, setShowPassword] = useState(false)
@@ -91,15 +96,50 @@ const AdminAssistants = () => {
 
     const handleCreateSubmit = async (e) => {
         e.preventDefault()
-        setIsSubmitting(true)
         setErrorMessage('')
         setSuccessMessage('')
 
+        const trimmedName = formData.name.trim()
+        if (!trimmedName || trimmedName.length < 2) {
+            setErrorMessage('Full name is required and must contain at least 2 characters.')
+            return
+        }
+
+        if (!/^[a-zA-Z\s.'-]+$/.test(trimmedName)) {
+            setErrorMessage('Full name can only contain letters, spaces, dots, and hyphens.')
+            return
+        }
+
+        const trimmedEmail = formData.email.trim()
+        if (!trimmedEmail) {
+            setErrorMessage('Official email address is required.')
+            return
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(trimmedEmail)) {
+            setErrorMessage('Please enter a valid email address.')
+            return
+        }
+
+        const cleanPhone = formData.phoneNumber.replace(/[^\d+]/g, '')
+        if (!cleanPhone || cleanPhone.length < 10 || cleanPhone.length > 15) {
+            setErrorMessage('Phone number must be between 10 and 15 digits.')
+            return
+        }
+
+        if (!formData.password || formData.password.length < 6) {
+            setErrorMessage('Password must be at least 6 characters long.')
+            return
+        }
+
+        setIsSubmitting(true)
+
         try {
             const payload = {
-                name: formData.name.trim(),
-                email: formData.email.trim(),
-                phoneNumber: formData.phoneNumber.trim(),
+                name: trimmedName,
+                email: trimmedEmail,
+                phoneNumber: cleanPhone,
                 password: formData.password,
                 departmentId: formData.departmentId ? parseInt(formData.departmentId) : null,
                 doctorId: formData.doctorId ? parseInt(formData.doctorId) : null,
@@ -109,7 +149,7 @@ const AdminAssistants = () => {
             }
 
             await axiosPrivate.post('/Assistant/register', payload)
-            setSuccessMessage(`Assistant ${formData.name} successfully registered.`)
+            setSuccessMessage(`Assistant ${trimmedName} successfully registered.`)
             setFormData(initialFormData)
             setViewMode('list')
             await fetchData()
@@ -181,19 +221,15 @@ const AdminAssistants = () => {
     }
 
     const filteredAssistants = assistants.filter(a => {
-        const matchesSearch = 
-            a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            a.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (a.phoneNumber && a.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (a.qualifications && a.qualifications.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (a.doctorName && a.doctorName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (a.departmentName && a.departmentName.toLowerCase().includes(searchQuery.toLowerCase()))
-        
-        const matchesDept = 
-            departmentFilter === 'ALL' || 
-            (a.departmentId && a.departmentId.toString() === departmentFilter)
-
-        return matchesSearch && matchesDept
+        const q = searchQuery.toLowerCase()
+        return (
+            (a.name || '').toLowerCase().includes(q) ||
+            (a.email || '').toLowerCase().includes(q) ||
+            (a.phoneNumber || '').toLowerCase().includes(q) ||
+            (a.qualifications || '').toLowerCase().includes(q) ||
+            (a.doctorName || '').toLowerCase().includes(q) ||
+            (a.departmentName || '').toLowerCase().includes(q)
+        )
     })
 
     if (viewMode === 'add') {
@@ -254,9 +290,10 @@ const AdminAssistants = () => {
                                     <input
                                         type="text"
                                         required
+                                        maxLength={50}
                                         placeholder="e.g. Fatima Tariq"
                                         value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.replace(/[^a-zA-Z\s.'-]/g, '') }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 bg-white"
                                     />
                                 </div>
@@ -268,6 +305,7 @@ const AdminAssistants = () => {
                                     <input
                                         type="email"
                                         required
+                                        maxLength={100}
                                         placeholder="fatima.triage@careflow.com"
                                         value={formData.email}
                                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -282,9 +320,10 @@ const AdminAssistants = () => {
                                     <input
                                         type="tel"
                                         required
+                                        maxLength={15}
                                         placeholder="03001234567 or +923001234567"
                                         value={formData.phoneNumber}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^\d+]/g, '') }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 bg-white"
                                     />
                                 </div>
@@ -298,6 +337,7 @@ const AdminAssistants = () => {
                                             type={showPassword ? "text" : "password"}
                                             required
                                             minLength={6}
+                                            maxLength={50}
                                             placeholder="Minimum 6 characters"
                                             value={formData.password}
                                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
@@ -374,6 +414,7 @@ const AdminAssistants = () => {
                                 </label>
                                 <input
                                     type="text"
+                                    maxLength={100}
                                     placeholder="e.g. Diploma in General Nursing, Certified Medical Lab Technician (BSc MLT)"
                                     value={formData.qualifications}
                                     onChange={(e) => setFormData(prev => ({ ...prev, qualifications: e.target.value }))}
@@ -520,6 +561,7 @@ const AdminAssistants = () => {
                                 </label>
                                 <input
                                     type="text"
+                                    maxLength={100}
                                     value={editFormData.qualifications}
                                     onChange={(e) => setEditFormData(prev => ({ ...prev, qualifications: e.target.value }))}
                                     className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 bg-white"
@@ -532,9 +574,10 @@ const AdminAssistants = () => {
                                 </label>
                                 <input
                                     type="tel"
+                                    maxLength={15}
                                     placeholder="03001234567 or +923001234567"
                                     value={editFormData.phoneNumber}
-                                    onChange={(e) => setEditFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^\d+]/g, '') }))}
                                     className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 bg-white"
                                 />
                             </div>
@@ -668,37 +711,25 @@ const AdminAssistants = () => {
             )}
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/70">
-                    <div className="relative flex-1 max-w-md">
+                <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70">
+                    <div className="relative w-full">
                         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search assistant by name, email, qualification, or doctor..."
+                            maxLength={100}
+                            placeholder="Search assistant by name, email, qualification, department, or doctor..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-800 bg-white"
                         />
                     </div>
-
-                    <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Filter Department:</span>
-                        <select
-                            value={departmentFilter}
-                            onChange={(e) => setDepartmentFilter(e.target.value)}
-                            className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:border-slate-800 font-bold"
-                        >
-                            <option value="ALL">All Departments</option>
-                            {departments.map((dept) => (
-                                <option key={dept.id} value={dept.id.toString()}>{dept.name}</option>
-                            ))}
-                        </select>
-                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full min-w-[850px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-black text-slate-700 uppercase tracking-wider">
+                                <th className="py-3.5 px-4 sm:px-6 w-12 text-slate-700">#</th>
                                 <th className="py-3.5 px-4 sm:px-6">Assistant Profile</th>
                                 <th className="py-3.5 px-4">Department</th>
                                 <th className="py-3.5 px-4">Assigned Doctor</th>
@@ -711,7 +742,7 @@ const AdminAssistants = () => {
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-600">
+                                    <td colSpan={8} className="py-14 text-center text-slate-600">
                                         <div className="flex items-center justify-center gap-2.5">
                                             <Loader2 size={18} className="animate-spin text-slate-900" />
                                             <span className="text-sm font-bold text-slate-700">Loading assistant personnel...</span>
@@ -720,7 +751,7 @@ const AdminAssistants = () => {
                                 </tr>
                             ) : filteredAssistants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-500">
+                                    <td colSpan={8} className="py-14 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <UserCheck size={36} className="text-slate-400" />
                                             <span className="text-base font-bold text-slate-800">No medical assistants found</span>
@@ -729,8 +760,11 @@ const AdminAssistants = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredAssistants.map((ast) => (
+                                filteredAssistants.slice((page - 1) * 20, page * 20).map((ast, index) => (
                                     <tr key={ast.id} className="hover:bg-slate-50/90 transition-colors">
+                                        <td className="py-4 px-4 sm:px-6 font-bold text-slate-400 font-mono">
+                                            {(page - 1) * 20 + index + 1}
+                                        </td>
                                         <td className="py-4 px-4 sm:px-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-950">{ast.name}</span>
@@ -810,6 +844,13 @@ const AdminAssistants = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={page}
+                    totalItems={filteredAssistants.length}
+                    pageSize={20}
+                    onPageChange={setPage}
+                />
             </div>
         </div>
     )

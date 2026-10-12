@@ -20,6 +20,9 @@ CareFlow is a full stack, enterprise grade Hospital Management System (HMS) and 
    * [7. Pure SVG Zero Dependency Visualizations](#7-pure-svg-zero-dependency-visualizations)
    * [8. Strict Institutional Design System](#8-strict-institutional-design-system)
    * [9. Assisted Booking Hotline & Phone Dispatch Architecture](#9-assisted-booking-hotline--phone-dispatch-architecture)
+   * [10. Consistent 20-Item Pagination Architecture & Continuous Serial Numbering](#10-consistent-20-item-pagination-architecture--continuous-serial-numbering)
+   * [11. Decoupling Relational Primary Keys from UI Presentation (IDOR & Enumeration Defense)](#11-decoupling-relational-primary-keys-from-ui-presentation-idor--enumeration-defense)
+   * [12. Bounded Input Sanitation & Strict Length Constraints](#12-bounded-input-sanitation--strict-length-constraints)
 4. [Technology Stack](#technology-stack)
 5. [Database Architecture](#database-architecture)
 6. [API Reference](#api-reference)
@@ -178,6 +181,21 @@ flowchart TD
   * **Composite Multi-Factor MPI Deduplication:** To prevent medical chart overlay corruption when multiple family members share a household phone (e.g., father and son sharing `03001234567`), the engine matches by composite `(PhoneNumber, Name)`. Returning patients reuse their existing longitudinal record, while distinct family members receive dedicated patient charts and unique collision-free synthetic emails (`walkin.{phone}.{name}@careflow.hospital`).
   * **Department-Scoped Scheduling Governance:** Enforces clinical governance where assistants can only schedule appointments for physicians within their assigned clinical department (`Assistant.DepartmentId == Doctor.DepartmentId`). Intra-department cross-coverage is permitted (e.g. covering partner cardiologists), but cross-specialty errors are blocked authoritatively with `HTTP 403 Forbidden`.
   * **Scoped Doctor Query (`GET /api/Assistant/schedulable-doctors`):** The triage booking modal dynamically populates only authorized peer physicians belonging to the assistant's clinical department.
+
+### 10. Consistent 20-Item Pagination Architecture & Continuous Serial Numbering
+* **Strict Uniformity:** Standardized a 20-item display ceiling (`pageSize = 20`) across all user roles (Admin System Activities, Admin Doctors, Admin Assistants, Admin Departments, Admin Schedules, Admin Patients, Doctor Appointments, Doctor Prescriptions, Doctor Assistants, Assistant Triage Queue, Assistant Lab Desk, Patient Appointments, Patient Prescriptions, and Patient Doctor Booking).
+* **Continuous Serial Numbering:** Replaced isolated local page indices (`index + 1`) with continuous global serial numbering:
+  $$\text{Serial Number} = (\text{currentPage} - 1) \times 20 + \text{index} + 1$$
+* **Reactive Invalidation:** Search, tab, or department filter alterations immediately reset the active page pointer to 1 via declarative `useEffect` synchronization, preventing out-of-bounds rendering on filtered datasets.
+
+### 11. Decoupling Relational Primary Keys from UI Presentation (IDOR & Enumeration Defense)
+* **Vulnerability Elimination:** Raw database primary keys (e.g., `#PID-14`, `ID: #14`, `#CF-02`, `#RX-3800`) were expunged from the presentation layer to defend against OWASP Insecure Direct Object Reference (IDOR) and business volume harvesting attacks.
+* **Clinical Focus:** Medical staff reference queues using intuitive, volatile sequential serial numbers (`#1`, `#2`, `#3`) that decouple front-end presentation from MySQL relational schemas.
+
+### 12. Bounded Input Sanitation & Strict Length Constraints
+* **Length Constraints:** Mandatory `maxLength` boundary guards are enforced across all application form inputs and textareas (e.g., names $\le 50$, search queries $\le 100$, medical license $\le 30$, lab notes $\le 300$, prescription advice $\le 1500$, telephone numbers $\le 15$).
+* **Real-World Boundaries:** Numerical values enforce clinical sanity limits: experience years ($0 \le \text{years} \le 70$) and consultation fees ($0 \le \text{fee} \le \$99,999$).
+* **Rate Limit Advisory:** Client-side Axios interceptors and form error handlers catch HTTP 429 (`Too Many Requests`) responses and display actionable 15-minute timeout guidance.
 
 ---
 

@@ -283,8 +283,8 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                         </div>
 
                         {labOrders.length > 0 && (
-                            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                                <table className="w-full text-left text-xs">
+                            <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
+                                <table className="w-full min-w-[500px] text-left text-xs">
                                     <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600">
                                         <tr>
                                             <th className="py-2.5 px-3">Test Name</th>
@@ -342,6 +342,7 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                                 <input
                                     type="text"
+                                    maxLength={100}
                                     placeholder="Test name (e.g. Serum Ferritin, ECG)"
                                     value={newTestName}
                                     onChange={(e) => setNewTestName(e.target.value)}
@@ -349,6 +350,7 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                                 />
                                 <input
                                     type="text"
+                                    maxLength={300}
                                     placeholder="Notes for lab desk (e.g. Fasting sample)"
                                     value={newTestNotes}
                                     onChange={(e) => setNewTestNotes(e.target.value)}
@@ -383,8 +385,8 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                                     No prior diagnostic laboratory tests on record for this patient.
                                 </div>
                             ) : (
-                                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                                    <table className="w-full text-left text-xs">
+                                <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
+                                    <table className="w-full min-w-[600px] text-left text-xs">
                                         <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600">
                                             <tr>
                                                 <th className="py-2.5 px-3">Date</th>
@@ -439,6 +441,7 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                             <input
                                 type="text"
                                 required
+                                maxLength={120}
                                 placeholder="e.g. Acute Bronchitis, Type 2 Diabetes Follow-up"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
@@ -452,6 +455,7 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                             </label>
                             <textarea
                                 rows={4}
+                                maxLength={1500}
                                 placeholder="Enter prescribed drug dosage, frequency (e.g. Tab Panadol 500mg TDS x 3 days), dietary restrictions, and follow-up timeline..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}

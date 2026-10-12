@@ -217,7 +217,7 @@ const AdminAuditLogs = () => {
             ) : (
                 <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[750px]">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     <th className="py-3.5 px-5">Session</th>

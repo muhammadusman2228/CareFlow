@@ -16,6 +16,7 @@ import {
     Power
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AdminSchedules = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -25,6 +26,7 @@ const AdminSchedules = () => {
     const [schedules, setSchedules] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [errorMessage, setErrorMessage] = useState('')
+    const [page, setPage] = useState(1)
 
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false)
     const [selectedDoctor, setSelectedDoctor] = useState(null)
@@ -56,6 +58,7 @@ const AdminSchedules = () => {
 
     useEffect(() => {
         fetchSchedules(selectedDate)
+        setPage(1)
     }, [selectedDate])
 
     const handleDateChange = (direction) => {
@@ -231,108 +234,121 @@ const AdminSchedules = () => {
                     </p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                    <th className="py-3.5 px-5">Doctor</th>
-                                    <th className="py-3.5 px-5">Department</th>
-                                    <th className="py-3.5 px-5">Shift Hours</th>
-                                    <th className="py-3.5 px-5">Booked Consultations</th>
-                                    <th className="py-3.5 px-5">Availability</th>
-                                    <th className="py-3.5 px-5 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-medium text-slate-800">
-                                {schedules.map((doc) => (
-                                    <tr key={doc.doctorId} className="hover:bg-slate-50/70 transition-colors">
-                                        <td className="py-4 px-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0">
-                                                    {(doc.doctorName || 'D').charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-900">{doc.doctorName}</span>
-                                                    <span className="text-xs font-semibold text-slate-500 font-mono">ID: #{doc.doctorId}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold">
-                                                <Building2 size={13} className="text-slate-500" />
-                                                {doc.departmentName}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <span className="inline-flex items-center gap-1.5 font-mono text-slate-800 font-semibold bg-sky-50/60 px-2.5 py-1 rounded-lg border border-sky-100 text-xs sm:text-sm">
-                                                <Clock size={13} className="text-sky-700" />
-                                                {doc.shiftStart} - {doc.shiftEnd}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="font-extrabold text-slate-900">{doc.bookedSlotsCount}</span>
-                                                <span className="text-xs font-semibold text-slate-500">booked</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-5">
-                                            <span className="text-xs font-semibold text-slate-700">
-                                                {doc.isAvailable ? 'On Duty' : 'Off Duty'}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-5 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {doc.isAvailable ? (
-                                                    <button
-                                                        disabled={togglingDoctorId === doc.doctorId}
-                                                        onClick={() => handleToggleAvailability(doc.doctorId)}
-                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-                                                        title="Mark Doctor Off Duty"
-                                                    >
-                                                        {togglingDoctorId === doc.doctorId ? (
-                                                            <Loader2 size={12} className="animate-spin" />
-                                                        ) : (
-                                                            <Power size={12} />
-                                                        )}
-                                                        <span>Set Off</span>
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        disabled={togglingDoctorId === doc.doctorId}
-                                                        onClick={() => handleToggleAvailability(doc.doctorId)}
-                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-                                                        title="Mark Doctor On Duty"
-                                                    >
-                                                        {togglingDoctorId === doc.doctorId ? (
-                                                            <Loader2 size={12} className="animate-spin" />
-                                                        ) : (
-                                                            <Power size={12} />
-                                                        )}
-                                                        <span>Set On</span>
-                                                    </button>
-                                                )}
-
-                                                <button
-                                                    onClick={() => openShiftModal(doc)}
-                                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-2xs cursor-pointer"
-                                                >
-                                                    <Edit3 size={12} />
-                                                    <span>Update Shift</span>
-                                                </button>
-                                            </div>
-                                        </td>
+                <div className="flex flex-col gap-6">
+                    <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[750px]">
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                        <th className="py-3.5 px-5 w-12 text-slate-700">#</th>
+                                        <th className="py-3.5 px-5">Doctor</th>
+                                        <th className="py-3.5 px-5">Department</th>
+                                        <th className="py-3.5 px-5">Shift Hours</th>
+                                        <th className="py-3.5 px-5">Booked Consultations</th>
+                                        <th className="py-3.5 px-5">Availability</th>
+                                        <th className="py-3.5 px-5 text-right">Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-medium text-slate-800">
+                                    {schedules.slice((page - 1) * 20, page * 20).map((doc, index) => (
+                                        <tr key={doc.doctorId} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-4 px-5 font-bold text-slate-400 font-mono">
+                                                {(page - 1) * 20 + index + 1}
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                                        {(doc.doctorName || 'D').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-900">{doc.doctorName}</span>
+                                                        <span className="text-xs font-semibold text-slate-500">{doc.specialization || 'Clinical Specialist'}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold">
+                                                    <Building2 size={13} className="text-slate-500" />
+                                                    {doc.departmentName}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <span className="inline-flex items-center gap-1.5 font-mono text-slate-800 font-semibold bg-sky-50/60 px-2.5 py-1 rounded-lg border border-sky-100 text-xs sm:text-sm">
+                                                    <Clock size={13} className="text-sky-700" />
+                                                    {doc.shiftStart} - {doc.shiftEnd}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-extrabold text-slate-900">{doc.bookedSlotsCount}</span>
+                                                    <span className="text-xs font-semibold text-slate-500">booked</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-5">
+                                                <span className="text-xs font-semibold text-slate-700">
+                                                    {doc.isAvailable ? 'On Duty' : 'Off Duty'}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-5 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {doc.isAvailable ? (
+                                                        <button
+                                                            disabled={togglingDoctorId === doc.doctorId}
+                                                            onClick={() => handleToggleAvailability(doc.doctorId)}
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                                                            title="Mark Doctor Off Duty"
+                                                        >
+                                                            {togglingDoctorId === doc.doctorId ? (
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                            ) : (
+                                                                <Power size={12} />
+                                                            )}
+                                                            <span>Set Off</span>
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            disabled={togglingDoctorId === doc.doctorId}
+                                                            onClick={() => handleToggleAvailability(doc.doctorId)}
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                                                            title="Mark Doctor On Duty"
+                                                        >
+                                                            {togglingDoctorId === doc.doctorId ? (
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                            ) : (
+                                                                <Power size={12} />
+                                                            )}
+                                                            <span>Set On</span>
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => openShiftModal(doc)}
+                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-2xs cursor-pointer"
+                                                    >
+                                                        <Edit3 size={12} />
+                                                        <span>Update Shift</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <Pagination
+                        currentPage={page}
+                        totalItems={schedules.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
 
             {isShiftModalOpen && selectedDoctor && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Clock size={18} className="text-sky-600" />

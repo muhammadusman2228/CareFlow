@@ -11,7 +11,8 @@ import {
     ChevronDown,
     LogOut,
     Stethoscope,
-    Users
+    Users,
+    X
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
@@ -27,7 +28,7 @@ const DoctorDashBoard = () => {
 
     const { auth, setAuth } = useAuth()
     const navigate = useNavigate()
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
     const [isProfileOpen, setIsProfileOpen] = useState(false)
 
     const handleLogout = async () => {
@@ -48,27 +49,45 @@ const DoctorDashBoard = () => {
     })
 
     return (
-        <div className="flex h-screen w-full bg-slate-100 overflow-hidden font-sans">
+        <div className="flex h-screen w-full bg-slate-100 overflow-hidden font-sans relative">
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
             <aside className={`
-                ${isSidebarOpen ? 'w-64' : 'w-20'}
-                h-full bg-white border-r border-slate-300/80 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out
+                fixed inset-y-0 left-0 z-40 lg:static lg:z-auto
+                ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-20'}
+                h-full bg-white border-r border-slate-300/80 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out shadow-xl lg:shadow-none
             `}>
                 <div className="flex flex-col">
-                    <div className="h-18 px-6 flex items-center gap-3 border-b border-slate-100 overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                            </svg>
+                    <div className="h-18 px-5 sm:px-6 flex items-center justify-between border-b border-slate-100 overflow-hidden">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            {isSidebarOpen && (
+                                <div className="flex flex-col">
+                                    <span className="text-lg font-bold tracking-tight text-slate-900 leading-tight">
+                                        CareFlow
+                                    </span>
+                                    <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                                        Physician Portal
+                                    </span>
+                                </div>
+                            )}
                         </div>
                         {isSidebarOpen && (
-                            <div className="flex flex-col">
-                                <span className="text-lg font-bold tracking-tight text-slate-900 leading-tight">
-                                    CareFlow
-                                </span>
-                                <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
-                                    Physician Portal
-                                </span>
-                            </div>
+                            <button
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors lg:hidden cursor-pointer"
+                                title="Close Sidebar"
+                            >
+                                <X size={18} />
+                            </button>
                         )}
                     </div>
 
@@ -80,6 +99,11 @@ const DoctorDashBoard = () => {
                                     key={item.name}
                                     to={item.path}
                                     end={item.end}
+                                    onClick={() => {
+                                        if (window.innerWidth < 1024) {
+                                            setIsSidebarOpen(false)
+                                        }
+                                    }}
                                     className={({ isActive }) => `
                                         flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all
                                         ${isActive 
@@ -171,7 +195,7 @@ const DoctorDashBoard = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 w-full overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
+                <main className="flex-1 w-full overflow-y-auto bg-slate-100 p-3 sm:p-6 lg:p-8">
                     <Outlet />
                 </main>
             </div>

@@ -51,7 +51,7 @@ const DepartmentsSection = ({ onSelectDepartment }) => {
     }
 
     return (
-        <section id="departments" className="py-16 px-6 lg:px-16 max-w-7xl mx-auto w-full">
+        <section id="departments" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                 <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
@@ -69,7 +69,7 @@ const DepartmentsSection = ({ onSelectDepartment }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {departments.map((dept) => {
                     const IconComponent = getDeptIcon(dept.name)
                     return (

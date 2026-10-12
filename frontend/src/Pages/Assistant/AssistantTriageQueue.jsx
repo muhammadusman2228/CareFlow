@@ -25,6 +25,7 @@ import {
     Calendar
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const generateSlots = (shiftStart, shiftEnd) => {
     if (!shiftStart || !shiftEnd) return []
@@ -112,6 +113,13 @@ const AssistantTriageQueue = () => {
     }
 
     const [bookingForm, setBookingForm] = useState(initialBookingForm)
+    const [triagePage, setTriagePage] = useState(1)
+    const [doctorSearchTerm, setDoctorSearchTerm] = useState('')
+    const [doctorSearchFilter, setDoctorSearchFilter] = useState('')
+
+    useEffect(() => {
+        setTriagePage(1)
+    }, [searchQuery, vitalsFilter, statusFilter])
 
     useEffect(() => {
         if (!bookingForm.doctorId || !bookingForm.appointmentDate) return
@@ -128,6 +136,8 @@ const AssistantTriageQueue = () => {
 
     const handleOpenBookingModal = async () => {
         setBookingError(null)
+        setDoctorSearchTerm('')
+        setDoctorSearchFilter('')
         try {
             const res = await axiosPrivate.get('/Assistant/schedulable-doctors')
             const docs = Array.isArray(res.data) ? res.data : []
@@ -375,7 +385,7 @@ const AssistantTriageQueue = () => {
                         />
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Triage:</span>
                             <select
@@ -407,10 +417,11 @@ const AssistantTriageQueue = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-black text-slate-700 uppercase tracking-wider">
-                                <th className="py-3.5 px-4 sm:px-6">Slot (PKT)</th>
+                                <th className="py-3.5 px-4 sm:px-6">#</th>
+                                <th className="py-3.5 px-4">Slot (PKT)</th>
                                 <th className="py-3.5 px-4">Patient Name</th>
                                 <th className="py-3.5 px-4">Consultant Doctor</th>
                                 <th className="py-3.5 px-4">Visit Status</th>
@@ -421,7 +432,7 @@ const AssistantTriageQueue = () => {
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="py-14 text-center text-slate-600">
+                                    <td colSpan={7} className="py-14 text-center text-slate-600">
                                         <div className="flex items-center justify-center gap-2.5">
                                             <Loader2 size={18} className="animate-spin text-slate-900" />
                                             <span className="text-sm font-bold text-slate-700">Loading today's queue...</span>
@@ -430,7 +441,7 @@ const AssistantTriageQueue = () => {
                                 </tr>
                             ) : filteredQueue.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-14 text-center text-slate-500">
+                                    <td colSpan={7} className="py-14 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Activity size={36} className="text-slate-400" />
                                             <span className="text-base font-bold text-slate-800">No appointments scheduled for today</span>
@@ -439,18 +450,21 @@ const AssistantTriageQueue = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredQueue.map((item) => {
+                                filteredQueue.slice((triagePage - 1) * 20, triagePage * 20).map((item, index) => {
+                                    const serialNumber = (triagePage - 1) * 20 + index + 1
                                     const isLocked = !item.canRecordVitals || item.isPast || item.status === 'Completed' || item.status === 'Cancelled' || item.status === 'Missed'
 
                                     return (
                                         <tr key={item.appointmentId} className="hover:bg-slate-50/70 transition-colors">
-                                            <td className="py-4 px-4 sm:px-6 text-xs font-semibold text-slate-800 whitespace-nowrap">
+                                            <td className="py-4 px-4 sm:px-6 font-mono text-xs font-bold text-slate-600">
+                                                {serialNumber}
+                                            </td>
+                                            <td className="py-4 px-4 text-xs font-semibold text-slate-800 whitespace-nowrap">
                                                 {item.timeSlot?.substring(0, 5)}
                                             </td>
                                             <td className="py-4 px-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-slate-900">{item.patientName}</span>
-                                                    <span className="text-xs font-medium text-slate-500">ID: #PID-{item.patientId}</span>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-4">
@@ -528,11 +542,18 @@ const AssistantTriageQueue = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={triagePage}
+                    totalItems={filteredQueue.length}
+                    pageSize={20}
+                    onPageChange={setTriagePage}
+                />
             </div>
 
             {isVitalsModalOpen && selectedItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
                         <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
@@ -731,9 +752,9 @@ const AssistantTriageQueue = () => {
             )}
 
             {isBookingModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full p-6 sm:p-7 flex flex-col gap-5 my-8">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <PhoneCall size={18} />
@@ -756,13 +777,13 @@ const AssistantTriageQueue = () => {
                         </div>
 
                         {bookingError && (
-                            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs font-bold text-rose-800">
+                            <div className="mx-6 mt-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs font-bold text-rose-800 shrink-0">
                                 <AlertCircle size={16} className="text-rose-600 shrink-0" />
                                 <span>{bookingError}</span>
                             </div>
                         )}
 
-                        <form onSubmit={handleAssistedBookingSubmit} className="flex flex-col gap-5">
+                        <form onSubmit={handleAssistedBookingSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4.5 [scrollbar-width:thin]">
                             <div className="flex flex-col gap-3">
                                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                                     <User size={14} />
@@ -777,6 +798,7 @@ const AssistantTriageQueue = () => {
                                         <input
                                             type="text"
                                             required
+                                            maxLength={50}
                                             placeholder="e.g. Muhammad Rasheed"
                                             value={bookingForm.patientName}
                                             onChange={(e) => setBookingForm(prev => ({ ...prev, patientName: e.target.value }))}
@@ -792,6 +814,7 @@ const AssistantTriageQueue = () => {
                                             <input
                                                 type="tel"
                                                 required
+                                                maxLength={15}
                                                 placeholder="03001234567"
                                                 value={bookingForm.patientPhone}
                                                 onChange={(e) => setBookingForm(prev => ({ ...prev, patientPhone: e.target.value }))}
@@ -807,6 +830,7 @@ const AssistantTriageQueue = () => {
                                         </label>
                                         <input
                                             type="email"
+                                            maxLength={100}
                                             placeholder="patient@careflow.com"
                                             value={bookingForm.patientEmail}
                                             onChange={(e) => setBookingForm(prev => ({ ...prev, patientEmail: e.target.value }))}
@@ -858,42 +882,108 @@ const AssistantTriageQueue = () => {
                                     <span>2. Consultant & Shift Timing</span>
                                 </span>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                    <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
                                         <label className="text-xs font-bold text-slate-800">
                                             Consultant Doctor <span className="text-rose-600">*</span>
                                         </label>
-                                        <select
-                                            required
-                                            value={bookingForm.doctorId}
-                                            onChange={(e) => setBookingForm(prev => ({ ...prev, doctorId: e.target.value, timeSlot: '' }))}
-                                            className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800"
-                                        >
-                                            {doctorsList.length === 0 ? (
-                                                <option value="" disabled>No doctors available in your assigned department</option>
-                                            ) : (
-                                                doctorsList.map((doc) => (
-                                                    <option key={doc.id} value={doc.id.toString()}>
-                                                        {doc.name} ({doc.specialization || doc.departmentName})
-                                                    </option>
-                                                ))
-                                            )}
-                                        </select>
+                                        {bookingForm.doctorId && (
+                                            <span className="text-[11px] font-semibold text-sky-700 truncate max-w-[200px]">
+                                                Dr. {doctorsList.find(d => String(d.id) === String(bookingForm.doctorId))?.name}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-xs font-bold text-slate-800">
-                                            Appointment Date (PKT) <span className="text-rose-600">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            required
-                                            min={todayPktStr}
-                                            value={bookingForm.appointmentDate}
-                                            onChange={(e) => setBookingForm(prev => ({ ...prev, appointmentDate: e.target.value, timeSlot: '' }))}
-                                            className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800"
-                                        />
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative flex-1">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search doctor by name, specialty..."
+                                                maxLength={100}
+                                                value={doctorSearchTerm}
+                                                onChange={(e) => {
+                                                    setDoctorSearchTerm(e.target.value)
+                                                    if (e.target.value === '') setDoctorSearchFilter('')
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        setDoctorSearchFilter(doctorSearchTerm)
+                                                    }
+                                                }}
+                                                className="w-full pl-8.5 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:border-slate-800"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDoctorSearchFilter(doctorSearchTerm)}
+                                            className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                                        >
+                                            <Search size={13} />
+                                            <span>Search</span>
+                                        </button>
                                     </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-1.5 border border-slate-200 rounded-xl bg-slate-50/50 [scrollbar-width:thin]">
+                                        {(() => {
+                                            const filteredDocs = doctorsList.filter(doc => {
+                                                const q = (doctorSearchFilter || doctorSearchTerm || '').trim().toLowerCase()
+                                                if (!q) return true
+                                                return (doc.name || '').toLowerCase().includes(q) ||
+                                                       (doc.specialization || '').toLowerCase().includes(q) ||
+                                                       (doc.departmentName || '').toLowerCase().includes(q)
+                                            })
+
+                                            if (filteredDocs.length === 0) {
+                                                return (
+                                                    <div className="col-span-2 p-3 text-center text-xs text-slate-500">
+                                                        No matching doctors found in your department.
+                                                    </div>
+                                                )
+                                            }
+
+                                            return filteredDocs.map((doc) => {
+                                                const isSelected = String(bookingForm.doctorId) === String(doc.id)
+                                                return (
+                                                    <button
+                                                        key={doc.id}
+                                                        type="button"
+                                                        onClick={() => setBookingForm(prev => ({ ...prev, doctorId: doc.id.toString(), timeSlot: '' }))}
+                                                        className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                                                            isSelected
+                                                                ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                                                                : 'bg-white hover:bg-slate-100 text-slate-900 border-slate-200'
+                                                        }`}
+                                                    >
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-xs font-bold truncate">Dr. {doc.name}</span>
+                                                            <span className={`text-[10px] truncate ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                                                                {doc.specialization || doc.departmentName}
+                                                            </span>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <UserCheck size={14} className="shrink-0 text-white" />
+                                                        )}
+                                                    </button>
+                                                )
+                                            })
+                                        })()}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-slate-800">
+                                        Appointment Date (PKT) <span className="text-rose-600">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        min={todayPktStr}
+                                        value={bookingForm.appointmentDate}
+                                        onChange={(e) => setBookingForm(prev => ({ ...prev, appointmentDate: e.target.value, timeSlot: '' }))}
+                                        className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800"
+                                    />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5 mt-1">
@@ -916,7 +1006,7 @@ const AssistantTriageQueue = () => {
                                         }
 
                                         return (
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1 border border-slate-200 rounded-xl bg-slate-50/50">
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto p-1.5 border border-slate-200 rounded-xl bg-slate-50/50 [scrollbar-width:thin]">
                                                 {slots.map((s) => {
                                                     const isBooked = bookedSlots.includes(s.value)
                                                     const isPast = isPastSlot(s.value, bookingForm.appointmentDate)
@@ -955,6 +1045,7 @@ const AssistantTriageQueue = () => {
                                 </label>
                                 <textarea
                                     rows={2}
+                                    maxLength={255}
                                     placeholder="e.g. High fever, persistent cough, walk-in consultation request..."
                                     value={bookingForm.symptoms}
                                     onChange={(e) => setBookingForm(prev => ({ ...prev, symptoms: e.target.value }))}
@@ -962,18 +1053,18 @@ const AssistantTriageQueue = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => setIsBookingModalOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                                    className="px-5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmittingBooking || !bookingForm.timeSlot}
-                                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white text-xs sm:text-sm font-bold hover:bg-slate-800 shadow-sm transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-6 py-2 rounded-xl bg-slate-900 text-white text-xs sm:text-sm font-bold hover:bg-slate-800 shadow-sm transition-all disabled:opacity-50"
                                 >
                                     {isSubmittingBooking && <Loader2 size={16} className="animate-spin" />}
                                     <span>Confirm Assisted Booking</span>

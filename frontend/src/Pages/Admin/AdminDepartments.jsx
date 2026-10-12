@@ -14,6 +14,7 @@ import {
     Sparkles 
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AdminDepartments = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -21,6 +22,7 @@ const AdminDepartments = () => {
     const [departments, setDepartments] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+    const [page, setPage] = useState(1)
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -52,8 +54,15 @@ const AdminDepartments = () => {
         fetchDepartments()
     }, [])
 
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery])
+
     const handleInputChange = (e) => {
-        const { name, value } = e.target
+        let { name, value } = e.target
+        if (name === 'name') {
+            value = value.replace(/[^a-zA-Z\s&'-]/g, '')
+        }
         setFormData(prev => ({ ...prev, [name]: value }))
         if (errorMessage) setErrorMessage('')
     }
@@ -80,13 +89,15 @@ const AdminDepartments = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        if (!formData.name.trim()) {
-            setErrorMessage('Department name is required.')
+        const trimmedName = formData.name.trim()
+        if (!trimmedName || trimmedName.length < 2) {
+            setErrorMessage('Department name is required and must contain at least 2 characters.')
             return
         }
 
-        if (!formData.description.trim()) {
-            setErrorMessage('Department description is required.')
+        const trimmedDesc = formData.description.trim()
+        if (!trimmedDesc || trimmedDesc.length < 5) {
+            setErrorMessage('Department description is required (at least 5 characters).')
             return
         }
 
@@ -95,8 +106,8 @@ const AdminDepartments = () => {
 
         try {
             const payload = {
-                name: formData.name.trim(),
-                description: formData.description.trim()
+                name: trimmedName,
+                description: trimmedDesc
             }
 
             const response = await axiosPrivate.post('/Department', payload)
@@ -124,8 +135,7 @@ const AdminDepartments = () => {
 
         return departments.filter(dept => 
             dept.name?.toLowerCase().includes(query) ||
-            dept.description?.toLowerCase().includes(query) ||
-            dept.id?.toString().includes(query)
+            dept.description?.toLowerCase().includes(query)
         )
     }, [departments, searchQuery])
 
@@ -245,6 +255,7 @@ const AdminDepartments = () => {
                     <Search size={18} className="text-slate-400 shrink-0 mr-2.5" />
                     <input
                         type="text"
+                        maxLength={100}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search department name or description..."
@@ -271,7 +282,7 @@ const AdminDepartments = () => {
             </div>
 
             {isLoading ? (
-                <div className="skeleton-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="skeleton-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[1, 2, 3, 4, 5, 6].map(item => (
                         <div 
                             key={item}
@@ -323,50 +334,59 @@ const AdminDepartments = () => {
                     )}
                 </div>
             ) : (
-                <div className="departments-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {filteredDepartments.map((dept) => (
-                        <div 
-                            key={dept.id}
-                            className="department-card bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-sm shadow-slate-200/80 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
-                        >
-                            <div className="card-top-content flex flex-col gap-3.5">
-                                <div className="card-header flex items-center justify-between">
-                                    <div className="dept-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-colors shrink-0 shadow-xs">
-                                        <Building2 size={22} />
+                <div className="flex flex-col gap-6">
+                    <div className="departments-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {filteredDepartments.slice((page - 1) * 20, page * 20).map((dept, index) => (
+                            <div 
+                                key={dept.id}
+                                className="department-card bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-sm shadow-slate-200/80 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
+                            >
+                                <div className="card-top-content flex flex-col gap-3.5">
+                                    <div className="card-header flex items-center justify-between">
+                                        <div className="dept-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-colors shrink-0 shadow-xs">
+                                            <Building2 size={22} />
+                                        </div>
+                                        <span className="dept-status text-xs font-medium text-slate-500">
+                                            Operational
+                                        </span>
                                     </div>
-                                    <span className="dept-status text-xs font-medium text-slate-500">
-                                        Operational
+
+                                    <div className="dept-info flex flex-col">
+                                        <h3 className="dept-title text-base sm:text-lg font-bold text-slate-900 tracking-tight capitalize group-hover:text-sky-600 transition-colors">
+                                            {dept.name}
+                                        </h3>
+                                        <p className="dept-description text-xs sm:text-sm text-slate-600 leading-relaxed mt-1 line-clamp-3 min-h-[4rem]">
+                                            {dept.description || 'Clinical specialty unit providing medical care and diagnostic consultations.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="card-footer pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div className="doctor-count-badge inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700">
+                                        <Users size={14} className="text-sky-600" />
+                                        <span>{dept.doctorCounts} Specialists</span>
+                                    </div>
+
+                                    <span className="dept-id-badge text-[11px] font-bold text-slate-400 font-mono">
+                                        #{(page - 1) * 20 + index + 1}
                                     </span>
                                 </div>
-
-                                <div className="dept-info flex flex-col">
-                                    <h3 className="dept-title text-base sm:text-lg font-bold text-slate-900 tracking-tight capitalize group-hover:text-sky-600 transition-colors">
-                                        {dept.name}
-                                    </h3>
-                                    <p className="dept-description text-xs sm:text-sm text-slate-600 leading-relaxed mt-1 line-clamp-3 min-h-[4rem]">
-                                        {dept.description || 'Clinical specialty unit providing medical care and diagnostic consultations.'}
-                                    </p>
-                                </div>
                             </div>
+                        ))}
+                    </div>
 
-                            <div className="card-footer pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                                <div className="doctor-count-badge inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700">
-                                    <Users size={14} className="text-sky-600" />
-                                    <span>{dept.doctorCounts} Specialists</span>
-                                </div>
-
-                                <span className="dept-id-badge text-[11px] font-bold text-slate-400 font-mono">
-                                    ID #{dept.id}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
+                    <Pagination
+                        currentPage={page}
+                        totalItems={filteredDepartments.length}
+                        pageSize={20}
+                        onPageChange={setPage}
+                    />
                 </div>
             )}
 
             {isModalOpen && (
                 <div className="modal-backdrop fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="modal-container bg-white rounded-xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="modal-container bg-white rounded-xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
                         
                         <div className="modal-header px-6 py-4.5 border-b border-slate-100 flex items-center justify-between">
                             <div className="header-titles flex flex-col">
@@ -408,8 +428,8 @@ const AdminDepartments = () => {
                                         <span className="text-sky-700 font-bold capitalize">{successDepartment.name}</span>
                                     </div>
                                     <div className="detail-row flex items-center justify-between">
-                                        <span className="text-slate-500 font-medium">Department Unit ID:</span>
-                                        <span className="text-slate-900 font-mono font-bold">#{successDepartment.id}</span>
+                                        <span className="text-slate-500 font-medium">Status:</span>
+                                        <span className="text-emerald-700 font-bold">Active Clinical Unit</span>
                                     </div>
                                     <div className="detail-row flex flex-col gap-1 border-t border-slate-200/60 pt-2">
                                         <span className="text-slate-500 font-medium">Clinical Scope:</span>
@@ -459,6 +479,7 @@ const AdminDepartments = () => {
                                     </label>
                                     <input
                                         type="text"
+                                        maxLength={60}
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
@@ -474,6 +495,7 @@ const AdminDepartments = () => {
                                     </label>
                                     <textarea
                                         rows={4}
+                                        maxLength={300}
                                         name="description"
                                         value={formData.description}
                                         onChange={handleInputChange}

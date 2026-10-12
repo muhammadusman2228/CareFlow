@@ -116,9 +116,9 @@ const DoctorPatientHistory = () => {
                             onChange={(e) => setSelectedPatientId(e.target.value)}
                             className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs font-semibold text-slate-800 shadow-sm focus:outline-none focus:border-sky-500"
                         >
-                            {patientList.map(p => (
+                            {patientList.map((p, idx) => (
                                 <option key={p.id} value={p.id}>
-                                    {p.name} (#PID-{p.id})
+                                    #{idx + 1}: {p.name}
                                 </option>
                             ))}
                         </select>
@@ -157,7 +157,7 @@ const DoctorPatientHistory = () => {
                                 {patientName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </div>
                             <h2 className="text-lg font-bold text-slate-900 mt-3">{patientName}</h2>
-                            <span className="text-xs font-semibold text-slate-500 mt-0.5">Patient Record #PID-{selectedPatientId}</span>
+                            <span className="text-xs font-semibold text-slate-500 mt-0.5">Verified Patient Clinical Profile</span>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2">
@@ -261,10 +261,11 @@ const DoctorPatientHistory = () => {
                             {labHistory.length === 0 ? (
                                 <p className="text-xs text-slate-500 py-3">No laboratory tests recorded for this patient.</p>
                             ) : (
-                                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                                    <table className="w-full text-left text-xs">
+                                <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
+                                    <table className="w-full min-w-[650px] text-left text-xs">
                                         <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600">
                                             <tr>
+                                                <th className="py-2.5 px-3 w-10">#</th>
                                                 <th className="py-2.5 px-3">Date</th>
                                                 <th className="py-2.5 px-3">Test Name</th>
                                                 <th className="py-2.5 px-3">Consultant</th>
@@ -273,8 +274,11 @@ const DoctorPatientHistory = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {labHistory.map((test) => (
+                                            {labHistory.map((test, idx) => (
                                                 <tr key={test.id} className="hover:bg-slate-50/50">
+                                                    <td className="py-2.5 px-3 font-mono text-[11px] font-bold text-slate-400">
+                                                        {idx + 1}
+                                                    </td>
                                                     <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">
                                                         {new Date(test.createdAt).toLocaleDateString()}
                                                     </td>

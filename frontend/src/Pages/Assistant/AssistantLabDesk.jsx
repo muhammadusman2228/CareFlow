@@ -15,6 +15,7 @@ import {
     ArrowRight
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import Pagination from '../../components/common/Pagination'
 
 const AssistantLabDesk = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -23,6 +24,11 @@ const AssistantLabDesk = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('ALL')
+    const [page, setPage] = useState(1)
+
+    useEffect(() => {
+        setPage(1)
+    }, [searchQuery, statusFilter])
 
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false)
@@ -158,6 +164,7 @@ const AssistantLabDesk = () => {
                         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
+                            maxLength={100}
                             placeholder="Search by patient, ordered test, or doctor..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -181,10 +188,11 @@ const AssistantLabDesk = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-black text-slate-700 uppercase tracking-wider">
-                                <th className="py-3.5 px-4 sm:px-6">Patient</th>
+                                <th className="py-3.5 px-4 sm:px-6">#</th>
+                                <th className="py-3.5 px-4">Patient</th>
                                 <th className="py-3.5 px-4">Diagnostic Test</th>
                                 <th className="py-3.5 px-4">Referring Doctor</th>
                                 <th className="py-3.5 px-4">Clinical Instructions</th>
@@ -196,7 +204,7 @@ const AssistantLabDesk = () => {
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-600">
+                                    <td colSpan={8} className="py-14 text-center text-slate-600">
                                         <div className="flex items-center justify-center gap-2.5">
                                             <Loader2 size={18} className="animate-spin text-slate-900" />
                                             <span className="text-sm font-bold text-slate-700">Loading laboratory orders...</span>
@@ -205,7 +213,7 @@ const AssistantLabDesk = () => {
                                 </tr>
                             ) : filteredOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-500">
+                                    <td colSpan={8} className="py-14 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <FlaskConical size={36} className="text-slate-400" />
                                             <span className="text-base font-bold text-slate-800">No diagnostic orders found</span>
@@ -214,71 +222,84 @@ const AssistantLabDesk = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                                        <td className="py-4 px-4 sm:px-6">
-                                            <span className="text-sm font-bold text-slate-900">{order.patientName}</span>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <span className="text-xs font-semibold text-slate-900">{order.testName}</span>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <span className="text-xs font-semibold text-slate-800">
-                                                Dr. {order.doctorName}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-xs font-medium text-slate-600 max-w-xs truncate" title={order.clinicalNotes}>
-                                            {order.clinicalNotes || '-'}
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <span className={`text-xs font-semibold ${
-                                                order.status === 'Completed'
-                                                    ? 'text-slate-950 font-bold'
-                                                    : order.status === 'Sample Collected'
-                                                    ? 'text-slate-800'
-                                                    : 'text-slate-500'
-                                            }`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-slate-900 text-xs font-medium max-w-xs truncate" title={order.resultsSummary}>
-                                            {order.resultsSummary || <span className="text-slate-400 italic">Awaiting findings</span>}
-                                        </td>
-                                        <td className="py-4 px-4 sm:px-6 text-right">
-                                            {order.isAppointmentCompleted || order.appointmentStatus === 'Completed' ? (
-                                                <span className="text-xs font-medium text-slate-400">Locked (Completed)</span>
-                                            ) : (
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {order.status === 'Ordered' && (
-                                                        <button
-                                                            onClick={() => handleQuickCollectSample(order)}
-                                                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 text-xs font-semibold transition-colors shadow-xs"
-                                                            title="Mark specimen collected"
-                                                        >
-                                                            Collect Specimen
-                                                        </button>
-                                                    )}
+                                filteredOrders.slice((page - 1) * 20, page * 20).map((order, index) => {
+                                    const serialNumber = (page - 1) * 20 + index + 1
+                                    return (
+                                        <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-4 px-4 sm:px-6 font-mono text-xs font-bold text-slate-600">
+                                                {serialNumber}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-sm font-bold text-slate-900">{order.patientName}</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-xs font-semibold text-slate-900">{order.testName}</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-xs font-semibold text-slate-800">
+                                                    Dr. {order.doctorName}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 text-xs font-medium text-slate-600 max-w-xs truncate" title={order.clinicalNotes}>
+                                                {order.clinicalNotes || '-'}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className={`text-xs font-semibold ${
+                                                    order.status === 'Completed'
+                                                        ? 'text-slate-950 font-bold'
+                                                        : order.status === 'Sample Collected'
+                                                        ? 'text-slate-800'
+                                                        : 'text-slate-500'
+                                                }`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 text-slate-900 text-xs font-medium max-w-xs truncate" title={order.resultsSummary}>
+                                                {order.resultsSummary || <span className="text-slate-400 italic">Awaiting findings</span>}
+                                            </td>
+                                            <td className="py-4 px-4 sm:px-6 text-right">
+                                                {order.isAppointmentCompleted || order.appointmentStatus === 'Completed' ? (
+                                                    <span className="text-xs font-medium text-slate-400">Locked (Completed)</span>
+                                                ) : (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {order.status === 'Ordered' && (
+                                                            <button
+                                                                onClick={() => handleQuickCollectSample(order)}
+                                                                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 text-xs font-semibold transition-colors shadow-xs"
+                                                                title="Mark specimen collected"
+                                                            >
+                                                                Collect Specimen
+                                                            </button>
+                                                        )}
 
-                                                    <button
-                                                        onClick={() => handleOpenCompleteModal(order)}
-                                                        className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold transition-colors shadow-xs"
-                                                    >
-                                                        {order.status === 'Completed' ? 'Edit Findings' : 'Enter Results'}
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
+                                                        <button
+                                                            onClick={() => handleOpenCompleteModal(order)}
+                                                            className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold transition-colors shadow-xs"
+                                                        >
+                                                            {order.status === 'Completed' ? 'Edit Findings' : 'Enter Results'}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })
                             )}
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={page}
+                    totalItems={filteredOrders.length}
+                    pageSize={20}
+                    onPageChange={setPage}
+                />
             </div>
 
             {isCompleteModalOpen && selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col">
                         <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
@@ -325,6 +346,7 @@ const AssistantLabDesk = () => {
                                 <textarea
                                     required
                                     rows={4}
+                                    maxLength={500}
                                     placeholder="e.g. Hb: 13.5 g/dL, WBC: 7,400 /mcL, Platelets: 220,000 /mcL, ESR: 12 mm/hr. Normal limits."
                                     value={resultsSummary}
                                     onChange={(e) => setResultsSummary(e.target.value)}

@@ -82,7 +82,7 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
     }
 
     return (
-        <section id="doctors" className="py-16 px-6 lg:px-16 max-w-7xl mx-auto w-full border-t border-slate-200/80">
+        <section id="doctors" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full border-t border-slate-200/80">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                 <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
