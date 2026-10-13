@@ -164,3 +164,41 @@ public class DoctorScheduleResponseDto
     public bool IsAvailable { get; set; }
     public int BookedSlotsCount { get; set; }
 }
+
+public class RegisterAdminRequestDto
+{
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(100)]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8, ErrorMessage = "The Password Must be greater than 8 characters")]
+    [MaxLength(100)]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class VerifyAdminOtpDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(6)]
+    public string Code { get; set; } = string.Empty;
+}
+
+public class AdminListItemDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public bool IsVerified { get; set; }
+    public DateTime CreatedAt { get; set; }
+}

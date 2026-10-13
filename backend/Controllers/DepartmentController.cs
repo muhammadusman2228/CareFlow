@@ -18,7 +18,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<DepartmentResponseDto>> RegisterDepartment([FromBody] DeparmentRequestDto dto)
     {
         try

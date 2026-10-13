@@ -19,7 +19,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("register")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseAssistantDto>> Register(RegisterAssistantDto dto)
     {
         try
@@ -42,7 +42,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<List<ResponseAssistantDto>>> GetAll()
     {
         try
@@ -57,7 +57,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseAssistantDto>> Update(int id, UpdateAssistantDto dto)
     {
         try
@@ -76,7 +76,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult> Delete(int id)
     {
         try
@@ -120,7 +120,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("queue")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<List<AssistantQueueItemDto>>> GetTodayQueue()
     {
         try
@@ -145,7 +145,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("vitals")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseVitalsDto>> RecordVitals(CreateVitalsDto dto)
     {
         try
@@ -174,7 +174,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("vitals/{appointmentId:int}")]
-    [Authorize(Roles = "Assistant,Doctor,Admin")]
+    [Authorize(Roles = "Assistant,Doctor,SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseVitalsDto>> GetVitals(int appointmentId)
     {
         try
@@ -193,7 +193,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("lab-order")]
-    [Authorize(Roles = "Doctor,Admin")]
+    [Authorize(Roles = "Doctor,SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseLabOrderDto>> CreateLabOrder(CreateLabOrderDto dto)
     {
         try
@@ -222,7 +222,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("lab-orders/{appointmentId:int}")]
-    [Authorize(Roles = "Assistant,Doctor,Patient,Admin")]
+    [Authorize(Roles = "Assistant,Doctor,Patient,SuperAdmin,Admin")]
     public async Task<ActionResult<List<ResponseLabOrderDto>>> GetLabOrders(int appointmentId)
     {
         try
@@ -237,7 +237,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("pending-lab-orders")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<List<ResponseLabOrderDto>>> GetPendingLabOrders()
     {
         try
@@ -262,7 +262,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPut("lab-order/{id:int}/status")]
-    [Authorize(Roles = "Assistant,Doctor,Admin")]
+    [Authorize(Roles = "Assistant,Doctor,SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseLabOrderDto>> UpdateLabStatus(int id, UpdateLabStatusDto dto)
     {
         try
@@ -285,7 +285,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPatch("check-in/{appointmentId:int}")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<AppointmentStatusResponseDto>> CheckIn(int appointmentId)
     {
         try
@@ -314,7 +314,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("patient-lab-history/{patientId:int}")]
-    [Authorize(Roles = "Doctor,Assistant,Admin")]
+    [Authorize(Roles = "Doctor,Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<List<ResponseLabOrderDto>>> GetPatientLabHistory(int patientId)
     {
         try
@@ -329,7 +329,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("book-appointment")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<ResponseAssistantBookingDto>> BookAppointment(AssistantBookAppointmentDto dto)
     {
         try
@@ -366,7 +366,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("schedulable-doctors")]
-    [Authorize(Roles = "Assistant,Admin")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
     public async Task<ActionResult<List<FindDoctorResponse>>> GetSchedulableDoctors()
     {
         try

@@ -25,8 +25,7 @@ public class AdminController : ControllerBase
         _adminExtra=adminExtra;
     }
     [HttpPost]
-    [Authorize(Roles ="Admin")]
-
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<DrRegResponseDto>> RegisterDoctor(DrRegRequestDto dto)
     {
         try
@@ -48,7 +47,7 @@ public class AdminController : ControllerBase
         }
     }
     [HttpGet("admin")]
-    [Authorize(Roles ="Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<List<AdminDoctorResponse>>> AdminDoctorResponse()
     {
         try
@@ -96,8 +95,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("dashboard")]
-    [Authorize(Roles ="Admin")]
-
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<AdminDashboardDto>> Dashboard()
     {
         try
@@ -111,7 +109,7 @@ public class AdminController : ControllerBase
         }
     }
     [HttpGet("patient")]
-    [Authorize(Roles ="Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<AdminPatientsDto>> Patients()
     {
         try
@@ -125,7 +123,7 @@ public class AdminController : ControllerBase
         }
     }
     [HttpGet("audit-logs")]
-    [Authorize(Roles="Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async   Task<ActionResult<List<AdminLogsDto>>> Logs()
     {
         try
@@ -140,7 +138,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("schedules")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<List<DoctorScheduleResponseDto>>> GetSchedules([FromQuery] DateOnly date)
     {
         try
@@ -159,7 +157,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPatch("doctor/{id}/shift")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult> UpdateShift([FromRoute] int id, [FromBody] DoctorShiftUpdateDto dto)
     {
         try
@@ -178,7 +176,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPatch("doctor/{id}/availability")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult> ToggleDoctorAvailability([FromRoute] int id)
     {
         try
@@ -193,6 +191,63 @@ public class AdminController : ControllerBase
         catch (Exception)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
+    [HttpPost("register-admin")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult> RegisterAdmin([FromBody] RegisterAdminRequestDto dto)
+    {
+        try
+        {
+            var message = await _adminExtra.RegisterAdmin(dto);
+            return Ok(new { message });
+        }
+        catch (DuplicateNameException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("verify-admin-otp")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult> VerifyAdminOtp([FromBody] VerifyAdminOtpDto dto)
+    {
+        try
+        {
+            var message = await _adminExtra.VerifyAdminOtp(dto);
+            return Ok(new { message });
+        }
+        catch (System.Security.Authentication.InvalidCredentialException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("admins-list")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult<List<AdminListItemDto>>> GetAdminsList()
+    {
+        try
+        {
+            var list = await _adminExtra.GetAdminsList();
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
 }

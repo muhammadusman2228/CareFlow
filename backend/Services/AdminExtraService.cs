@@ -1,20 +1,24 @@
 
+using System.Data;
+using System.Security.Authentication;
+using System.Security.Cryptography;
 using backend.Data;
 using backend.DTOs;
 using backend.Interfaces;
+using backend.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services;
 
-
 public class AdminExtraService : IAdminExtra
 {
-
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public AdminExtraService(AppDbContext context)
+    public AdminExtraService(AppDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
 
@@ -293,6 +297,141 @@ public class AdminExtraService : IAdminExtra
         catch (KeyNotFoundException)
         {
             throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
+        }
+    }
+
+    public async Task<string> RegisterAdmin(RegisterAdminRequestDto dto)
+    {
+        try
+        {
+            var normalEmail = dto.Email.Trim().ToLower();
+            var isExist = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalEmail);
+            if (isExist)
+            {
+                throw new DuplicateNameException("An account with this email address already exists.");
+            }
+
+            string token = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = new User
+                {
+                    Name = dto.Name,
+                    Email = normalEmail,
+                    Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Role = "Admin",
+                    IsVerified = false
+                };
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+
+                var verification = new Verification
+                {
+                    Email = normalEmail,
+                    Code = token,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+                };
+                await _context.Verification.AddAsync(verification);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            try
+            {
+                await _emailService.SendOtpEmailAsync(
+                    normalEmail,
+                    token,
+                    "CareFlow - Administrator Account Verification",
+                    "verify the new administrator account"
+                );
+            }
+            catch
+            {
+                throw new Exception("Administrator account registered, but verification email could not be sent. Please retry verification.");
+            }
+
+            return "Administrator registered successfully. Verification OTP has been dispatched to their email.";
+        }
+        catch (DuplicateNameException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<string> VerifyAdminOtp(VerifyAdminOtpDto dto)
+    {
+        try
+        {
+            var normalEmail = dto.Email.Trim().ToLower();
+            var record = await _context.Verification
+                .Where(u => u.Email.ToLower() == normalEmail && !u.IsUsed && u.ExpiresAt > DateTime.UtcNow)
+                .OrderByDescending(v => v.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (record == null || dto.Code.Trim() != record.Code)
+            {
+                throw new InvalidCredentialException("Invalid or expired verification code.");
+            }
+
+            record.IsUsed = true;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalEmail);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Administrator account not found.");
+            }
+
+            user.IsVerified = true;
+            await _context.SaveChangesAsync();
+            return "Administrator account verified successfully.";
+        }
+        catch (InvalidCredentialException)
+        {
+            throw;
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<List<AdminListItemDto>> GetAdminsList()
+    {
+        try
+        {
+            var list = await _context.Users.AsNoTracking()
+                .Where(u => u.Role == "Admin" || u.Role == "SuperAdmin")
+                .OrderByDescending(u => u.CreatedAt)
+                .Select(u => new AdminListItemDto
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    Role = u.Role,
+                    IsVerified = u.IsVerified,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return list;
         }
         catch (Exception)
         {
