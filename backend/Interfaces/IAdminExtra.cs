@@ -9,9 +9,12 @@ public interface IAdminExtra
     Task<AdminPatientsDto> AdminPatient();
     Task<List<AdminLogsDto>> AdminLogs();
     Task<List<DoctorScheduleResponseDto>> GetDoctorSchedules(DateOnly date);
-    Task<string> UpdateDoctorShift(int doctorId, DoctorShiftUpdateDto dto);
-    Task<bool> ToggleDoctorAvailability(int doctorId);
+    Task<string> UpdateDoctorShift(int doctorId, DoctorShiftUpdateDto dto, DateOnly? date = null);
+    Task<bool> ToggleDoctorAvailability(int doctorId, DateOnly? date = null);
     Task<string> RegisterAdmin(RegisterAdminRequestDto dto);
     Task<string> VerifyAdminOtp(VerifyAdminOtpDto dto);
     Task<List<AdminListItemDto>> GetAdminsList();
+    Task<DiversionCandidatesResponseDto> GetAdminDiversionCandidates(int appointmentId);
+    Task<DivertAppointmentResponseDto> DivertFutureAppointment(AdminDivertAppointmentDto dto, int adminUserId);
+    Task<List<AdminDoctorAppointmentDto>> GetDoctorAppointments(int doctorId, DateOnly date);
 }

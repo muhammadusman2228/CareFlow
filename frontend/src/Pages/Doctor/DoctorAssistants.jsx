@@ -125,7 +125,7 @@ const DoctorAssistants = () => {
                                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col gap-2.5 text-xs">
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-500 font-bold uppercase tracking-wider text-[11px]">Department</span>
-                                            <span className="font-bold text-slate-900 text-sm">{ast.departmentName || 'General OPD'}</span>
+                                            <span className="font-bold text-slate-900 text-sm capitalize">{ast.departmentName || 'General OPD'}</span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-500 font-bold uppercase tracking-wider text-[11px]">Shift (PKT)</span>

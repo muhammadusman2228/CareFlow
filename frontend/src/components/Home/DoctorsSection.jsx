@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import axios from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
+import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) => {
     const navigate = useNavigate()
@@ -185,14 +186,14 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 text-sky-700 font-extrabold text-sm flex items-center justify-center shrink-0">
-                                        {(doc.name || 'D').replace('Dr. ', '').charAt(0)}
+                                        {(formatDoctorName(doc.name) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
                                     </div>
                                     <div className="flex flex-col min-w-0">
                                         <h3 className="text-sm font-bold text-slate-900 truncate">
-                                            {doc.name}
+                                            {formatDoctorName(doc.name)}
                                         </h3>
                                         <span className="text-xs font-semibold text-sky-700 truncate capitalize">
-                                            {doc.departmentName}
+                                            {formatDepartmentName(doc.departmentName)}
                                         </span>
                                     </div>
                                 </div>

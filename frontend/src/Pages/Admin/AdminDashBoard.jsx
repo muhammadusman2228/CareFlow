@@ -12,21 +12,24 @@ import {
     Menu,
     ChevronDown,
     LogOut,
-    X
+    X,
+    ShieldCheck
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
 const AdminDashBoard = () => {
-    const navItems = [
-    { name: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard, end: true },
-    { name: 'Doctors Management', path: '/admin/dashboard/doctors', icon: Stethoscope },
-    { name: 'Assistants', path: '/admin/dashboard/assistants', icon: UserCheck },
-    { name: 'Departments', path: '/admin/dashboard/departments', icon: Building2 },
-    { name: 'Schedules & Shifts', path: '/admin/dashboard/schedules', icon: CalendarDays },
-    { name: 'Patients', path: '/admin/dashboard/patients', icon: Users }
-]
-  
     const { auth, setAuth } = useAuth()
+    const isSuperAdmin = auth?.role?.trim().toLowerCase() === 'superadmin'
+
+    const navItems = [
+        { name: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard, end: true },
+        { name: 'Doctors Management', path: '/admin/dashboard/doctors', icon: Stethoscope },
+        { name: 'Assistants', path: '/admin/dashboard/assistants', icon: UserCheck },
+        { name: 'Departments', path: '/admin/dashboard/departments', icon: Building2 },
+        { name: 'Schedules & Shifts', path: '/admin/dashboard/schedules', icon: CalendarDays },
+        { name: 'Patients', path: '/admin/dashboard/patients', icon: Users },
+        ...(isSuperAdmin ? [{ name: 'Admin Governance', path: '/admin/dashboard/governance', icon: ShieldCheck }] : [])
+    ]
     const navigate = useNavigate()
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
     const [isProfileOpen, setIsProfileOpen] = useState(false)

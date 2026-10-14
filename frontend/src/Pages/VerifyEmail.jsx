@@ -1,21 +1,29 @@
 
 
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import img from '../assets/verifyEmail.png'
 import AppLogo from '../components/Home/AppLogo.Home'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from '../api/axios'
 
-const VerifyEmail=()=>{
+const VerifyEmail = () => {
+    const [searchParams] = useSearchParams()
+    const emailParam = searchParams.get('email') || ''
 
     const initialForm = {
-        email: "",
+        email: emailParam,
         code: ""
     }
     const [formData, setFormData] = useState(initialForm)
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (emailParam) {
+            setFormData(prev => ({ ...prev, email: emailParam }))
+        }
+    }, [emailParam])
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -106,7 +114,7 @@ const VerifyEmail=()=>{
                 </button>
             </form>
             <div className="flex justify-between items-center text-xs sm:text-sm text-slate-500 mt-2 pt-2 border-t border-slate-100">
-                <span>Didn't receive code? <Link to="/resendOtp" className="text-sky-600 font-semibold hover:underline">Resend</Link></span>
+                <span>Didn't receive code? <Link to={formData.email ? `/resendOtp?email=${encodeURIComponent(formData.email)}` : "/resendOtp"} className="text-sky-600 font-semibold hover:underline">Resend</Link></span>
                 <Link to="/login" className="text-sky-600 font-semibold hover:underline">Back to Login</Link>
             </div>
         </div>

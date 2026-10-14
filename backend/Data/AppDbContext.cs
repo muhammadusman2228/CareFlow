@@ -21,6 +21,9 @@ public class AppDbContext : DbContext
     public DbSet<Assistant> Assistants => Set<Assistant>();
     public DbSet<PatientVitals> PatientVitals => Set<PatientVitals>();
     public DbSet<Labs> Labs => Set<Labs>();
+    public DbSet<DoctorDepartment> DoctorDepartments => Set<DoctorDepartment>();
+    public DbSet<AssistantDepartment> AssistantDepartments => Set<AssistantDepartment>();
+    public DbSet<DoctorDateSchedule> DoctorDateSchedules => Set<DoctorDateSchedule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,8 +92,13 @@ modelBuilder.Entity<Appointment>()
     .HasOne(a => a.Doctor)
     .WithMany(d => d.Appointments)
     .HasForeignKey(a => a.DoctorId)
-    .OnDelete(DeleteBehavior.Restrict); 
+    .OnDelete(DeleteBehavior.Restrict);
 
+modelBuilder.Entity<Appointment>()
+    .HasOne(a => a.OriginalDoctor)
+    .WithMany()
+    .HasForeignKey(a => a.OriginalDoctorId)
+    .OnDelete(DeleteBehavior.SetNull);
 
 modelBuilder.Entity<Appointment>()
     .HasIndex(a => new { a.DoctorId, a.AppointmentDate, a.TimeSlot });
@@ -165,6 +173,48 @@ modelBuilder.Entity<Labs>()
     .WithMany()
     .HasForeignKey(l => l.PatientId)
     .OnDelete(DeleteBehavior.Restrict);
+
+modelBuilder.Entity<DoctorDepartment>()
+    .HasIndex(dd => new { dd.DoctorId, dd.DepartmentId })
+    .IsUnique();
+
+modelBuilder.Entity<DoctorDepartment>()
+    .HasOne(dd => dd.Doctor)
+    .WithMany(d => d.DoctorDepartments)
+    .HasForeignKey(dd => dd.DoctorId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<DoctorDepartment>()
+    .HasOne(dd => dd.Department)
+    .WithMany(dept => dept.DoctorDepartments)
+    .HasForeignKey(dd => dd.DepartmentId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<AssistantDepartment>()
+    .HasIndex(ad => new { ad.AssistantId, ad.DepartmentId })
+    .IsUnique();
+
+modelBuilder.Entity<AssistantDepartment>()
+    .HasOne(ad => ad.Assistant)
+    .WithMany(a => a.AssistantDepartments)
+    .HasForeignKey(ad => ad.AssistantId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<AssistantDepartment>()
+    .HasOne(ad => ad.Department)
+    .WithMany(dept => dept.AssistantDepartments)
+    .HasForeignKey(ad => ad.DepartmentId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<DoctorDateSchedule>()
+    .HasIndex(ds => new { ds.DoctorId, ds.ScheduleDate })
+    .IsUnique();
+
+modelBuilder.Entity<DoctorDateSchedule>()
+    .HasOne(ds => ds.Doctor)
+    .WithMany()
+    .HasForeignKey(ds => ds.DoctorId)
+    .OnDelete(DeleteBehavior.Cascade);
             
     }
 }

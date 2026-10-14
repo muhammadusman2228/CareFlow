@@ -205,7 +205,7 @@ const DoctorAppointments = () => {
                                                     {appt.status === 'CheckedIn' && (
                                                         <button
                                                             onClick={() => setActiveAppointment(appt)}
-                                                            className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                                                            className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                                                         >
                                                             <Stethoscope size={13} />
                                                             <span>Start Consultation</span>
@@ -217,7 +217,7 @@ const DoctorAppointments = () => {
                                                             <button
                                                                 disabled={isProcessing}
                                                                 onClick={() => handleUpdateStatus(appt.appointmentId, 'Confirmed')}
-                                                                className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                                                className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                                                             >
                                                                 <Check size={13} />
                                                                 <span>Approve</span>
@@ -225,7 +225,7 @@ const DoctorAppointments = () => {
                                                             <button
                                                                 disabled={isProcessing}
                                                                 onClick={() => handleUpdateStatus(appt.appointmentId, 'Cancelled')}
-                                                                className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors disabled:opacity-50"
+                                                                className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                                                             >
                                                                 <X size={13} />
                                                             </button>
@@ -234,17 +234,13 @@ const DoctorAppointments = () => {
 
                                                     {appt.status === 'Confirmed' && (
                                                         <>
-                                                            <button
-                                                                onClick={() => setActiveAppointment(appt)}
-                                                                className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
-                                                            >
-                                                                <FileText size={13} />
-                                                                <span>Prescribe</span>
-                                                            </button>
+                                                            <span className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-xs font-medium">
+                                                                Awaiting Check-in
+                                                            </span>
                                                             <button
                                                                 disabled={isProcessing}
                                                                 onClick={() => handleUpdateStatus(appt.appointmentId, 'Missed')}
-                                                                className="px-2.5 py-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-semibold transition-colors disabled:opacity-50"
+                                                                className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                                                                 title="Mark as Missed (No-Show)"
                                                             >
                                                                 No Show

@@ -36,7 +36,24 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("DiversionReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("DivertedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DivertedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDiverted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("OriginalDoctorId")
                         .HasColumnType("int");
 
                     b.Property<int>("PatientId")
@@ -56,6 +73,8 @@ namespace backend.Migrations
                         .HasColumnType("time(6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OriginalDoctorId");
 
                     b.HasIndex("PatientId");
 
@@ -84,6 +103,11 @@ namespace backend.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Qualifications")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -108,6 +132,33 @@ namespace backend.Migrations
                         .IsUnique();
 
                     b.ToTable("Assistants");
+                });
+
+            modelBuilder.Entity("backend.Models.AssistantDepartment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssistantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("AssistantId", "DepartmentId")
+                        .IsUnique();
+
+                    b.ToTable("AssistantDepartments");
                 });
 
             modelBuilder.Entity("backend.Models.Departments", b =>
@@ -154,6 +205,21 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("DailyStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateOnly?>("DailyStatusDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("DelayMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DelayReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<int>("DepartmentId")
                         .HasColumnType("int");
 
@@ -161,6 +227,9 @@ namespace backend.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsLateToday")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("LicenseNumber")
@@ -198,6 +267,79 @@ namespace backend.Migrations
                         .IsUnique();
 
                     b.ToTable("Doctors");
+                });
+
+            modelBuilder.Entity("backend.Models.DoctorDateSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DailyStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int>("DelayMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DelayReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateOnly>("ScheduleDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "ScheduleDate")
+                        .IsUnique();
+
+                    b.ToTable("DoctorDateSchedules");
+                });
+
+            modelBuilder.Entity("backend.Models.DoctorDepartment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DoctorId", "DepartmentId")
+                        .IsUnique();
+
+                    b.ToTable("DoctorDepartments");
                 });
 
             modelBuilder.Entity("backend.Models.Labs", b =>
@@ -528,6 +670,11 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.Doctor", "OriginalDoctor")
+                        .WithMany()
+                        .HasForeignKey("OriginalDoctorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("backend.Models.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
@@ -535,6 +682,8 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Doctor");
+
+                    b.Navigation("OriginalDoctor");
 
                     b.Navigation("Patient");
                 });
@@ -564,6 +713,25 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("backend.Models.AssistantDepartment", b =>
+                {
+                    b.HasOne("backend.Models.Assistant", "Assistant")
+                        .WithMany("AssistantDepartments")
+                        .HasForeignKey("AssistantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Departments", "Department")
+                        .WithMany("AssistantDepartments")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assistant");
+
+                    b.Navigation("Department");
+                });
+
             modelBuilder.Entity("backend.Models.Doctor", b =>
                 {
                     b.HasOne("backend.Models.Departments", "Department")
@@ -581,6 +749,36 @@ namespace backend.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("backend.Models.DoctorDateSchedule", b =>
+                {
+                    b.HasOne("backend.Models.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("backend.Models.DoctorDepartment", b =>
+                {
+                    b.HasOne("backend.Models.Departments", "Department")
+                        .WithMany("DoctorDepartments")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Doctor", "Doctor")
+                        .WithMany("DoctorDepartments")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("backend.Models.Labs", b =>
@@ -697,11 +895,17 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Models.Assistant", b =>
                 {
+                    b.Navigation("AssistantDepartments");
+
                     b.Navigation("RecordedVitals");
                 });
 
             modelBuilder.Entity("backend.Models.Departments", b =>
                 {
+                    b.Navigation("AssistantDepartments");
+
+                    b.Navigation("DoctorDepartments");
+
                     b.Navigation("Doctors");
                 });
 
@@ -710,6 +914,8 @@ namespace backend.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("Assistants");
+
+                    b.Navigation("DoctorDepartments");
 
                     b.Navigation("LabOrders");
 

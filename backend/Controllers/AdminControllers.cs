@@ -3,6 +3,7 @@
 
 
 using System.Data;
+using System.Security.Claims;
 using backend.DTOs;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -158,16 +159,20 @@ public class AdminController : ControllerBase
 
     [HttpPatch("doctor/{id}/shift")]
     [Authorize(Roles = "SuperAdmin,Admin")]
-    public async Task<ActionResult> UpdateShift([FromRoute] int id, [FromBody] DoctorShiftUpdateDto dto)
+    public async Task<ActionResult> UpdateShift([FromRoute] int id, [FromBody] DoctorShiftUpdateDto dto, [FromQuery] DateOnly? date)
     {
         try
         {
-            var message = await _adminExtra.UpdateDoctorShift(id, dto);
+            var message = await _adminExtra.UpdateDoctorShift(id, dto, date);
             return Ok(new { message });
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -177,16 +182,20 @@ public class AdminController : ControllerBase
 
     [HttpPatch("doctor/{id}/availability")]
     [Authorize(Roles = "SuperAdmin,Admin")]
-    public async Task<ActionResult> ToggleDoctorAvailability([FromRoute] int id)
+    public async Task<ActionResult> ToggleDoctorAvailability([FromRoute] int id, [FromQuery] DateOnly? date)
     {
         try
         {
-            var isAvailable = await _adminExtra.ToggleDoctorAvailability(id);
+            var isAvailable = await _adminExtra.ToggleDoctorAvailability(id, date);
             return Ok(new { isAvailable, message = isAvailable ? "Doctor is now On Duty" : "Doctor is now Off Duty" });
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -244,6 +253,100 @@ public class AdminController : ControllerBase
         {
             var list = await _adminExtra.GetAdminsList();
             return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("doctor/{id}/departments")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult> UpdateDoctorDepartments([FromRoute] int id, [FromBody] UpdateDoctorDepartmentsDto dto)
+    {
+        try
+        {
+            var message = await _doctorService.UpdateDoctorDepartments(id, dto);
+            return Ok(new { message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidKeyException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
+    [HttpGet("diversion/candidates/{appointmentId:int}")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<DiversionCandidatesResponseDto>> GetDiversionCandidates([FromRoute] int appointmentId)
+    {
+        try
+        {
+            var candidates = await _adminExtra.GetAdminDiversionCandidates(appointmentId);
+            return Ok(candidates);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("divert-appointment")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<DivertAppointmentResponseDto>> DivertAppointment([FromBody] AdminDivertAppointmentDto dto)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var adminUserId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var response = await _adminExtra.DivertFutureAppointment(dto, adminUserId);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("doctor/{doctorId:int}/appointments")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<List<AdminDoctorAppointmentDto>>> GetDoctorAppointments([FromRoute] int doctorId, [FromQuery] DateOnly date)
+    {
+        try
+        {
+            if (date == default)
+            {
+                date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+            }
+            var appointments = await _adminExtra.GetDoctorAppointments(doctorId, date);
+            return Ok(appointments);
         }
         catch (Exception ex)
         {

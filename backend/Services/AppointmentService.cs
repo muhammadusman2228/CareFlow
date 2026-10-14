@@ -20,29 +20,61 @@ public class AppointmentService : IAppointment
     {
         try
         {
-             var doctors = await _context.Doctors
-            .AsNoTracking()
-            .Where(d => d.DepartmentId == departmentId && d.IsAvailable && d.ShiftStart <= timeSlot && timeSlot < d.ShiftEnd && d.User!.IsVerified)
-            .Select(u => new ResponseAppointmentDto
-            {
-                Id = u.Id,
-                Name = u.User!.Name,
-                Specialization = u.Specialization,
-                IsAvailable = u.IsAvailable,
-                ConsultationFee = u.ConsultationFee,
-                IsSlotBooked = _context.Appointments.Any(a => 
-                    a.DoctorId == u.Id && 
-                    a.AppointmentDate == date && 
-                    a.TimeSlot == timeSlot && 
-                    (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
-            })
-            .ToListAsync();
+            var todayPkt = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+            var dateSchedules = await _context.DoctorDateSchedules
+                .AsNoTracking()
+                .Where(s => s.ScheduleDate == date)
+                .ToDictionaryAsync(s => s.DoctorId);
 
-        return doctors;
+            var doctorsQuery = await _context.Doctors
+                .AsNoTracking()
+                .Where(d => (d.DepartmentId == departmentId || d.DoctorDepartments.Any(dd => dd.DepartmentId == departmentId)) && d.ShiftStart <= timeSlot && timeSlot < d.ShiftEnd && d.User!.IsVerified)
+                .Select(u => new
+                {
+                    u.Id,
+                    Name = u.User!.Name,
+                    u.Specialization,
+                    u.IsAvailable,
+                    u.DailyStatus,
+                    u.DailyStatusDate,
+                    u.ConsultationFee,
+                    IsSlotBooked = _context.Appointments.Any(a => 
+                        a.DoctorId == u.Id && 
+                        a.AppointmentDate == date && 
+                        a.TimeSlot == timeSlot && 
+                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
+                })
+                .ToListAsync();
+
+            var doctors = doctorsQuery
+                .Where(u =>
+                {
+                    if (dateSchedules.TryGetValue(u.Id, out var ds))
+                    {
+                        return ds.IsAvailable && ds.DailyStatus != "OffDuty";
+                    }
+                    if (date == todayPkt && u.DailyStatusDate == todayPkt)
+                    {
+                        return u.IsAvailable && u.DailyStatus != "OffDuty";
+                    }
+                    return u.IsAvailable;
+                })
+                .Select(u => new ResponseAppointmentDto
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Specialization = u.Specialization,
+                    IsAvailable = true,
+                    ConsultationFee = u.ConsultationFee,
+                    IsSlotBooked = u.IsSlotBooked
+                })
+                .ToList();
+
+            return doctors;
         }
         catch
         {
-            throw ;
+            throw;
         }
     }
 
@@ -73,6 +105,26 @@ public class AppointmentService : IAppointment
             if (doctor == null)
             {
                 throw new KeyNotFoundException("Doctor does not exist or is not verified");
+            }
+
+            var dateSchedule = await _context.DoctorDateSchedules
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.DoctorId == dto.DoctorId && s.ScheduleDate == dto.AppointmentDate);
+
+            if (dateSchedule != null)
+            {
+                if (!dateSchedule.IsAvailable || dateSchedule.DailyStatus == "OffDuty")
+                {
+                    throw new InvalidOperationException("Doctor is Off Duty on the selected date");
+                }
+            }
+            else if (dto.AppointmentDate == todayPkt && doctor.DailyStatusDate == todayPkt && doctor.DailyStatus == "OffDuty")
+            {
+                throw new InvalidOperationException("Doctor is Off Duty on the selected date");
+            }
+            else if (!doctor.IsAvailable)
+            {
+                throw new InvalidOperationException("Doctor is currently unavailable");
             }
 
             if (dto.TimeSlot < doctor.ShiftStart || dto.TimeSlot >= doctor.ShiftEnd)

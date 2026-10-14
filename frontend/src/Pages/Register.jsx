@@ -42,12 +42,13 @@ const navigate=useNavigate()
     emergencyContact: formData.EmergencyContact,
     dateOfBirth: formData.dob
 }
-  const handleSubmit =async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true)
- try {
-   await axios.post("/auth/patient/register",payload)
-   navigate('/verifyEmail')
+    const registeredEmail = (formData.email || '').trim()
+    try {
+      await axios.post("/auth/patient/register", payload)
+      navigate(`/verifyEmail?email=${encodeURIComponent(registeredEmail)}`)
  
  } catch (error) {
   if(!error?.response){

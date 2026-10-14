@@ -45,10 +45,23 @@ public class Doctor
 
     public TimeOnly ShiftEnd { get; set; } = new TimeOnly(17, 0);
 
+    [MaxLength(50)]
+    public string DailyStatus { get; set; } = "OnDuty";
+
+    public bool IsLateToday { get; set; } = false;
+
+    public int DelayMinutes { get; set; } = 0;
+
+    [MaxLength(255)]
+    public string? DelayReason { get; set; }
+
+    public DateOnly? DailyStatusDate { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<Appointment> Appointments{get;set;}=new List<Appointment>();
     public virtual ICollection<Prescriptions> Prescriptions{get;set;}=new List<Prescriptions>();
     public virtual ICollection<Assistant> Assistants { get; set; } = new List<Assistant>();
     public virtual ICollection<Labs> LabOrders { get; set; } = new List<Labs>();
+    public virtual ICollection<DoctorDepartment> DoctorDepartments { get; set; } = new List<DoctorDepartment>();
 }

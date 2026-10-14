@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import useAuth from '../../hooks/useAuth'
+import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const PatientOverview = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -108,8 +109,8 @@ const PatientOverview = () => {
                                     <Stethoscope size={24} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h3 className="text-base font-bold text-slate-900">{nextAppointment.doctorName}</h3>
-                                    <span className="text-xs font-medium text-slate-500">{nextAppointment.department}</span>
+                                    <h3 className="text-base font-bold text-slate-900">{formatDoctorName(nextAppointment.doctorName)}</h3>
+                                    <span className="text-xs font-medium text-slate-500 capitalize">{formatDepartmentName(nextAppointment.department)}</span>
                                 </div>
                             </div>
 
@@ -205,8 +206,8 @@ const PatientOverview = () => {
                                         <tr key={appt.appointmentId} className="hover:bg-slate-50/60 transition-colors">
                                             <td className="px-5 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-900">{appt.doctorName}</span>
-                                                    <span className="text-xs font-medium text-slate-500">{appt.department}</span>
+                                                    <span className="text-sm font-bold text-slate-900">{formatDoctorName(appt.doctorName)}</span>
+                                                    <span className="text-xs font-medium text-slate-500 capitalize">{formatDepartmentName(appt.department)}</span>
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4">
@@ -252,7 +253,7 @@ const PatientOverview = () => {
                             prescriptions.slice(0, 3).map((rx, idx) => (
                                 <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col gap-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-900">{rx.doctorName}</span>
+                                        <span className="text-xs font-bold text-slate-900">{formatDoctorName(rx.doctorName)}</span>
                                         <span className="text-[11px] font-semibold text-slate-500">{rx.appointmentDate}</span>
                                     </div>
                                     <div className="text-xs font-semibold text-slate-700">

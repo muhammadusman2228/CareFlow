@@ -20,4 +20,7 @@ public interface IAssistant
     Task<List<ResponseLabOrderDto>> GetPatientLabHistory(int patientId);
     Task<ResponseAssistantBookingDto> BookAssistedAppointment(AssistantBookAppointmentDto dto, int assistantUserId);
     Task<List<FindDoctorResponse>> GetSchedulableDoctors(int assistantUserId);
+    Task<List<AssistantDepartmentDoctorDto>> GetDepartmentDoctors(int assistantUserId);
+    Task<DiversionCandidatesResponseDto> GetDiversionCandidates(int appointmentId, int assistantUserId);
+    Task<DivertAppointmentResponseDto> DivertTodayAppointment(DivertAppointmentDto dto, int assistantUserId);
 }

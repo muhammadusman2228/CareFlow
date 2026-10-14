@@ -31,6 +31,8 @@ import AssistantDashboard from "./Pages/Assistant/AssistantDashboard"
 import AssistantTriageQueue from "./Pages/Assistant/AssistantTriageQueue"
 import AssistantLabDesk from "./Pages/Assistant/AssistantLabDesk"
 import DoctorPublicProfile from "./Pages/DoctorPublicProfile"
+import DoctorSchedule from "./Pages/Doctor/DoctorSchedule"
+import AdminGovernance from "./Pages/Admin/AdminGovernance"
 
 const App = () => {
     return (
@@ -62,6 +64,7 @@ const App = () => {
                 <Route path="/doctor/dashboard" element={<DoctorDashBoard />}>
                     <Route index element={<DoctorOverview />} />
                     <Route path="appointments" element={<DoctorAppointments />} />
+                    <Route path="schedule" element={<DoctorSchedule />} />
                     <Route path="prescriptions" element={<DoctorPrescriptions />} />
                     <Route path="assistants" element={<DoctorAssistants />} />
                     <Route path="records" element={<DoctorPatientHistory />} />
@@ -75,7 +78,7 @@ const App = () => {
                 </Route>
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']} />}>
                 <Route path="/admin/dashboard" element={<AdminDashBoard />}>
                     <Route index element={<AdminOverview />} />
                     <Route path="doctors" element={<AdminDoctors />} />
@@ -83,6 +86,7 @@ const App = () => {
                     <Route path="departments" element={<AdminDepartments />} />
                     <Route path="schedules" element={<AdminSchedules />} />
                     <Route path="patients" element={<AdminPatients />} />
+                    <Route path="governance" element={<AdminGovernance />} />
                 </Route>
             </Route>
         </Routes>

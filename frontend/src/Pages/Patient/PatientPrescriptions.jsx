@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName } from '../../utils/formatters'
 
 const PatientPrescriptions = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -114,7 +115,7 @@ const PatientPrescriptions = () => {
                                             Rx
                                         </div>
                                         <div className="flex flex-col">
-                                            <h3 className="text-sm font-bold text-slate-900">{rx.doctorName}</h3>
+                                            <h3 className="text-sm font-bold text-slate-900">{formatDoctorName(rx.doctorName)}</h3>
                                         </div>
                                     </div>
 
@@ -178,7 +179,7 @@ const PatientPrescriptions = () => {
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2.5">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="font-semibold text-slate-500">Attending Physician:</span>
-                                    <span className="font-bold text-slate-900">{selectedRx.doctorName}</span>
+                                    <span className="font-bold text-slate-900">{formatDoctorName(selectedRx.doctorName)}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="font-semibold text-slate-500">Prescription Date:</span>

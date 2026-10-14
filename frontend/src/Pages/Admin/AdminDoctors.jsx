@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName } from '../../utils/formatters'
 
 const AdminDoctors = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -50,6 +51,12 @@ const AdminDoctors = () => {
     const [isVerifiedSuccess, setIsVerifiedSuccess] = useState(false)
     const [isResendingOtp, setIsResendingOtp] = useState(false)
     const [resendSuccessMessage, setResendSuccessMessage] = useState('')
+    const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([])
+    const [isEditDeptsModalOpen, setIsEditDeptsModalOpen] = useState(false)
+    const [editingDoctor, setEditingDoctor] = useState(null)
+    const [editingDeptIds, setEditingDeptIds] = useState([])
+    const [isSavingDepts, setIsSavingDepts] = useState(false)
+    const [deptsModalError, setDeptsModalError] = useState('')
 
     const [formData, setFormData] = useState({
         name: '',
@@ -137,12 +144,37 @@ const AdminDoctors = () => {
             shiftEnd: '17:00',
             slotDuration: '20 min'
         })
+        setSelectedDepartmentIds([])
         setErrorMessage('')
         setSuccessDoctor(null)
         setVerificationCode('')
         setVerifyError('')
         setIsVerifiedSuccess(false)
         setResendSuccessMessage('')
+    }
+
+    const handleSaveDoctorDepartments = async (e) => {
+        e.preventDefault()
+        if (!editingDoctor) return
+        if (editingDeptIds.length === 0) {
+            setDeptsModalError('Please select at least one department for clinical allocation.')
+            return
+        }
+
+        setIsSavingDepts(true)
+        setDeptsModalError('')
+        try {
+            await axiosPrivate.patch(`/Admin/doctor/${editingDoctor.id}/departments`, {
+                departmentIds: editingDeptIds
+            })
+            setIsEditDeptsModalOpen(false)
+            setEditingDoctor(null)
+            fetchData()
+        } catch (err) {
+            setDeptsModalError(err.response?.data?.message || 'Failed to update department allocations.')
+        } finally {
+            setIsSavingDepts(false)
+        }
     }
 
     const handleCreateDoctor = async (e) => {
@@ -224,11 +256,17 @@ const AdminDoctors = () => {
                 ? trimmedName 
                 : `Dr. ${trimmedName}`
 
+            const allDeptIds = Array.from(new Set([
+                parseInt(formData.departmentId, 10),
+                ...selectedDepartmentIds.map(id => parseInt(id, 10))
+            ])).filter(id => !isNaN(id))
+
             const payload = {
                 name: formattedName,
                 email: trimmedEmail,
                 password: formData.password,
                 departmentId: parseInt(formData.departmentId, 10),
+                departmentIds: allDeptIds,
                 specialization: formData.specialization.trim(),
                 qualifications: formData.qualifications.trim(),
                 licenseNumber: trimmedLicense,
@@ -539,7 +577,7 @@ const AdminDoctors = () => {
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-slate-700">
-                                        Department <span className="text-rose-500">*</span>
+                                        Primary Department <span className="text-rose-500">*</span>
                                     </label>
                                     <select
                                         name="departmentId"
@@ -555,6 +593,49 @@ const AdminDoctors = () => {
                                              </option>
                                         ))}
                                     </select>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-slate-700">
+                                        Cross-Department Allocations (Optional)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                        {departments.length === 0 ? (
+                                            <span className="text-xs text-slate-400">No departments available</span>
+                                        ) : (
+                                            departments.map(dept => {
+                                                const isPrimary = formData.departmentId === dept.id.toString()
+                                                const isSelected = selectedDepartmentIds.includes(dept.id) || isPrimary
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={dept.id}
+                                                        disabled={isPrimary}
+                                                        onClick={() => {
+                                                            if (isPrimary) return
+                                                            setSelectedDepartmentIds(prev =>
+                                                                prev.includes(dept.id)
+                                                                    ? prev.filter(id => id !== dept.id)
+                                                                    : [...prev, dept.id]
+                                                            )
+                                                        }}
+                                                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                                            isPrimary
+                                                                ? 'bg-sky-100 text-sky-800 border-sky-300 cursor-not-allowed'
+                                                                : isSelected
+                                                                ? 'bg-sky-600 text-white border-sky-600 shadow-2xs'
+                                                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                                                        }`}
+                                                    >
+                                                        {dept.name} {isPrimary && '(Primary)'}
+                                                    </button>
+                                                )
+                                            })
+                                        )}
+                                    </div>
+                                    <span className="text-[11px] text-slate-400">
+                                        Doctors can be cross-allocated to multiple hospital departments simultaneously.
+                                    </span>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -833,12 +914,12 @@ const AdminDoctors = () => {
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 font-bold text-sm shrink-0">
-                                            {(doc.name || 'D').charAt(0).toUpperCase()}
+                                        <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 font-bold text-sm shrink-0">
+                                            {(formatDoctorName(doc.name) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                                                {doc.name}
+                                                {formatDoctorName(doc.name)}
                                             </h3>
                                             <span className="text-xs sm:text-sm font-semibold text-slate-600 truncate">
                                                 {doc.specialization || 'Specialist'}
@@ -846,7 +927,7 @@ const AdminDoctors = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                        <span className="text-xs font-bold text-slate-400 font-mono">
                                             #{(page - 1) * 20 + index + 1}
                                         </span>
                                         <span className="text-xs sm:text-sm font-semibold text-slate-600">
@@ -855,10 +936,28 @@ const AdminDoctors = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 text-xs sm:text-sm text-slate-700 pt-3 border-t border-slate-100">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 font-medium">Department:</span>
-                                        <span className="font-semibold text-slate-900">{doc.departmentName}</span>
+                                <div className="flex flex-col gap-2.5 text-xs sm:text-sm text-slate-700 pt-3 border-t border-slate-100">
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500 font-medium">Departments:</span>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingDoctor(doc)
+                                                    const currentIds = doc.departmentIds && doc.departmentIds.length > 0
+                                                        ? doc.departmentIds
+                                                        : doc.departmentId ? [doc.departmentId] : []
+                                                    setEditingDeptIds(currentIds)
+                                                    setDeptsModalError('')
+                                                    setIsEditDeptsModalOpen(true)
+                                                }}
+                                                className="text-xs font-bold text-slate-700 hover:text-slate-950 hover:underline cursor-pointer"
+                                            >
+                                                Manage
+                                            </button>
+                                        </div>
+                                        <span className="text-slate-900 text-sm font-bold capitalize">
+                                            {(doc.departmentNames && doc.departmentNames.length > 0 ? doc.departmentNames : [doc.departmentName]).filter(Boolean).join(', ') || 'General OPD'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-slate-500 font-medium">License:</span>
@@ -887,6 +986,105 @@ const AdminDoctors = () => {
                         pageSize={20}
                         onPageChange={setPage}
                     />
+                </div>
+            )}
+
+            {isEditDeptsModalOpen && editingDoctor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-xl overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Manage Clinical Departments</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">{formatDoctorName(editingDoctor.name)}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsEditDeptsModalOpen(false)
+                                    setEditingDoctor(null)
+                                }}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveDoctorDepartments} className="p-5 flex flex-col gap-4">
+                            {deptsModalError && (
+                                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                                    <AlertCircle size={15} className="shrink-0" />
+                                    <span>{deptsModalError}</span>
+                                </div>
+                            )}
+
+                            <p className="text-xs text-slate-600">
+                                Allocate this specialist to multiple hospital departments to handle multidisciplinary rotations and cross-coverage.
+                            </p>
+
+                            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                                {departments.map(dept => {
+                                    const isChecked = editingDeptIds.includes(dept.id)
+                                    return (
+                                        <label
+                                            key={dept.id}
+                                            className={`flex items-center justify-between p-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                                                isChecked
+                                                    ? 'bg-sky-50/70 border-sky-300 text-sky-900'
+                                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isChecked}
+                                                    onChange={() => {
+                                                        setEditingDeptIds(prev =>
+                                                            prev.includes(dept.id)
+                                                                ? prev.filter(id => id !== dept.id)
+                                                                : [...prev, dept.id]
+                                                        )
+                                                    }}
+                                                    className="w-4 h-4 text-sky-600 rounded-sm border-slate-300 focus:ring-sky-500"
+                                                />
+                                                <span>{dept.name}</span>
+                                            </div>
+                                            {isChecked && (
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100/80 px-2 py-0.5 rounded-md">
+                                                    Assigned
+                                                </span>
+                                            )}
+                                        </label>
+                                    )
+                                })}
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsEditDeptsModalOpen(false)
+                                        setEditingDoctor(null)
+                                    }}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingDepts}
+                                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isSavingDepts ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        'Save Allocations'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

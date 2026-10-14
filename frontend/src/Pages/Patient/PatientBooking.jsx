@@ -13,6 +13,7 @@ import {
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import axios from '../../api/axios'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const generateDoctorSlots = (shiftStart, shiftEnd) => {
     if (!shiftStart || !shiftEnd) {
@@ -137,7 +138,7 @@ const PatientBooking = () => {
     }, [])
 
     const filteredDoctors = doctors.filter(doc => {
-        const matchesDept = selectedDepartment === 'All' || doc.departmentName === selectedDepartment
+        const matchesDept = selectedDepartment === 'All' || doc.departmentName?.toLowerCase() === selectedDepartment?.toLowerCase()
         const matchesSearch = 
             doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             doc.specialization?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -211,7 +212,7 @@ const PatientBooking = () => {
                         >
                             <option value="All">All Departments</option>
                             {departments.map(d => (
-                                <option key={d.id} value={d.name}>{d.name}</option>
+                                <option key={d.id} value={d.name}>{formatDepartmentName(d.name)}</option>
                             ))}
                         </select>
                     </div>
@@ -255,10 +256,10 @@ const PatientBooking = () => {
                                     </span>
                                     <div className="flex flex-col items-center text-center">
                                         <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-lg shadow-2xs mb-3">
-                                            {doc.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
+                                            {(formatDoctorName(doc.name) || 'D').replace(/^Dr\.\s*/i, '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
                                         </div>
-                                        <h3 className="text-base font-bold text-slate-900">{doc.name}</h3>
-                                        <span className="text-xs font-semibold text-slate-600 mt-0.5">{doc.departmentName}</span>
+                                        <h3 className="text-base font-bold text-slate-900">{formatDoctorName(doc.name)}</h3>
+                                        <span className="text-xs font-semibold text-slate-600 mt-0.5">{formatDepartmentName(doc.departmentName)}</span>
                                         <span className="text-[11px] font-medium text-slate-500">{doc.specialization}</span>
 
                                         <div className="mt-3 px-3 py-1 rounded-md bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800">
@@ -338,11 +339,11 @@ const PatientBooking = () => {
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2.5">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-sm">
-                                        {selectedDoctor.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                        {(formatDoctorName(selectedDoctor.name) || 'D').replace(/^Dr\.\s*/i, '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-slate-900">{selectedDoctor.name}</span>
-                                        <span className="text-xs font-medium text-slate-500">{selectedDoctor.departmentName} Specialist</span>
+                                        <span className="text-sm font-bold text-slate-900">{formatDoctorName(selectedDoctor.name)}</span>
+                                        <span className="text-xs font-medium text-slate-500">{formatDepartmentName(selectedDoctor.departmentName)} Specialist</span>
                                     </div>
                                 </div>
 

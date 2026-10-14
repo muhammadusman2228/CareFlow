@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName } from '../../utils/formatters'
 
 const AssistantLabDesk = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -237,7 +238,7 @@ const AssistantLabDesk = () => {
                                             </td>
                                             <td className="py-4 px-4">
                                                 <span className="text-xs font-semibold text-slate-800">
-                                                    Dr. {order.doctorName}
+                                                    {formatDoctorName(order.doctorName)}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4 text-xs font-medium text-slate-600 max-w-xs truncate" title={order.clinicalNotes}>

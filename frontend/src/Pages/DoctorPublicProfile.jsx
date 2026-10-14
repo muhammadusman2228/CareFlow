@@ -20,6 +20,7 @@ import axios from '../api/axios'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import useAuth from '../hooks/useAuth'
 import AppLogo from '../components/Home/AppLogo.Home'
+import { formatDoctorName, formatDepartmentName } from '../utils/formatters'
 
 const generateDoctorSlots = (shiftStart, shiftEnd) => {
     if (!shiftStart || !shiftEnd) {
@@ -266,13 +267,13 @@ const DoctorPublicProfile = () => {
                             <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm flex flex-col gap-6">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6 border-b border-slate-100">
                                     <div className="w-20 h-20 rounded-2xl bg-sky-50 border border-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center shrink-0 shadow-2xs">
-                                        {(doctor.name || 'D').replace('Dr. ', '').charAt(0)}
+                                        {(formatDoctorName(doctor.name) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
                                     </div>
                                     <div className="flex flex-col gap-1.5 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-100">
                                                 <Building2 size={12} />
-                                                <span>{doctor.departmentName} Department</span>
+                                                <span>{formatDepartmentName(doctor.departmentName)} Department</span>
                                             </span>
                                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                                                 <ShieldCheck size={12} className="text-sky-600" />
@@ -280,7 +281,7 @@ const DoctorPublicProfile = () => {
                                             </span>
                                         </div>
                                         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                                            {doctor.name}
+                                            {formatDoctorName(doctor.name)}
                                         </h1>
                                         <p className="text-sm font-semibold text-slate-600">
                                             {doctor.specialization}
@@ -332,7 +333,7 @@ const DoctorPublicProfile = () => {
                                         Clinical Focus & Care Methodology
                                     </h3>
                                     <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                                        {doctor.name} provides evidence-based clinical diagnostics and therapeutic treatments within the {doctor.departmentName} department. Patient care pathways are individualized, focusing on thorough evaluations, clinical lab reviews, and proactive health maintenance.
+                                        {formatDoctorName(doctor.name)} provides evidence-based clinical diagnostics and therapeutic treatments within the {formatDepartmentName(doctor.departmentName)} department. Patient care pathways are individualized, focusing on thorough evaluations, clinical lab reviews, and proactive health maintenance.
                                     </p>
                                 </div>
 
@@ -364,7 +365,7 @@ const DoctorPublicProfile = () => {
                                             Book Consultation
                                         </h2>
                                         <p className="text-xs text-slate-500 mt-0.5">
-                                            Direct reservation with {doctor.name}
+                                            Direct reservation with {formatDoctorName(doctor.name)}
                                         </p>
                                     </div>
                                     <span className="text-base font-extrabold text-slate-900">

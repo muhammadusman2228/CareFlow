@@ -10,7 +10,12 @@ import {
     FileText, 
     ArrowRight,
     RefreshCw,
-    User
+    User,
+    Hourglass,
+    AlertCircle,
+    X,
+    Loader2,
+    ShieldAlert
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import DoctorPrescriptionModal from './DoctorPrescriptionModal'
@@ -26,15 +31,27 @@ const DoctorOverview = () => {
         totalUniquePatients: 0
     })
     const [appointments, setAppointments] = useState([])
+    const [dailyStatusData, setDailyStatusData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [activeAppointment, setActiveAppointment] = useState(null)
+
+    const [isDutyModalOpen, setIsDutyModalOpen] = useState(false)
+    const [dutyForm, setDutyForm] = useState({
+        dailyStatus: 'OnDuty',
+        delayMinutes: 30,
+        delayReason: ''
+    })
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+    const [statusError, setStatusError] = useState('')
+    const [statusSuccess, setStatusSuccess] = useState('')
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true)
-            const [statsRes, apptsRes] = await Promise.all([
+            const [statsRes, apptsRes, statusRes] = await Promise.all([
                 axiosPrivate.get('/Doctor/doctor-dashboard'),
-                axiosPrivate.get('/Doctor/doctor-appointments')
+                axiosPrivate.get('/Doctor/doctor-appointments'),
+                axiosPrivate.get('/Doctor/daily-status').catch(() => ({ data: null }))
             ])
             setStats(statsRes.data || {
                 todayAppointments: 0,
@@ -43,6 +60,7 @@ const DoctorOverview = () => {
                 totalUniquePatients: 0
             })
             setAppointments(Array.isArray(apptsRes.data) ? apptsRes.data : [])
+            setDailyStatusData(statusRes?.data || null)
         } catch {
         } finally {
             setLoading(false)
@@ -53,13 +71,92 @@ const DoctorOverview = () => {
         fetchDashboardData()
     }, [])
 
-    const todayDateStr = new Date().toISOString().split('T')[0]
-    const todaysAppointments = appointments.filter(a => a.appointmentDate === todayDateStr || true)
+    const handleDutySubmit = async (e) => {
+        e.preventDefault()
+        setStatusError('')
+        setStatusSuccess('')
+        setIsUpdatingStatus(true)
 
-    const nextPatient = appointments.find(a => a.status === 'CheckedIn' || a.status === 'Confirmed' || a.status === 'Pending')
+        try {
+            const payload = {
+                dailyStatus: dutyForm.dailyStatus,
+                delayMinutes: dutyForm.dailyStatus === 'Delayed' ? parseInt(dutyForm.delayMinutes, 10) : 0,
+                delayReason: dutyForm.delayReason.trim()
+            }
+
+            await axiosPrivate.post('/Doctor/daily-status', payload)
+            setStatusSuccess(`Status updated to ${dutyForm.dailyStatus}.`)
+            setIsDutyModalOpen(false)
+            await fetchDashboardData()
+        } catch (err) {
+            setStatusError(err?.response?.data?.message || 'Failed to update duty status.')
+        } finally {
+            setIsUpdatingStatus(false)
+        }
+    }
+
+    const todayDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
+    const todaysAppointments = appointments.filter(a => a.appointmentDate === todayDateStr)
+
+    const nextPatient = todaysAppointments.find(a => a.status === 'CheckedIn') || todaysAppointments.find(a => a.status === 'Confirmed' || a.status === 'Pending')
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                        {dailyStatusData?.dailyStatus === 'Delayed' ? <Hourglass size={20} /> : <CheckCircle2 size={20} />}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Today's Duty Status:</span>
+                            <span className="text-xs font-semibold text-slate-900">
+                                {dailyStatusData?.dailyStatus === 'Delayed' 
+                                    ? `Delayed (${dailyStatusData?.delayMinutes}m delay)` 
+                                    : dailyStatusData?.dailyStatus === 'OffDuty'
+                                    ? 'Off Duty / On Leave'
+                                    : 'On Duty & Active'}
+                            </span>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                            {dailyStatusData?.dailyStatus === 'Delayed'
+                                ? (dailyStatusData?.delayReason || 'Doctor is delayed today')
+                                : dailyStatusData?.dailyStatus === 'OffDuty'
+                                ? (dailyStatusData?.delayReason || 'Unavailable for appointments today')
+                                : 'Actively consulting patients on schedule'}
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => {
+                        setDutyForm({
+                            dailyStatus: dailyStatusData?.dailyStatus || 'OnDuty',
+                            delayMinutes: dailyStatusData?.delayMinutes > 0 ? dailyStatusData.delayMinutes : 30,
+                            delayReason: dailyStatusData?.delayReason || ''
+                        })
+                        setStatusError('')
+                        setIsDutyModalOpen(true)
+                    }}
+                    className="px-4 py-2.5 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs cursor-pointer flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                >
+                    <Clock size={15} />
+                    <span>Set Delay / Duty Status</span>
+                </button>
+            </div>
+
+            {statusSuccess && (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 size={18} />
+                        <span>{statusSuccess}</span>
+                    </div>
+                    <button onClick={() => setStatusSuccess('')} className="cursor-pointer">
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
                     <div className="flex flex-col">
@@ -126,18 +223,18 @@ const DoctorOverview = () => {
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Time</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Chief Complaint</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
-                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-right">Action</th>
+                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {appointments.length === 0 ? (
+                                {todaysAppointments.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500 font-medium">
                                             No consultations scheduled for today.
                                         </td>
                                     </tr>
                                 ) : (
-                                    appointments.map((appt) => (
+                                    todaysAppointments.map((appt) => (
                                         <tr key={appt.appointmentId} className="hover:bg-slate-50/60 transition-colors">
                                             <td className="px-5 py-4">
                                                 <div className="flex flex-col">
@@ -164,30 +261,40 @@ const DoctorOverview = () => {
                                                     {appt.status === 'CheckedIn' ? 'Checked In' : appt.status}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-4 text-right">
-                                                {appt.status === 'Completed' ? (
-                                                    <button
-                                                        onClick={() => navigate(`/doctor/dashboard/records?patientId=${appt.patientId}`)}
-                                                        className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                                                    >
-                                                        View EHR
-                                                    </button>
-                                                ) : appt.status === 'Cancelled' ? (
-                                                    <span className="text-xs font-semibold text-slate-400">
-                                                        Cancelled
-                                                    </span>
-                                                ) : appt.status === 'Missed' ? (
-                                                    <span className="text-xs font-semibold text-slate-400">
-                                                        Missed
-                                                    </span>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => setActiveAppointment(appt)}
-                                                        className="px-3.5 py-1.5 rounded-lg border border-sky-300 text-xs font-semibold text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
-                                                    >
-                                                        Start Consultation
-                                                    </button>
-                                                )}
+                                            <td className="px-5 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {appt.status === 'Completed' ? (
+                                                        <button
+                                                            onClick={() => navigate(`/doctor/dashboard/records?patientId=${appt.patientId}`)}
+                                                            className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                                                        >
+                                                            View EHR
+                                                        </button>
+                                                    ) : appt.status === 'Cancelled' ? (
+                                                        <span className="text-xs font-semibold text-slate-400">
+                                                            Cancelled
+                                                        </span>
+                                                    ) : appt.status === 'Missed' ? (
+                                                        <span className="text-xs font-semibold text-slate-400">
+                                                            Missed
+                                                        </span>
+                                                    ) : appt.status === 'CheckedIn' ? (
+                                                        <button
+                                                            onClick={() => setActiveAppointment(appt)}
+                                                            className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                                        >
+                                                            Start Consultation
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            disabled
+                                                            className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-400 cursor-not-allowed"
+                                                            title="Patient must be checked in at triage before starting consultation"
+                                                        >
+                                                            Awaiting Check-in
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -224,7 +331,16 @@ const DoctorOverview = () => {
                     </div>
 
                     <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Next Patient</span>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Next Patient</span>
+                            {nextPatient && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                    nextPatient.status === 'CheckedIn' ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                    {nextPatient.status === 'CheckedIn' ? 'Checked In' : 'Awaiting Check-in'}
+                                </span>
+                            )}
+                        </div>
                         {nextPatient ? (
                             <div className="flex flex-col gap-3">
                                 <div>
@@ -233,20 +349,30 @@ const DoctorOverview = () => {
                                 </div>
                                 <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 w-fit">
                                     <Clock size={13} />
-                                    <span>Scheduled Slot</span>
+                                    <span>{nextPatient.status === 'CheckedIn' ? 'Ready for Consultation' : 'Scheduled Slot'}</span>
                                 </div>
-                                <button
-                                    onClick={() => navigate(`/doctor/dashboard/records?patientId=${nextPatient.patientId}`)}
-                                    className="w-full mt-1 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2"
-                                >
-                                    <span>View Patient EHR</span>
-                                    <ArrowRight size={14} />
-                                </button>
+                                {nextPatient.status === 'CheckedIn' ? (
+                                    <button
+                                        onClick={() => setActiveAppointment(nextPatient)}
+                                        className="w-full mt-1 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <span>Start Consultation</span>
+                                        <ArrowRight size={14} />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => navigate(`/doctor/dashboard/records?patientId=${nextPatient.patientId}`)}
+                                        className="w-full mt-1 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <span>View Patient EHR</span>
+                                        <ArrowRight size={14} />
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="py-6 flex flex-col items-center text-center gap-2">
                                 <User size={24} className="text-slate-400" />
-                                <p className="text-xs font-medium text-slate-500">No upcoming patients in queue</p>
+                                <p className="text-xs font-medium text-slate-500">No upcoming patients in queue today</p>
                             </div>
                         )}
                     </div>
@@ -259,6 +385,138 @@ const DoctorOverview = () => {
                     onClose={() => setActiveAppointment(null)}
                     onSuccess={fetchDashboardData}
                 />
+            )}
+
+            {isDutyModalOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                                    <Clock size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Set Today's Duty Status</h3>
+                                    <p className="text-xs text-slate-500">Alert clinical triage assistants of delays</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsDutyModalOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleDutySubmit} className="p-6 space-y-4">
+                            {statusError && (
+                                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                                    <AlertCircle size={16} className="shrink-0" />
+                                    <span>{statusError}</span>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                                    Duty Status Option
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDutyForm(p => ({ ...p, dailyStatus: 'OnDuty' }))}
+                                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                                            dutyForm.dailyStatus === 'OnDuty'
+                                                ? 'bg-slate-900 border-slate-900 text-white font-bold'
+                                                : 'border-slate-300 hover:bg-slate-50 text-slate-700 bg-white'
+                                        }`}
+                                    >
+                                        <CheckCircle2 size={18} className="mx-auto mb-1" />
+                                        <span className="text-xs">On Duty</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setDutyForm(p => ({ ...p, dailyStatus: 'Delayed' }))}
+                                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                                            dutyForm.dailyStatus === 'Delayed'
+                                                ? 'bg-slate-900 border-slate-900 text-white font-bold'
+                                                : 'border-slate-300 hover:bg-slate-50 text-slate-700 bg-white'
+                                        }`}
+                                    >
+                                        <Hourglass size={18} className="mx-auto mb-1" />
+                                        <span className="text-xs">Running Late</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setDutyForm(p => ({ ...p, dailyStatus: 'OffDuty' }))}
+                                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                                            dutyForm.dailyStatus === 'OffDuty'
+                                                ? 'bg-slate-900 border-slate-900 text-white font-bold'
+                                                : 'border-slate-300 hover:bg-slate-50 text-slate-700 bg-white'
+                                        }`}
+                                    >
+                                        <ShieldAlert size={18} className="mx-auto mb-1" />
+                                        <span className="text-xs">Off Duty</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {dutyForm.dailyStatus === 'Delayed' && (
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                        Estimated Delay Duration
+                                    </label>
+                                    <select
+                                        value={dutyForm.delayMinutes}
+                                        onChange={(e) => setDutyForm(p => ({ ...p, delayMinutes: parseInt(e.target.value, 10) }))}
+                                        className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                                    >
+                                        <option value={15}>15 Minutes</option>
+                                        <option value={30}>30 Minutes</option>
+                                        <option value={45}>45 Minutes</option>
+                                        <option value={60}>1 Hour (60 min)</option>
+                                        <option value={90}>1.5 Hours (90 min)</option>
+                                        <option value={120}>2 Hours (120 min)</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {(dutyForm.dailyStatus === 'Delayed' || dutyForm.dailyStatus === 'OffDuty') && (
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                        Reason / Clinical Note
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={dutyForm.delayReason}
+                                        onChange={(e) => setDutyForm(p => ({ ...p, delayReason: e.target.value }))}
+                                        placeholder={dutyForm.dailyStatus === 'Delayed' ? 'e.g. Critical case in OR 2' : 'e.g. Approved leave'}
+                                        className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="pt-2 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDutyModalOpen(false)}
+                                    className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isUpdatingStatus}
+                                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                    {isUpdatingStatus && <Loader2 size={16} className="animate-spin" />}
+                                    <span>Broadcast Status</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     )

@@ -78,7 +78,20 @@ const AdminOverview = () => {
     })()
 
     const weeklyTrends = dashboardData?.weeklyCompletedTrends || [0, 0, 0, 0, 0, 0, 0]
-    const maxTrendVal = Math.max(...weeklyTrends, 5)
+    const yAxisConfig = (() => {
+        const rawMax = Math.max(...weeklyTrends, 0)
+        const steps = [1, 2, 5, 10, 15, 20, 25, 50, 100, 150, 200, 250, 500, 1000]
+        let chosenStep = 1
+        for (const s of steps) {
+            if (s * 5 >= Math.max(rawMax, 5)) {
+                chosenStep = s
+                break
+            }
+        }
+        const max = chosenStep * 5
+        const ticks = [max, chosenStep * 4, chosenStep * 3, chosenStep * 2, chosenStep, 0]
+        return { max, ticks }
+    })()
 
     const radius = 95
     const circumference = 2 * Math.PI * radius
@@ -238,26 +251,34 @@ const AdminOverview = () => {
                     </div>
 
                 <div className="relative w-full h-64 pt-4">
-                    <svg className="w-full h-full overflow-visible" viewBox="0 0 460 170">
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 470 170">
                         <g className="text-xs fill-slate-500 font-semibold">
-                            <line x1="20" y1="20" x2="440" y2="20" stroke="#e2e8f0" strokeWidth="1" />
-                            <text x="10" y="24" textAnchor="end">{maxTrendVal}</text>
-
-                            <line x1="20" y1="65" x2="440" y2="65" stroke="#e2e8f0" strokeWidth="1" />
-                            <text x="10" y="69" textAnchor="end">{Math.round(maxTrendVal * 0.6)}</text>
-
-                            <line x1="20" y1="110" x2="440" y2="110" stroke="#e2e8f0" strokeWidth="1" />
-                            <text x="10" y="114" textAnchor="end">{Math.round(maxTrendVal * 0.3)}</text>
-
-                            <line x1="20" y1="145" x2="440" y2="145" stroke="#cbd5e1" strokeWidth="1" />
-                            <text x="10" y="148" textAnchor="end">0</text>
+                            {yAxisConfig.ticks.map((tickVal, idx) => {
+                                const y = 25 + idx * 24
+                                const isBaseline = idx === yAxisConfig.ticks.length - 1
+                                return (
+                                    <g key={tickVal + '-' + idx}>
+                                        <line
+                                            x1="36"
+                                            y1={y}
+                                            x2="455"
+                                            y2={y}
+                                            stroke={isBaseline ? '#cbd5e1' : '#e2e8f0'}
+                                            strokeWidth="1"
+                                        />
+                                        <text x="28" y={y + 4} textAnchor="end">
+                                            {tickVal}
+                                        </text>
+                                    </g>
+                                )
+                            })}
                         </g>
 
                         {past7Days.map((day, idx) => {
-                            const x = 50 + idx * 56
+                            const x = 56 + idx * 56
                             const val = weeklyTrends[idx] ?? 0
-                            const barH = maxTrendVal > 0 && val > 0 
-                                ? Math.max((val / maxTrendVal) * 115, 8) 
+                            const barH = yAxisConfig.max > 0 && val > 0 
+                                ? (val / yAxisConfig.max) * 120 
                                 : 0
                             const y = 145 - barH
 
@@ -265,7 +286,7 @@ const AdminOverview = () => {
                                 <g key={day}>
                                     {val > 0 && (
                                         <text
-                                            x={x + 12}
+                                            x={x + 13}
                                             y={y - 5}
                                             textAnchor="middle"
                                             className="text-[11px] fill-slate-700 font-bold"
@@ -276,14 +297,14 @@ const AdminOverview = () => {
                                     <rect
                                         x={x}
                                         y={y}
-                                        width="24"
-                                        height={Math.max(barH, 2)}
+                                        width="26"
+                                        height={Math.max(barH, 3)}
                                         rx="4"
                                         fill="#0284c7"
                                         className="transition-all duration-300"
                                     />
                                     <text
-                                        x={x + 12}
+                                        x={x + 13}
                                         y="164"
                                         textAnchor="middle"
                                         className="text-xs fill-slate-600 font-semibold"

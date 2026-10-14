@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const PatientAppointments = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -180,13 +181,13 @@ const PatientAppointments = () => {
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
-                                                    {appt.doctorName?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'DR'}
+                                                    {(formatDoctorName(appt.doctorName) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
                                                 </div>
-                                                <span className="text-sm font-bold text-slate-900">{appt.doctorName}</span>
+                                                <span className="text-sm font-bold text-slate-900">{formatDoctorName(appt.doctorName)}</span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-4 text-xs font-semibold text-slate-600">
-                                            {appt.department}
+                                        <td className="px-5 py-4 text-xs font-semibold text-slate-600 capitalize">
+                                            {formatDepartmentName(appt.department)}
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="flex flex-col">

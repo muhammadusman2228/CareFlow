@@ -43,5 +43,19 @@ public class Appointment
     public virtual Prescriptions? Prescriptions{get;set;}=null;
     public virtual PatientVitals? Vitals { get; set; } = null;
     public virtual ICollection<Labs> LabOrders { get; set; } = new List<Labs>();
+
+    public bool IsDiverted { get; set; } = false;
+    public int? OriginalDoctorId { get; set; }
+
+    [ForeignKey(nameof(OriginalDoctorId))]
+    public virtual Doctor? OriginalDoctor { get; set; } = null;
+
+    [MaxLength(255)]
+    public string? DiversionReason { get; set; }
+    public DateTime? DivertedAt { get; set; }
+
+    [MaxLength(100)]
+    public string? DivertedBy { get; set; }
+
     public DateTime CreatedAt{get;set;}=DateTime.UtcNow;
 }

@@ -39,4 +39,5 @@ public class Assistant
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<PatientVitals> RecordedVitals { get; set; } = new List<PatientVitals>();
+    public virtual ICollection<AssistantDepartment> AssistantDepartments { get; set; } = new List<AssistantDepartment>();
 }

@@ -21,6 +21,8 @@ public class DrRegRequestDto
     [Required]
     public int DepartmentId { get; set; }
 
+    public List<int>? DepartmentIds { get; set; } = new List<int>();
+
     [Required]
     [MaxLength(100)]
     public string Specialization { get; set; } = string.Empty;
@@ -48,6 +50,8 @@ public class DrRegResponseDto
     public string Email { get; set; } = string.Empty;
     public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
+    public List<int> DepartmentIds { get; set; } = new List<int>();
+    public List<string> DepartmentNames { get; set; } = new List<string>();
     public string Specialization { get; set; } = string.Empty;
     public decimal ConsultationFee { get; set; }
 }
@@ -59,6 +63,8 @@ public class AdminDoctorResponse
     public string Email { get; set; } = string.Empty;
     public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
+    public List<int> DepartmentIds { get; set; } = new List<int>();
+    public List<string> DepartmentNames { get; set; } = new List<string>();
     public string Specialization { get; set; } = string.Empty;
     public string Qualifications { get; set; } = string.Empty;
     public string LicenseNumber { get; set; } = string.Empty;
@@ -74,6 +80,8 @@ public class FindDoctorResponse
     public string Name { get; set; } = string.Empty;
     public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
+    public List<int> DepartmentIds { get; set; } = new List<int>();
+    public List<string> DepartmentNames { get; set; } = new List<string>();
     public string Specialization { get; set; } = string.Empty;
     public string Qualifications { get; set; } = string.Empty;
     public int ExperienceYears { get; set; }
@@ -163,6 +171,7 @@ public class DoctorScheduleResponseDto
     public TimeOnly ShiftEnd { get; set; }
     public bool IsAvailable { get; set; }
     public int BookedSlotsCount { get; set; }
+    public int CompletedSlotsCount { get; set; }
 }
 
 public class RegisterAdminRequestDto
@@ -201,4 +210,44 @@ public class AdminListItemDto
     public string Role { get; set; } = string.Empty;
     public bool IsVerified { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class UpdateDoctorDepartmentsDto
+{
+    [Required]
+    public List<int> DepartmentIds { get; set; } = new List<int>();
+}
+
+public class AdminDivertAppointmentDto
+{
+    [Required]
+    public int AppointmentId { get; set; }
+
+    [Required]
+    public int TargetDoctorId { get; set; }
+
+    public DateOnly? NewDate { get; set; }
+
+    [Required]
+    public TimeOnly NewTimeSlot { get; set; }
+
+    [MaxLength(255)]
+    public string DiversionReason { get; set; } = string.Empty;
+}
+
+public class AdminDoctorAppointmentDto
+{
+    public int AppointmentId { get; set; }
+    public int PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientPhone { get; set; } = string.Empty;
+    public int DoctorId { get; set; }
+    public string DoctorName { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = string.Empty;
+    public DateOnly AppointmentDate { get; set; }
+    public TimeOnly TimeSlot { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool IsDiverted { get; set; }
+    public string? OriginalDoctorName { get; set; }
+    public string? DiversionReason { get; set; }
 }

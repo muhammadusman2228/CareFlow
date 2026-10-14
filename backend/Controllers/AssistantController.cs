@@ -389,4 +389,95 @@ public class AssistantController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
+
+    [HttpGet("department-doctors")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    public async Task<ActionResult<List<AssistantDepartmentDoctorDto>>> GetDepartmentDoctors()
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var assistantUserId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var doctors = await _assistantService.GetDepartmentDoctors(assistantUserId);
+            return Ok(doctors);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("diversion/candidates/{appointmentId:int}")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    public async Task<ActionResult<DiversionCandidatesResponseDto>> GetDiversionCandidates(int appointmentId)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var assistantUserId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var candidates = await _assistantService.GetDiversionCandidates(appointmentId, assistantUserId);
+            return Ok(candidates);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("divert-appointment")]
+    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    public async Task<ActionResult<DivertAppointmentResponseDto>> DivertAppointment([FromBody] DivertAppointmentDto dto)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var assistantUserId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var response = await _assistantService.DivertTodayAppointment(dto, assistantUserId);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
 }

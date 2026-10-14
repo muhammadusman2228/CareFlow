@@ -114,9 +114,62 @@ public class HistoryResponseListDto
 
 public class DoctorDashBoardDto
 {
-
     public int TodayAppointments { get; set; }
     public int PendingApprovals { get; set; }
     public int TodayCompletedCount { get; set; }
     public int TotalUniquePatients { get; set; }
+}
+
+public class DoctorDailyStatusDto
+{
+    [Required]
+    [MaxLength(50)]
+    public string DailyStatus { get; set; } = "OnDuty";
+
+    [Range(0, 480)]
+    public int DelayMinutes { get; set; } = 0;
+
+    [MaxLength(255)]
+    public string? DelayReason { get; set; }
+}
+
+public class DoctorDailyStatusResponseDto
+{
+    public int DoctorId { get; set; }
+    public string DoctorName { get; set; } = string.Empty;
+    public string DailyStatus { get; set; } = "OnDuty";
+    public bool IsLateToday { get; set; }
+    public int DelayMinutes { get; set; }
+    public string? DelayReason { get; set; }
+    public DateOnly StatusDate { get; set; }
+    public bool IsAvailable { get; set; }
+    public TimeOnly ShiftStart { get; set; }
+    public TimeOnly ShiftEnd { get; set; }
+}
+
+public class DoctorMyScheduleDto
+{
+    public int DoctorId { get; set; }
+    public string DoctorName { get; set; } = string.Empty;
+    public string DepartmentName { get; set; } = string.Empty;
+    public List<string> DepartmentNames { get; set; } = new List<string>();
+    public TimeOnly ShiftStart { get; set; }
+    public TimeOnly ShiftEnd { get; set; }
+    public bool IsAvailable { get; set; }
+    public string DailyStatus { get; set; } = "OnDuty";
+    public bool IsLateToday { get; set; }
+    public int DelayMinutes { get; set; }
+    public string? DelayReason { get; set; }
+    public List<DoctorDailyRosterDayDto> UpcomingDays { get; set; } = new List<DoctorDailyRosterDayDto>();
+}
+
+public class DoctorDailyRosterDayDto
+{
+    public DateOnly Date { get; set; }
+    public string DayOfWeek { get; set; } = string.Empty;
+    public int TotalAppointments { get; set; }
+    public int ConfirmedCount { get; set; }
+    public int CompletedCount { get; set; }
+    public bool IsAvailable { get; set; } = true;
+    public string DailyStatus { get; set; } = "OnDuty";
 }

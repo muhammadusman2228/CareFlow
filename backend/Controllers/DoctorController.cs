@@ -129,4 +129,68 @@ public class DoctorController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
+
+    [HttpGet("daily-status")]
+    [Authorize(Roles = "Doctor")]
+    public async Task<ActionResult<DoctorDailyStatusResponseDto>> GetDailyStatus()
+    {
+        try
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var response = await _doctorService.GetDoctorDailyStatus(userId);
+            return Ok(response);
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("daily-status")]
+    [Authorize(Roles = "Doctor")]
+    public async Task<ActionResult> SetDailyStatus([FromBody] DoctorDailyStatusDto dto)
+    {
+        try
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _doctorService.SetDoctorDailyStatus(userId, dto);
+            return Ok(new { message = result });
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my-schedule")]
+    [Authorize(Roles = "Doctor")]
+    public async Task<ActionResult<DoctorMyScheduleDto>> GetMySchedule()
+    {
+        try
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var response = await _doctorService.GetDoctorMySchedule(userId);
+            return Ok(response);
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
 }

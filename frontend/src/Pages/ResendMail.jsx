@@ -1,34 +1,40 @@
 
 
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import img from '../assets/resendMail.png'
 import AppLogo from '../components/Home/AppLogo.Home'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from '../api/axios'
 
-const ResendMail=()=>{
-    const [email,setEmail]=useState("")
-    const [loading,setLoading]=useState(false)
-    const [errorMsg,setErrorMsg]=useState("")
-    const navigate= useNavigate()
-    const handleSubmit= async (e)=>{
-        e.preventDefault()
-       setLoading(true)
-       try {
-        await axios.post('/auth/resent-otp',email)
-        navigate("/verifyEmail")
-       } catch (error) {
-        if(!error?.response)
-        {
-            setErrorMsg("Maintenanc is going on.Try again later")
-        }
-       }
-       finally
-       {
-        setLoading(false)
-        setEmail("")
-       }
+const ResendMail = () => {
+    const [searchParams] = useSearchParams()
+    const emailParam = searchParams.get('email') || ''
+    const [email, setEmail] = useState(emailParam)
+    const [loading, setLoading] = useState(false)
+    const [errorMsg, setErrorMsg] = useState("")
+    const navigate = useNavigate()
 
+    useEffect(() => {
+        if (emailParam) {
+            setEmail(emailParam)
+        }
+    }, [emailParam])
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+        try {
+            await axios.post('/auth/resent-otp', email.trim())
+            navigate(`/verifyEmail?email=${encodeURIComponent(email.trim())}`)
+        } catch (error) {
+            if (!error?.response) {
+                setErrorMsg("Maintenance is going on. Try again later")
+            } else {
+                setErrorMsg(error.response?.data?.message || "Failed to resend code. Try again later")
+            }
+        } finally {
+            setLoading(false)
+        }
     }
     return(
 <div className="parent grid grid-cols-1 lg:grid-cols-12 w-full min-h-screen bg-slate-50 overflow-y-auto">

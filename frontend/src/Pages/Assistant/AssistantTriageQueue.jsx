@@ -22,10 +22,12 @@ import {
     Lock,
     PhoneCall,
     Phone,
-    Calendar
+    Calendar,
+    ArrowRightLeft
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const generateSlots = (shiftStart, shiftEnd) => {
     if (!shiftStart || !shiftEnd) return []
@@ -116,6 +118,16 @@ const AssistantTriageQueue = () => {
     const [triagePage, setTriagePage] = useState(1)
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('')
     const [doctorSearchFilter, setDoctorSearchFilter] = useState('')
+    const [isDivertModalOpen, setIsDivertModalOpen] = useState(false)
+    const [divertItem, setDivertItem] = useState(null)
+    const [diversionCandidates, setDiversionCandidates] = useState(null)
+    const [isLoadingCandidates, setIsLoadingCandidates] = useState(false)
+    const [selectedDiversionOption, setSelectedDiversionOption] = useState('PeerDoctor')
+    const [targetDoctorId, setTargetDoctorId] = useState('')
+    const [targetSlot, setTargetSlot] = useState('')
+    const [diversionReasonInput, setDiversionReasonInput] = useState('')
+    const [isSubmittingDivert, setIsSubmittingDivert] = useState(false)
+    const [divertError, setDivertError] = useState('')
 
     useEffect(() => {
         setTriagePage(1)
@@ -287,6 +299,76 @@ const AssistantTriageQueue = () => {
         }
     }
 
+    const handleOpenDivertModal = async (item) => {
+        setDivertItem(item)
+        setDivertError('')
+        setDiversionCandidates(null)
+        setSelectedDiversionOption('PeerDoctor')
+        setTargetDoctorId('')
+        setTargetSlot('')
+        setDiversionReasonInput('')
+        setIsDivertModalOpen(true)
+        setIsLoadingCandidates(true)
+
+        try {
+            const res = await axiosPrivate.get(`/Assistant/diversion/candidates/${item.appointmentId}`)
+            setDiversionCandidates(res.data)
+            if (res.data.peerDoctors && res.data.peerDoctors.length > 0) {
+                const firstAvailablePeer = res.data.peerDoctors.find(p => p.availableSlots && p.availableSlots.length > 0) || res.data.peerDoctors[0]
+                setTargetDoctorId(firstAvailablePeer.doctorId.toString())
+                if (firstAvailablePeer.availableSlots && firstAvailablePeer.availableSlots.length > 0) {
+                    setTargetSlot(firstAvailablePeer.availableSlots[0])
+                }
+            } else if (res.data.sameDoctorAlternativeSlots && res.data.sameDoctorAlternativeSlots.length > 0) {
+                setSelectedDiversionOption('SameDoctor')
+                setTargetDoctorId(item.doctorId.toString())
+                setTargetSlot(res.data.sameDoctorAlternativeSlots[0])
+            }
+        } catch (err) {
+            setDivertError(err.response?.data?.message || 'Failed to load diversion options.')
+        } finally {
+            setIsLoadingCandidates(false)
+        }
+    }
+
+    const handleSubmitDiversion = async (e) => {
+        e.preventDefault()
+        if (!divertItem) return
+
+        if (!targetDoctorId) {
+            setDivertError('Please select a target physician.')
+            return
+        }
+
+        if (!targetSlot) {
+            setDivertError('Please select a valid consultation time slot.')
+            return
+        }
+
+        setIsSubmittingDivert(true)
+        setDivertError('')
+
+        try {
+            const payload = {
+                appointmentId: divertItem.appointmentId,
+                targetDoctorId: parseInt(targetDoctorId),
+                newTimeSlot: targetSlot.length === 5 ? `${targetSlot}:00` : targetSlot,
+                diversionReason: diversionReasonInput.trim() || 'Physician schedule adjustment / delay reassignment',
+                optionType: selectedDiversionOption
+            }
+
+            const res = await axiosPrivate.post('/Assistant/divert-appointment', payload)
+            setSuccessMessage(`Appointment successfully diverted to Dr. ${res.data.newDoctorName} at ${res.data.newTimeSlot.substring(0, 5)}!`)
+            setIsDivertModalOpen(false)
+            setDivertItem(null)
+            await fetchQueue()
+        } catch (err) {
+            setDivertError(err.response?.data?.message || 'Failed to divert appointment.')
+        } finally {
+            setIsSubmittingDivert(false)
+        }
+    }
+
     const filteredQueue = queue.filter(item => {
         const matchesSearch = 
             item.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -416,8 +498,8 @@ const AssistantTriageQueue = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-black text-slate-700 uppercase tracking-wider">
                                 <th className="py-3.5 px-4 sm:px-6">#</th>
@@ -426,7 +508,7 @@ const AssistantTriageQueue = () => {
                                 <th className="py-3.5 px-4">Consultant Doctor</th>
                                 <th className="py-3.5 px-4">Visit Status</th>
                                 <th className="py-3.5 px-4">Triage Vitals Check</th>
-                                <th className="py-3.5 px-4 sm:px-6 text-right">Triage Actions</th>
+                                <th className="py-3.5 px-4 sm:px-6 text-center">Triage Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">
@@ -468,9 +550,27 @@ const AssistantTriageQueue = () => {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-slate-900">Dr. {item.doctorName}</span>
-                                                    <span className="text-[11px] font-semibold text-slate-500 mt-0.5">{item.departmentName}</span>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-xs font-bold text-slate-900">{formatDoctorName(item.doctorName)}</span>
+                                                    <span className="text-[11px] font-semibold text-slate-500">{item.departmentName}</span>
+
+                                                    {item.isDoctorLateToday && (
+                                                        <span className="text-[11px] font-semibold text-slate-600">
+                                                            Delayed ({item.doctorDelayMinutes}m){item.doctorDelayReason ? `: ${item.doctorDelayReason}` : ''}
+                                                        </span>
+                                                    )}
+
+                                                    {item.doctorDailyStatus === 'OffDuty' && (
+                                                        <span className="text-[11px] font-semibold text-slate-600">
+                                                            Off-Duty Today
+                                                        </span>
+                                                    )}
+
+                                                    {item.isDiverted && (
+                                                        <span className="text-[11px] font-semibold text-slate-600">
+                                                            Diverted from {formatDoctorName(item.originalDoctorName || 'Peer')}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="py-4 px-4">
@@ -500,8 +600,19 @@ const AssistantTriageQueue = () => {
                                                     <span className="text-xs text-slate-400 font-medium">Pending measurement</span>
                                                 )}
                                             </td>
-                                            <td className="py-4 px-4 sm:px-6 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                            <td className="py-4 px-4 sm:px-6 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {(item.isDoctorLateToday || item.doctorDailyStatus === 'OffDuty' || item.doctorDailyStatus === 'Delayed') && item.status !== 'Completed' && item.status !== 'Cancelled' && !item.isPast && (
+                                                        <button
+                                                            onClick={() => handleOpenDivertModal(item)}
+                                                            className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                                            title="Divert appointment due to doctor delay or absence"
+                                                        >
+                                                            <ArrowRightLeft size={13} />
+                                                            <span>Divert</span>
+                                                        </button>
+                                                    )}
+
                                                     {item.status !== 'CheckedIn' && item.status !== 'Completed' && item.status !== 'Cancelled' && !item.isPast && (
                                                         <button
                                                             onClick={() => handleCheckIn(item.appointmentId, item.patientName)}
@@ -519,7 +630,7 @@ const AssistantTriageQueue = () => {
                                                     )}
 
                                                     {isLocked ? (
-                                                        <span className="text-xs font-medium text-slate-400">Locked (Concluded)</span>
+                                                        <span className="text-xs font-medium text-slate-400">Locked</span>
                                                     ) : (
                                                         <button
                                                             onClick={() => handleOpenVitalsModal(item)}
@@ -562,7 +673,7 @@ const AssistantTriageQueue = () => {
                                 <div>
                                     <h3 className="text-base font-black text-slate-900">Record Patient Triage Vitals</h3>
                                     <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                                        Patient: <span className="text-slate-950 font-bold">{selectedItem.patientName}</span> &bull; Consultant: <span className="text-slate-950 font-bold">Dr. {selectedItem.doctorName}</span>
+                                        Patient: <span className="text-slate-950 font-bold">{selectedItem.patientName}</span> &bull; Consultant: <span className="text-slate-950 font-bold">{formatDoctorName(selectedItem.doctorName)}</span>
                                     </p>
                                 </div>
                             </div>
@@ -889,7 +1000,7 @@ const AssistantTriageQueue = () => {
                                         </label>
                                         {bookingForm.doctorId && (
                                             <span className="text-[11px] font-semibold text-sky-700 truncate max-w-[200px]">
-                                                Dr. {doctorsList.find(d => String(d.id) === String(bookingForm.doctorId))?.name}
+                                                {formatDoctorName(doctorsList.find(d => String(d.id) === String(bookingForm.doctorId))?.name)}
                                             </span>
                                         )}
                                     </div>
@@ -957,7 +1068,7 @@ const AssistantTriageQueue = () => {
                                                         }`}
                                                     >
                                                         <div className="flex flex-col min-w-0">
-                                                            <span className="text-xs font-bold truncate">Dr. {doc.name}</span>
+                                                            <span className="text-xs font-bold truncate">{formatDoctorName(doc.name)}</span>
                                                             <span className={`text-[10px] truncate ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
                                                                 {doc.specialization || doc.departmentName}
                                                             </span>
@@ -1068,6 +1179,234 @@ const AssistantTriageQueue = () => {
                                 >
                                     {isSubmittingBooking && <Loader2 size={16} className="animate-spin" />}
                                     <span>Confirm Assisted Booking</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {isDivertModalOpen && divertItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-xl overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <ArrowRightLeft size={16} className="text-slate-800" />
+                                    <span>Divert Clinical Appointment</span>
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Patient: <span className="font-semibold text-slate-800">{divertItem.patientName}</span> • Current Slot: <span className="font-mono text-slate-800">{divertItem.timeSlot?.substring(0, 5)}</span>
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsDivertModalOpen(false)
+                                    setDivertItem(null)
+                                }}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitDiversion} className="p-5 flex flex-col gap-4">
+                            {divertError && (
+                                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                                    <AlertCircle size={15} className="shrink-0" />
+                                    <span>{divertError}</span>
+                                </div>
+                            )}
+
+                            {divertItem.isDoctorLateToday && (
+                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs flex items-center gap-2.5">
+                                    <Clock size={16} className="text-slate-600 shrink-0" />
+                                    <div>
+                                        <span className="font-bold">{formatDoctorName(divertItem.doctorName)}</span> is delayed by {divertItem.doctorDelayMinutes} minutes {divertItem.doctorDelayReason ? `(${divertItem.doctorDelayReason})` : ''}.
+                                    </div>
+                                </div>
+                            )}
+
+                            {divertItem.doctorDailyStatus === 'OffDuty' && (
+                                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2.5">
+                                    <AlertTriangle size={16} className="text-rose-700 shrink-0" />
+                                    <div>
+                                        <span className="font-bold">{formatDoctorName(divertItem.doctorName)}</span> is marked off-duty today. Reassign appointment to avoid patient wait.
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedDiversionOption('PeerDoctor')
+                                        if (diversionCandidates?.peerDoctors?.length > 0) {
+                                            const firstDoc = diversionCandidates.peerDoctors[0]
+                                            setTargetDoctorId(firstDoc.doctorId.toString())
+                                            setTargetSlot(firstDoc.availableSlots?.[0] || '')
+                                        }
+                                    }}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                        selectedDiversionOption === 'PeerDoctor'
+                                            ? 'bg-white text-slate-900 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                >
+                                    Peer Doctor in Department
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedDiversionOption('SameDoctor')
+                                        setTargetDoctorId(divertItem.doctorId.toString())
+                                        setTargetSlot(diversionCandidates?.sameDoctorAlternativeSlots?.[0] || '')
+                                    }}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                        selectedDiversionOption === 'SameDoctor'
+                                            ? 'bg-white text-slate-900 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                                >
+                                    Later Slot with Same Doctor
+                                </button>
+                            </div>
+
+                            {isLoadingCandidates ? (
+                                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                    <Loader2 size={24} className="animate-spin text-slate-900" />
+                                    <span className="text-xs font-semibold text-slate-500">Checking open slots and peer doctors...</span>
+                                </div>
+                            ) : selectedDiversionOption === 'PeerDoctor' ? (
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-slate-700">
+                                            Target Physician ({formatDepartmentName(diversionCandidates?.departmentName)})
+                                        </label>
+                                        <select
+                                            value={targetDoctorId}
+                                            onChange={(e) => {
+                                                const newId = e.target.value
+                                                setTargetDoctorId(newId)
+                                                const peer = diversionCandidates?.peerDoctors?.find(p => p.doctorId.toString() === newId)
+                                                if (peer && peer.availableSlots && peer.availableSlots.length > 0) {
+                                                    setTargetSlot(peer.availableSlots[0])
+                                                } else {
+                                                    setTargetSlot('')
+                                                }
+                                            }}
+                                            required
+                                            className="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-slate-900 shadow-2xs bg-white"
+                                        >
+                                            <option value="">Select Candidate Doctor</option>
+                                            {diversionCandidates?.peerDoctors?.map(peer => (
+                                                <option key={peer.doctorId} value={peer.doctorId}>
+                                                    {formatDoctorName(peer.doctorName)} ({formatDepartmentName(peer.departmentName)}) - {peer.availableSlots?.length || 0} open slots {peer.isFreeAtTargetSlot ? '★ Matches Slot' : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-bold text-slate-700">Target Time Slot</label>
+                                        {(() => {
+                                            const currentPeer = diversionCandidates?.peerDoctors?.find(p => p.doctorId.toString() === targetDoctorId)
+                                            const slots = currentPeer?.availableSlots || []
+                                            if (slots.length === 0) {
+                                                return (
+                                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 font-medium">
+                                                        No remaining open slots available for this physician today.
+                                                    </div>
+                                                )
+                                            }
+                                            return (
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-36 overflow-y-auto p-1">
+                                                    {slots.map(slot => (
+                                                        <button
+                                                            key={slot}
+                                                            type="button"
+                                                            onClick={() => setTargetSlot(slot)}
+                                                            className={`py-2 px-2.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
+                                                                targetSlot === slot
+                                                                    ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                                                            }`}
+                                                        >
+                                                            {slot.substring(0, 5)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-slate-700">
+                                        Select Later Slot for {formatDoctorName(divertItem.doctorName)}
+                                    </label>
+                                    {(!diversionCandidates?.sameDoctorAlternativeSlots || diversionCandidates.sameDoctorAlternativeSlots.length === 0) ? (
+                                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 font-medium">
+                                            No alternative open slots remaining for {formatDoctorName(divertItem.doctorName)} today.
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-36 overflow-y-auto p-1">
+                                            {diversionCandidates.sameDoctorAlternativeSlots.map(slot => (
+                                                <button
+                                                    type="button"
+                                                    key={slot}
+                                                    onClick={() => setTargetSlot(slot)}
+                                                    className={`py-2 px-2.5 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
+                                                        targetSlot === slot
+                                                            ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                                                    }`}
+                                                >
+                                                    {slot.substring(0, 5)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-slate-800">
+                                    Reason for Diversion / Reassignment Notes
+                                </label>
+                                <input
+                                    type="text"
+                                    maxLength={200}
+                                    placeholder="e.g. Doctor delay reassignment with patient consent"
+                                    value={diversionReasonInput}
+                                    onChange={(e) => setDiversionReasonInput(e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:border-slate-800"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsDivertModalOpen(false)
+                                        setDivertItem(null)
+                                    }}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingDivert || !targetDoctorId || !targetSlot}
+                                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isSubmittingDivert ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Diverting...
+                                        </>
+                                    ) : (
+                                        'Confirm Diversion'
+                                    )}
                                 </button>
                             </div>
                         </form>

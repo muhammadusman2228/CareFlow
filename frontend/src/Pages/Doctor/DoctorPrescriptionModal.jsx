@@ -15,6 +15,7 @@ import {
     Droplets 
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
+import { formatDoctorName } from '../../utils/formatters'
 
 const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
     const axiosPrivate = useAxiosPrivate()
@@ -405,7 +406,7 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                                                             {new Date(item.createdAt).toLocaleDateString()}
                                                         </td>
                                                         <td className="py-2.5 px-3 font-semibold text-slate-900">{item.testName}</td>
-                                                        <td className="py-2.5 px-3 text-slate-700">Dr. {item.doctorName}</td>
+                                                        <td className="py-2.5 px-3 text-slate-700">{formatDoctorName(item.doctorName)}</td>
                                                         <td className="py-2.5 px-3">
                                                             <span className={`text-xs font-semibold ${
                                                                 item.status === 'Completed'

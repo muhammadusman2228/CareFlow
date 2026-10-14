@@ -20,6 +20,6 @@ public class Departments
     public DateTime CreatedAt{get;set;}=DateTime.UtcNow;
 
     public virtual ICollection<Doctor> Doctors{get;set;}=new List<Doctor>();
-
-
+    public virtual ICollection<DoctorDepartment> DoctorDepartments { get; set; } = new List<DoctorDepartment>();
+    public virtual ICollection<AssistantDepartment> AssistantDepartments { get; set; } = new List<AssistantDepartment>();
 }

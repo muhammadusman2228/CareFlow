@@ -12,15 +12,18 @@ import {
     LogOut,
     Stethoscope,
     Users,
-    X
+    X,
+    Calendar
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
+import { formatDoctorName } from '../../utils/formatters'
 
 const DoctorDashBoard = () => {
     const navItems = [
         { name: 'Overview', path: '/doctor/dashboard', icon: LayoutDashboard, end: true },
         { name: 'Consultations', path: '/doctor/dashboard/appointments', icon: CalendarDays },
+        { name: 'My Schedule', path: '/doctor/dashboard/schedule', icon: Calendar },
         { name: 'Prescriptions', path: '/doctor/dashboard/prescriptions', icon: FileText },
         { name: 'My Assistants', path: '/doctor/dashboard/assistants', icon: Users },
         { name: 'Patient Records', path: '/doctor/dashboard/records', icon: FolderClock },
@@ -163,11 +166,11 @@ const DoctorDashBoard = () => {
                                 className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer select-none"
                             >
                                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-linear-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0">
-                                    {(auth?.user || "D").charAt(0).toUpperCase()}
+                                    {(formatDoctorName(auth?.user) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
                                 </div>
                                 <div className="hidden md:flex flex-col text-left">
                                     <span className="text-xs font-bold text-slate-900 leading-tight">
-                                        Dr. {auth?.user || "Physician"}
+                                        {formatDoctorName(auth?.user || "Physician")}
                                     </span>
                                     <span className="text-[11px] font-medium text-slate-500 leading-tight">
                                         Active Duty
@@ -179,7 +182,7 @@ const DoctorDashBoard = () => {
                             {isProfileOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                                     <div className="px-4 py-2 border-b border-slate-100 md:hidden">
-                                        <p className="text-xs font-bold text-slate-900">{auth?.user || "Doctor"}</p>
+                                        <p className="text-xs font-bold text-slate-900">{formatDoctorName(auth?.user || "Doctor")}</p>
                                         <p className="text-[10px] text-slate-500">Physician</p>
                                     </div>
                                     <button

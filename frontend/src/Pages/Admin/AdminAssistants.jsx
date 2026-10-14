@@ -5,7 +5,6 @@ import {
     Search, 
     Mail, 
     Building2, 
-    Stethoscope, 
     Clock, 
     Award, 
     Edit3, 
@@ -14,13 +13,13 @@ import {
     X, 
     CheckCircle2, 
     AlertCircle, 
-    RefreshCw,
-    ShieldCheck,
-    ArrowLeft,
-    Check,
-    Eye,
-    EyeOff,
-    Phone
+    RefreshCw, 
+    ShieldCheck, 
+    ArrowLeft, 
+    Check, 
+    Eye, 
+    EyeOff, 
+    Phone 
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
@@ -45,6 +44,8 @@ const AdminAssistants = () => {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
     const [successMessage, setSuccessMessage] = useState('')
+    const [selectedDeptIds, setSelectedDeptIds] = useState([])
+    const [editDeptIds, setEditDeptIds] = useState([])
 
     const initialFormData = {
         name: '',
@@ -136,13 +137,19 @@ const AdminAssistants = () => {
         setIsSubmitting(true)
 
         try {
+            const allDeptIds = Array.from(new Set([
+                formData.departmentId ? parseInt(formData.departmentId, 10) : null,
+                ...selectedDeptIds.map(Number)
+            ])).filter(id => id !== null && !isNaN(id))
+
             const payload = {
                 name: trimmedName,
                 email: trimmedEmail,
                 phoneNumber: cleanPhone,
                 password: formData.password,
-                departmentId: formData.departmentId ? parseInt(formData.departmentId) : null,
-                doctorId: formData.doctorId ? parseInt(formData.doctorId) : null,
+                departmentId: allDeptIds.length > 0 ? allDeptIds[0] : null,
+                departmentIds: allDeptIds,
+                doctorId: null,
                 qualifications: formData.qualifications.trim(),
                 shiftStart: formData.shiftStart.length === 5 ? `${formData.shiftStart}:00` : formData.shiftStart,
                 shiftEnd: formData.shiftEnd.length === 5 ? `${formData.shiftEnd}:00` : formData.shiftEnd
@@ -151,6 +158,7 @@ const AdminAssistants = () => {
             await axiosPrivate.post('/Assistant/register', payload)
             setSuccessMessage(`Assistant ${trimmedName} successfully registered.`)
             setFormData(initialFormData)
+            setSelectedDeptIds([])
             setViewMode('list')
             await fetchData()
         } catch (err) {
@@ -162,9 +170,13 @@ const AdminAssistants = () => {
 
     const handleOpenEdit = (assistant) => {
         setSelectedAssistant(assistant)
+        const deptIds = assistant.departmentIds && assistant.departmentIds.length > 0
+            ? assistant.departmentIds
+            : assistant.departmentId ? [assistant.departmentId] : []
+        setEditDeptIds(deptIds)
         setEditFormData({
             phoneNumber: assistant.phoneNumber || '',
-            departmentId: assistant.departmentId ? assistant.departmentId.toString() : '',
+            departmentId: assistant.departmentId ? assistant.departmentId.toString() : (deptIds[0]?.toString() || ''),
             doctorId: assistant.doctorId ? assistant.doctorId.toString() : '',
             qualifications: assistant.qualifications || '',
             shiftStart: assistant.shiftStart ? assistant.shiftStart.substring(0, 5) : '08:00',
@@ -184,10 +196,16 @@ const AdminAssistants = () => {
         setSuccessMessage('')
 
         try {
+            const allDeptIds = Array.from(new Set([
+                editFormData.departmentId ? parseInt(editFormData.departmentId, 10) : null,
+                ...editDeptIds.map(Number)
+            ])).filter(id => id !== null && !isNaN(id))
+
             const payload = {
                 phoneNumber: editFormData.phoneNumber.trim(),
-                departmentId: editFormData.departmentId ? parseInt(editFormData.departmentId) : null,
-                doctorId: editFormData.doctorId ? parseInt(editFormData.doctorId) : null,
+                departmentId: allDeptIds.length > 0 ? allDeptIds[0] : null,
+                departmentIds: allDeptIds,
+                doctorId: null,
                 qualifications: editFormData.qualifications.trim(),
                 shiftStart: editFormData.shiftStart.length === 5 ? `${editFormData.shiftStart}:00` : editFormData.shiftStart,
                 shiftEnd: editFormData.shiftEnd.length === 5 ? `${editFormData.shiftEnd}:00` : editFormData.shiftEnd,
@@ -358,45 +376,62 @@ const AdminAssistants = () => {
                         <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                                 <Building2 size={16} />
-                                <span>2. Clinical Station & Doctor Assignment</span>
+                                <span>2. Department Pool & Physician Coverage</span>
                             </h3>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1.5">
+                                <div className="flex flex-col gap-1.5 sm:col-span-2">
                                     <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                        Clinical Department
+                                        Primary Assigned Department
                                     </label>
                                     <select
                                         value={formData.departmentId}
                                         onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
                                     >
-                                        <option value="">General Hospital OPD Pool</option>
+                                        <option value="">Select Primary Department</option>
                                         {departments.map((d) => (
                                             <option key={d.id} value={d.id.toString()}>{d.name}</option>
                                         ))}
                                     </select>
-                                    <span className="text-[11px] font-medium text-slate-500">
-                                        Assigning a department allows this assistant to triage patients for all doctors in that department.
-                                    </span>
                                 </div>
 
-                                <div className="flex flex-col gap-1.5">
+                                <div className="flex flex-col gap-1.5 sm:col-span-2">
                                     <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                        Dedicated Doctor Assignment
+                                        Additional Department Pools (Multi-Department Pool)
                                     </label>
-                                    <select
-                                        value={formData.doctorId}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, doctorId: e.target.value }))}
-                                        className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
-                                    >
-                                        <option value="">No Dedicated Doctor (Department Pool)</option>
-                                        {doctors.map((doc) => (
-                                            <option key={doc.id} value={doc.id.toString()}>{doc.name} ({doc.specialization})</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                        {departments.map(d => {
+                                            const isPrimary = formData.departmentId === d.id.toString()
+                                            const isSelected = selectedDeptIds.includes(d.id) || isPrimary
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={d.id}
+                                                    disabled={isPrimary}
+                                                    onClick={() => {
+                                                        if (isPrimary) return
+                                                        setSelectedDeptIds(prev =>
+                                                            prev.includes(d.id)
+                                                                ? prev.filter(id => id !== d.id)
+                                                                : [...prev, d.id]
+                                                        )
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                                        isPrimary
+                                                            ? 'bg-slate-900 text-white border-slate-900 cursor-not-allowed'
+                                                            : isSelected
+                                                            ? 'bg-slate-800 text-white border-slate-800 shadow-2xs'
+                                                            : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                                                    }`}
+                                                >
+                                                    {d.name} {isPrimary && '(Primary)'}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                     <span className="text-[11px] font-medium text-slate-500">
-                                        Select a specific physician if this assistant works exclusively as their dedicated triage clerk.
+                                        One assistant can cover all doctors across multiple departments to optimize clinical costs.
                                     </span>
                                 </div>
                             </div>
@@ -521,36 +556,56 @@ const AdminAssistants = () => {
 
                     <form onSubmit={handleEditSubmit} className="flex flex-col gap-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1.5 sm:col-span-2">
                                 <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                    Clinical Department
+                                    Primary Assigned Department
                                 </label>
                                 <select
                                     value={editFormData.departmentId}
                                     onChange={(e) => setEditFormData(prev => ({ ...prev, departmentId: e.target.value }))}
                                     className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
                                 >
-                                    <option value="">General Hospital OPD Pool</option>
+                                    <option value="">Select Primary Department</option>
                                     {departments.map((d) => (
                                         <option key={d.id} value={d.id.toString()}>{d.name}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1.5 sm:col-span-2">
                                 <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                    Doctor Assignment
+                                    Additional Department Pools (Multi-Department Pool)
                                 </label>
-                                <select
-                                    value={editFormData.doctorId}
-                                    onChange={(e) => setEditFormData(prev => ({ ...prev, doctorId: e.target.value }))}
-                                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
-                                >
-                                    <option value="">Departmental / No Dedicated Doctor</option>
-                                    {doctors.map((doc) => (
-                                        <option key={doc.id} value={doc.id.toString()}>{doc.name} ({doc.specialization})</option>
-                                    ))}
-                                </select>
+                                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                    {departments.map(d => {
+                                        const isPrimary = editFormData.departmentId === d.id.toString()
+                                        const isSelected = editDeptIds.includes(d.id) || isPrimary
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={d.id}
+                                                disabled={isPrimary}
+                                                onClick={() => {
+                                                    if (isPrimary) return
+                                                    setEditDeptIds(prev =>
+                                                        prev.includes(d.id)
+                                                            ? prev.filter(id => id !== d.id)
+                                                            : [...prev, d.id]
+                                                    )
+                                                }}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                                    isPrimary
+                                                        ? 'bg-slate-900 text-white border-slate-900 cursor-not-allowed'
+                                                        : isSelected
+                                                        ? 'bg-slate-800 text-white border-slate-800 shadow-2xs'
+                                                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                                                }`}
+                                            >
+                                                {d.name} {isPrimary && '(Primary)'}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
 
@@ -725,24 +780,23 @@ const AdminAssistants = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[850px] text-left border-collapse">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full min-w-[1000px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-black text-slate-700 uppercase tracking-wider">
                                 <th className="py-3.5 px-4 sm:px-6 w-12 text-slate-700">#</th>
                                 <th className="py-3.5 px-4 sm:px-6">Assistant Profile</th>
-                                <th className="py-3.5 px-4">Department</th>
-                                <th className="py-3.5 px-4">Assigned Doctor</th>
+                                <th className="py-3.5 px-4">Department Pool</th>
                                 <th className="py-3.5 px-4">Qualifications</th>
                                 <th className="py-3.5 px-4">Shift (PKT)</th>
                                 <th className="py-3.5 px-4">Status</th>
-                                <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
+                                <th className="py-3.5 px-4 sm:px-6 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={8} className="py-14 text-center text-slate-600">
+                                    <td colSpan={7} className="py-14 text-center text-slate-600">
                                         <div className="flex items-center justify-center gap-2.5">
                                             <Loader2 size={18} className="animate-spin text-slate-900" />
                                             <span className="text-sm font-bold text-slate-700">Loading assistant personnel...</span>
@@ -751,7 +805,7 @@ const AdminAssistants = () => {
                                 </tr>
                             ) : filteredAssistants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="py-14 text-center text-slate-500">
+                                    <td colSpan={7} className="py-14 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <UserCheck size={36} className="text-slate-400" />
                                             <span className="text-base font-bold text-slate-800">No medical assistants found</span>
@@ -780,61 +834,39 @@ const AdminAssistants = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="py-4 px-4 text-slate-800">
-                                            {ast.departmentName ? (
-                                                <span className="inline-flex items-center gap-1.5 font-bold text-slate-900">
-                                                    <Building2 size={14} className="text-slate-600" />
-                                                    {ast.departmentName}
-                                                </span>
+                                        <td className="py-4 px-4 text-slate-700 text-sm font-medium capitalize">
+                                            {ast.departmentNames && ast.departmentNames.length > 0 ? (
+                                                ast.departmentNames.join(', ')
                                             ) : (
-                                                <span className="text-slate-500 font-semibold italic">General OPD</span>
+                                                ast.departmentName || 'General OPD'
                                             )}
                                         </td>
-                                        <td className="py-4 px-4 text-slate-800">
-                                            {ast.doctorName ? (
-                                                <span className="inline-flex items-center gap-1.5 font-bold text-slate-900">
-                                                    <Stethoscope size={14} className="text-slate-600" />
-                                                    {ast.doctorName}
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-500 font-semibold italic">Department Pool</span>
-                                            )}
-                                        </td>
-                                        <td className="py-4 px-4 text-slate-800 font-semibold max-w-xs truncate" title={ast.qualifications}>
+                                        <td className="py-4 px-4 text-slate-700 text-sm font-medium max-w-xs truncate" title={ast.qualifications}>
                                             {ast.qualifications || 'Certified Clinical Assistant'}
                                         </td>
-                                        <td className="py-4 px-4">
-                                            <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-300 font-mono text-xs font-bold text-slate-900">
-                                                <Clock size={13} className="text-slate-700" />
-                                                {ast.shiftStart?.substring(0, 5)} - {ast.shiftEnd?.substring(0, 5)}
-                                            </span>
+                                        <td className="py-4 px-4 text-slate-700 text-sm font-medium font-mono">
+                                            {ast.shiftStart?.substring(0, 5)} - {ast.shiftEnd?.substring(0, 5)}
                                         </td>
-                                        <td className="py-4 px-4">
-                                            {ast.isActive ? (
-                                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-black bg-slate-900 text-white shadow-2xs">
-                                                    Active
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-black bg-slate-100 text-slate-700 border border-slate-300">
-                                                    Inactive
-                                                </span>
-                                            )}
+                                        <td className="py-4 px-4 text-slate-700 text-sm font-medium">
+                                            {ast.isActive ? 'Active' : 'Inactive'}
                                         </td>
-                                        <td className="py-4 px-4 sm:px-6 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                        <td className="py-4 px-4 sm:px-6 text-center">
+                                            <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => handleOpenEdit(ast)}
-                                                    className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
                                                     title="Edit assistant profile"
                                                 >
-                                                    <Edit3 size={16} />
+                                                    <Edit3 size={13} />
+                                                    <span>Edit</span>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteAssistant(ast.id, ast.name)}
-                                                    className="p-2 rounded-xl text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
                                                     title="Delete assistant"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={13} />
+                                                    <span>Delete</span>
                                                 </button>
                                             </div>
                                         </td>

@@ -31,11 +31,22 @@ public class DoctorService : IDoctor
         {
             throw new DuplicateNameException("This Email is already registered. Please login.");
         }
-        var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == dto.DepartmentId);
-        if (department == null)
+
+        var departmentIds = (dto.DepartmentIds != null && dto.DepartmentIds.Count > 0)
+            ? dto.DepartmentIds.Distinct().ToList()
+            : new List<int> { dto.DepartmentId };
+
+        var departments = await _context.Departments
+            .Where(d => departmentIds.Contains(d.Id))
+            .ToListAsync();
+
+        if (departments.Count != departmentIds.Count)
         {
-            throw new InvalidKeyException("No Department Exist with this Id");
+            throw new InvalidKeyException("One or more selected departments do not exist.");
         }
+
+        var primaryDept = departments.FirstOrDefault(d => d.Id == dto.DepartmentId) ?? departments.First();
+
         string token = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -53,8 +64,7 @@ public class DoctorService : IDoctor
             var doctor = new Doctor
             {
                 UserId = user.Id,
-                DepartmentId = dto.DepartmentId,
-
+                DepartmentId = primaryDept.Id,
                 Specialization = dto.Specialization,
                 Qualifications = dto.Qualifications,
                 LicenseNumber = dto.LicenseNumber,
@@ -62,27 +72,36 @@ public class DoctorService : IDoctor
                 ConsultationFee = dto.ConsultationFee
             };
             await _context.Doctors.AddAsync(doctor);
+            await _context.SaveChangesAsync();
 
-            var verfication = new Verification
+            foreach (var deptId in departmentIds)
+            {
+                var docDept = new DoctorDepartment
+                {
+                    DoctorId = doctor.Id,
+                    DepartmentId = deptId,
+                    IsPrimary = (deptId == primaryDept.Id)
+                };
+                await _context.DoctorDepartments.AddAsync(docDept);
+            }
+
+            var verification = new Verification
             {
                 Email = normalEmail,
                 Code = token,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(10)
             };
 
-            await _context.Verification.AddAsync(verfication);
+            await _context.Verification.AddAsync(verification);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-
-
-
         }
-
         catch
         {
             await transaction.RollbackAsync();
             throw new Exception("Error occured while registering the Doctor Try again later");
         }
+
         try
         {
             await _emailService.SendOtpEmailAsync(normalEmail, token);
@@ -96,13 +115,13 @@ public class DoctorService : IDoctor
         {
             Name = dto.Name,
             Email = normalEmail,
-            DepartmentId = dto.DepartmentId,
-            DepartmentName = department.Name,
+            DepartmentId = primaryDept.Id,
+            DepartmentName = primaryDept.Name,
+            DepartmentIds = departments.Select(d => d.Id).ToList(),
+            DepartmentNames = departments.Select(d => d.Name).ToList(),
             Specialization = dto.Specialization,
             ConsultationFee = dto.ConsultationFee
-
         };
-
     }
 
     public async Task<List<AdminDoctorResponse>> GetDoctorsAdmin()
@@ -116,6 +135,8 @@ public class DoctorService : IDoctor
                 Email = u.User.Email,
                 DepartmentId = u.DepartmentId,
                 DepartmentName = u.Department!.Name,
+                DepartmentIds = u.DoctorDepartments.Select(dd => dd.DepartmentId).ToList(),
+                DepartmentNames = u.DoctorDepartments.Select(dd => dd.Department!.Name).ToList(),
                 Specialization = u.Specialization,
                 Qualifications = u.Qualifications,
                 LicenseNumber = u.LicenseNumber,
@@ -123,9 +144,19 @@ public class DoctorService : IDoctor
                 ConsultationFee = u.ConsultationFee,
                 IsAvailable = u.IsAvailable,
                 CreatedAt = u.CreatedAt
-
-
             }).ToListAsync();
+
+            foreach (var doc in doctors)
+            {
+                if (doc.DepartmentIds.Count == 0 && doc.DepartmentId > 0)
+                {
+                    doc.DepartmentIds.Add(doc.DepartmentId);
+                    if (!string.IsNullOrEmpty(doc.DepartmentName))
+                    {
+                        doc.DepartmentNames.Add(doc.DepartmentName);
+                    }
+                }
+            }
 
             return doctors;
         }
@@ -145,6 +176,8 @@ public class DoctorService : IDoctor
                 Name = u.User!.Name,
                 DepartmentId = u.DepartmentId,
                 DepartmentName = u.Department!.Name,
+                DepartmentIds = u.DoctorDepartments.Select(dd => dd.DepartmentId).ToList(),
+                DepartmentNames = u.DoctorDepartments.Select(dd => dd.Department!.Name).ToList(),
                 Specialization = u.Specialization,
                 Qualifications = u.Qualifications,
                 ExperienceYears = u.ExperienceYears,
@@ -154,6 +187,43 @@ public class DoctorService : IDoctor
                 AssistantName = u.Assistants.Where(a => a.IsActive).Select(a => a.User!.Name).FirstOrDefault(),
                 AssistantPhone = u.Assistants.Where(a => a.IsActive).Select(a => a.PhoneNumber).FirstOrDefault()
             }).ToListAsync();
+
+            var deptAssistants = await _context.Assistants.AsNoTracking()
+                .Where(a => a.IsActive && !string.IsNullOrEmpty(a.PhoneNumber))
+                .Select(a => new
+                {
+                    Name = a.User != null ? a.User.Name : "Clinical Assistant",
+                    a.PhoneNumber,
+                    a.DepartmentId,
+                    DeptIds = a.AssistantDepartments.Select(ad => ad.DepartmentId).ToList()
+                })
+                .ToListAsync();
+
+            foreach (var doc in doctors)
+            {
+                if (doc.DepartmentIds.Count == 0 && doc.DepartmentId > 0)
+                {
+                    doc.DepartmentIds.Add(doc.DepartmentId);
+                    if (!string.IsNullOrEmpty(doc.DepartmentName))
+                    {
+                        doc.DepartmentNames.Add(doc.DepartmentName);
+                    }
+                }
+
+                if (string.IsNullOrEmpty(doc.AssistantPhone))
+                {
+                    var matchedAssistant = deptAssistants.FirstOrDefault(a => 
+                        (a.DepartmentId.HasValue && doc.DepartmentIds.Contains(a.DepartmentId.Value)) ||
+                        a.DeptIds.Any(did => doc.DepartmentIds.Contains(did))
+                    );
+                    if (matchedAssistant != null)
+                    {
+                        doc.AssistantName = matchedAssistant.Name;
+                        doc.AssistantPhone = matchedAssistant.PhoneNumber;
+                    }
+                }
+            }
+
             return doctors;
         }
         catch (Exception)
@@ -172,6 +242,8 @@ public class DoctorService : IDoctor
                 Name = u.User!.Name,
                 DepartmentId = u.DepartmentId,
                 DepartmentName = u.Department!.Name,
+                DepartmentIds = u.DoctorDepartments.Select(dd => dd.DepartmentId).ToList(),
+                DepartmentNames = u.DoctorDepartments.Select(dd => dd.Department!.Name).ToList(),
                 Specialization = u.Specialization,
                 Qualifications = u.Qualifications,
                 ExperienceYears = u.ExperienceYears,
@@ -181,11 +253,96 @@ public class DoctorService : IDoctor
                 AssistantName = u.Assistants.Where(a => a.IsActive).Select(a => a.User!.Name).FirstOrDefault(),
                 AssistantPhone = u.Assistants.Where(a => a.IsActive).Select(a => a.PhoneNumber).FirstOrDefault()
             }).FirstOrDefaultAsync();
+
+            if (doctor != null && doctor.DepartmentIds.Count == 0 && doctor.DepartmentId > 0)
+            {
+                doctor.DepartmentIds.Add(doctor.DepartmentId);
+                if (!string.IsNullOrEmpty(doctor.DepartmentName))
+                {
+                    doctor.DepartmentNames.Add(doctor.DepartmentName);
+                }
+            }
+
+            if (doctor != null && string.IsNullOrEmpty(doctor.AssistantPhone))
+            {
+                var matchedAssistant = await _context.Assistants.AsNoTracking()
+                    .Where(a => a.IsActive && !string.IsNullOrEmpty(a.PhoneNumber) &&
+                        ((a.DepartmentId.HasValue && doctor.DepartmentIds.Contains(a.DepartmentId.Value)) ||
+                         a.AssistantDepartments.Any(ad => doctor.DepartmentIds.Contains(ad.DepartmentId))))
+                    .Select(a => new
+                    {
+                        Name = a.User != null ? a.User.Name : "Clinical Assistant",
+                        a.PhoneNumber
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (matchedAssistant != null)
+                {
+                    doctor.AssistantName = matchedAssistant.Name;
+                    doctor.AssistantPhone = matchedAssistant.PhoneNumber;
+                }
+            }
+
             return doctor;
         }
         catch (Exception)
         {
             throw new Exception("Try Again Later");
+        }
+    }
+
+    public async Task<string> UpdateDoctorDepartments(int doctorId, UpdateDoctorDepartmentsDto dto)
+    {
+        try
+        {
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId);
+            if (doctor == null)
+            {
+                throw new KeyNotFoundException("Doctor does not exist.");
+            }
+
+            if (dto.DepartmentIds == null || dto.DepartmentIds.Count == 0)
+            {
+                throw new InvalidKeyException("Doctor must be assigned to at least one department.");
+            }
+
+            var cleanDeptIds = dto.DepartmentIds.Distinct().ToList();
+            var existingDeptCount = await _context.Departments.CountAsync(d => cleanDeptIds.Contains(d.Id));
+            if (existingDeptCount != cleanDeptIds.Count)
+            {
+                throw new InvalidKeyException("One or more selected departments do not exist.");
+            }
+
+            var currentLinks = await _context.DoctorDepartments.Where(dd => dd.DoctorId == doctorId).ToListAsync();
+            _context.DoctorDepartments.RemoveRange(currentLinks);
+
+            doctor.DepartmentId = cleanDeptIds.First();
+
+            foreach (var deptId in cleanDeptIds)
+            {
+                var docDept = new DoctorDepartment
+                {
+                    DoctorId = doctorId,
+                    DepartmentId = deptId,
+                    IsPrimary = (deptId == cleanDeptIds.First())
+                };
+                await _context.DoctorDepartments.AddAsync(docDept);
+            }
+
+            await _context.SaveChangesAsync();
+            return "Doctor departments updated successfully.";
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (InvalidKeyException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
         }
     }
 }

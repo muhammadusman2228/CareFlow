@@ -1,6 +1,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import useAuth from '../hooks/useAuth'
 
+const getDedicatedPortal = (role) => {
+    const normalized = (role || '').trim().toLowerCase()
+    if (normalized === 'admin' || normalized === 'superadmin') return '/admin/dashboard'
+    if (normalized === 'doctor') return '/doctor/dashboard'
+    if (normalized === 'assistant') return '/assistant/dashboard'
+    return '/patient/dashboard'
+}
+
 const ProtectedRoute = ({ allowedRoles }) => {
     const { auth } = useAuth()
     const location = useLocation()
@@ -10,10 +18,13 @@ const ProtectedRoute = ({ allowedRoles }) => {
     }
 
     const userRole = auth?.role?.trim().toLowerCase()
-    const isAuthorized = !allowedRoles || allowedRoles.some(r => r.trim().toLowerCase() === userRole)
+    const isAuthorized = !allowedRoles || allowedRoles.some(r => {
+        const normalized = r.trim().toLowerCase()
+        return normalized === userRole || (userRole === 'superadmin' && normalized === 'admin')
+    })
 
     if (!isAuthorized) {
-        return <Navigate to="/" replace />
+        return <Navigate to={getDedicatedPortal(userRole)} replace />
     }
 
     return <Outlet />
