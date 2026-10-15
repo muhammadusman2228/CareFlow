@@ -260,6 +260,35 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpDelete("admin/{id:int}")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult> DeleteAdmin([FromRoute] int id)
+    {
+        try
+        {
+            var currentUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserIdStr) || !int.TryParse(currentUserIdStr, out var currentUserId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var message = await _adminExtra.DeleteAdmin(id, currentUserId);
+            return Ok(new { message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
     [HttpPatch("doctor/{id}/departments")]
     [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult> UpdateDoctorDepartments([FromRoute] int id, [FromBody] UpdateDoctorDepartmentsDto dto)

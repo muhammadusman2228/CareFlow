@@ -31,7 +31,7 @@ public class Appointment
 
     [Required]
     [MaxLength(20)]
-    public string Status{get;set;}="Pending";
+    public string Status{get;set;}="Booked";
 
     [Required]
     [MaxLength(100)]

@@ -42,7 +42,7 @@ public class AppointmentService : IAppointment
                         a.DoctorId == u.Id && 
                         a.AppointmentDate == date && 
                         a.TimeSlot == timeSlot && 
-                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn" || a.Status == "Completed"))
                 })
                 .ToListAsync();
 
@@ -136,7 +136,7 @@ public class AppointmentService : IAppointment
                 u.DoctorId == dto.DoctorId && 
                 u.AppointmentDate == dto.AppointmentDate && 
                 u.TimeSlot == dto.TimeSlot && 
-                (u.Status == "Confirmed" || u.Status == "Pending" || u.Status == "Completed"));
+                (u.Status == "Booked" || u.Status == "Confirmed" || u.Status == "Pending" || u.Status == "CheckedIn" || u.Status == "Completed"));
 
             if (isAlreadyBooked)
             {
@@ -158,7 +158,7 @@ public class AppointmentService : IAppointment
                 AppointmentDate = dto.AppointmentDate,
                 TimeSlot = dto.TimeSlot,
                 Symptoms = dto.Symptom,
-                Status = "Pending"
+                Status = "Booked"
             };
 
             await _context.Appointments.AddAsync(appointment);
@@ -200,7 +200,7 @@ public class AppointmentService : IAppointment
                 .AsNoTracking()
                 .Where(a => a.DoctorId == doctorId && 
                             a.AppointmentDate == date && 
-                            (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed"))
+                            (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn" || a.Status == "Completed"))
                 .Select(a => a.TimeSlot.ToString("HH:mm:ss"))
                 .Distinct()
                 .ToListAsync();

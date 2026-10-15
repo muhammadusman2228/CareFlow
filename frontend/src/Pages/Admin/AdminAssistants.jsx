@@ -46,6 +46,9 @@ const AdminAssistants = () => {
     const [successMessage, setSuccessMessage] = useState('')
     const [selectedDeptIds, setSelectedDeptIds] = useState([])
     const [editDeptIds, setEditDeptIds] = useState([])
+    const [assistantToDelete, setAssistantToDelete] = useState(null)
+    const [isDeletingAssistant, setIsDeletingAssistant] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
 
     const initialFormData = {
         name: '',
@@ -224,17 +227,20 @@ const AdminAssistants = () => {
         }
     }
 
-    const handleDeleteAssistant = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to deactivate and remove assistant ${name}?`)) {
-            return
-        }
+    const handleConfirmDeleteAssistant = async () => {
+        if (!assistantToDelete) return
+        setIsDeletingAssistant(true)
+        setDeleteError('')
 
         try {
-            await axiosPrivate.delete(`/Assistant/${id}`)
-            setSuccessMessage(`Assistant ${name} removed.`)
+            await axiosPrivate.delete(`/Assistant/${assistantToDelete.id}`)
+            setSuccessMessage(`Assistant ${assistantToDelete.name} removed successfully.`)
+            setAssistantToDelete(null)
             await fetchData()
         } catch (err) {
-            setErrorMessage(err.response?.data?.message || 'Failed to delete assistant.')
+            setDeleteError(err.response?.data?.message || 'Failed to delete assistant.')
+        } finally {
+            setIsDeletingAssistant(false)
         }
     }
 
@@ -861,9 +867,12 @@ const AdminAssistants = () => {
                                                     <span>Edit</span>
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteAssistant(ast.id, ast.name)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
-                                                    title="Delete assistant"
+                                                    onClick={() => {
+                                                        setAssistantToDelete(ast)
+                                                        setDeleteError('')
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                                                    title={`Delete assistant ${ast.name}`}
                                                 >
                                                     <Trash2 size={13} />
                                                     <span>Delete</span>
@@ -884,6 +893,65 @@ const AdminAssistants = () => {
                     onPageChange={setPage}
                 />
             </div>
+
+            {assistantToDelete && (
+                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <div className="p-6">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900">Confirm Assistant Deletion</h3>
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                                Are you sure you want to permanently delete clinical assistant <strong className="text-slate-900 font-semibold">{assistantToDelete.name}</strong> (<span className="text-slate-700 font-mono text-[11px]">{assistantToDelete.email}</span>)?
+                            </p>
+                            <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-start gap-2.5">
+                                <AlertCircle size={15} className="shrink-0 mt-0.5 text-slate-500" />
+                                <span className="leading-relaxed">This record and all associated active triage sessions will be permanently purged from the database. This action cannot be reversed.</span>
+                            </div>
+
+                            {deleteError && (
+                                <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                                    <AlertCircle size={15} className="shrink-0 text-red-600" />
+                                    <span>{deleteError}</span>
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    disabled={isDeletingAssistant}
+                                    onClick={() => {
+                                        setAssistantToDelete(null)
+                                        setDeleteError('')
+                                    }}
+                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isDeletingAssistant}
+                                    onClick={handleConfirmDeleteAssistant}
+                                    className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                    {isDeletingAssistant ? (
+                                        <>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 size={13} />
+                                            <span>Confirm Delete</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

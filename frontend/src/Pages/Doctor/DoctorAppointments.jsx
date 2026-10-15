@@ -65,14 +65,15 @@ const DoctorAppointments = () => {
     }
 
     const filteredAppointments = appointments.filter(a => {
-        const matchesTab = selectedTab === 'All' || a.status === selectedTab
+        const matchesTab = selectedTab === 'All' 
+            || (selectedTab === 'Booked' ? (a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending') : a.status === selectedTab)
         const matchesSearch = 
             a.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             a.symptoms?.toLowerCase().includes(searchQuery.toLowerCase())
         return matchesTab && matchesSearch
     })
 
-    const tabs = ['All', 'CheckedIn', 'Confirmed', 'Pending', 'Completed', 'Cancelled', 'Missed']
+    const tabs = ['All', 'Booked', 'CheckedIn', 'Completed', 'Cancelled', 'Missed']
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -102,7 +103,11 @@ const DoctorAppointments = () => {
                 <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
                         {tabs.map((tab) => {
-                            const count = tab === 'All' ? appointments.length : appointments.filter(a => a.status === tab).length
+                            const count = tab === 'All' 
+                                ? appointments.length 
+                                : tab === 'Booked'
+                                ? appointments.filter(a => a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending').length
+                                : appointments.filter(a => a.status === tab).length
                             const isActive = selectedTab === tab
                             return (
                                 <button
@@ -183,13 +188,13 @@ const DoctorAppointments = () => {
                                                 <span className={`text-xs font-semibold ${
                                                     appt.status === 'CheckedIn'
                                                         ? 'text-slate-950 font-bold'
-                                                        : appt.status === 'Confirmed'
+                                                        : (appt.status === 'Booked' || appt.status === 'Confirmed')
                                                         ? 'text-slate-800'
                                                         : appt.status === 'Completed'
                                                         ? 'text-slate-600'
                                                         : 'text-slate-500'
                                                 }`}>
-                                                    {appt.status === 'CheckedIn' ? 'Checked In' : appt.status}
+                                                    {appt.status === 'CheckedIn' ? 'Checked In' : ((appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending') ? 'Booked' : appt.status)}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4 text-right">
@@ -212,27 +217,7 @@ const DoctorAppointments = () => {
                                                         </button>
                                                     )}
 
-                                                    {appt.status === 'Pending' && (
-                                                        <>
-                                                            <button
-                                                                disabled={isProcessing}
-                                                                onClick={() => handleUpdateStatus(appt.appointmentId, 'Confirmed')}
-                                                                className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                                                            >
-                                                                <Check size={13} />
-                                                                <span>Approve</span>
-                                                            </button>
-                                                            <button
-                                                                disabled={isProcessing}
-                                                                onClick={() => handleUpdateStatus(appt.appointmentId, 'Cancelled')}
-                                                                className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-                                                            >
-                                                                <X size={13} />
-                                                            </button>
-                                                        </>
-                                                    )}
-
-                                                    {appt.status === 'Confirmed' && (
+                                                    {(appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending') && (
                                                         <>
                                                             <span className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-xs font-medium">
                                                                 Awaiting Check-in

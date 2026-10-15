@@ -33,7 +33,7 @@ public class DoctorApisService : IDoctorApis
 
             await _context.Appointments
                 .Where(u => u.DoctorId == doctor.Id && 
-                            (u.Status == "Pending" || u.Status == "Confirmed") && 
+                            (u.Status == "Booked" || u.Status == "Confirmed" || u.Status == "Pending") && 
                             (u.AppointmentDate < todayPkt || (u.AppointmentDate == todayPkt && u.TimeSlot < nowTimePkt)))
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
@@ -72,7 +72,7 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Doctor does not exist");
             }
 
-            if (dto.Status != "Confirmed" && dto.Status != "CheckedIn" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
+            if (dto.Status != "Booked" && dto.Status != "Confirmed" && dto.Status != "CheckedIn" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
             {
                 throw new InvalidOperationException("Invalid appointment status");
             }
@@ -210,7 +210,7 @@ public class DoctorApisService : IDoctorApis
             var hasActiveAppointment = await _context.Appointments.AnyAsync(a => 
                 a.DoctorId == doctor.Id && 
                 a.PatientId == patient.Id && 
-                (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn"));
+                (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn"));
 
             if (!hasActiveAppointment)
             {
@@ -269,7 +269,7 @@ public class DoctorApisService : IDoctorApis
                 .CountAsync(u => u.DoctorId == doctor.Id && u.AppointmentDate == today);
 
             var pendingApprovals = await _context.Appointments
-                .CountAsync(a => a.DoctorId == doctor.Id && a.Status == "Pending");
+                .CountAsync(a => a.DoctorId == doctor.Id && (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending") && a.AppointmentDate == today);
 
             var todayCompletedCount = await _context.Appointments
                 .CountAsync(a => a.DoctorId == doctor.Id && a.Status == "Completed" && a.AppointmentDate == today);

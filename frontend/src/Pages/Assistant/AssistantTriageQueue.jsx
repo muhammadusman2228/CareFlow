@@ -375,7 +375,11 @@ const AssistantTriageQueue = () => {
             item.doctorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.departmentName && item.departmentName.toLowerCase().includes(searchQuery.toLowerCase()))
 
-        const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter
+        const matchesStatus = statusFilter === 'ALL'
+            ? true
+            : statusFilter === 'Booked'
+            ? (item.status === 'Booked' || item.status === 'Confirmed' || item.status === 'Pending')
+            : item.status === statusFilter
 
         const matchesVitals = 
             vitalsFilter === 'ALL' ||
@@ -489,10 +493,9 @@ const AssistantTriageQueue = () => {
                                 className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:border-slate-800 font-bold"
                             >
                                 <option value="ALL">All Statuses</option>
+                                <option value="Booked">Booked</option>
                                 <option value="CheckedIn">Checked In</option>
-                                <option value="Confirmed">Confirmed</option>
                                 <option value="Completed">Completed</option>
-                                <option value="Pending">Pending</option>
                             </select>
                         </div>
                     </div>

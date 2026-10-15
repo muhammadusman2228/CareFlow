@@ -36,7 +36,7 @@ public class PatientService : IPatient
 
         await _context.Appointments
             .Where(a => a.PatientId == patient.Id && 
-                        (a.Status == "Pending" || a.Status == "Confirmed") && 
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending") && 
                         (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 

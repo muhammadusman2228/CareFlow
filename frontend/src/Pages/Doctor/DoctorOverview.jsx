@@ -98,7 +98,7 @@ const DoctorOverview = () => {
     const todayDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     const todaysAppointments = appointments.filter(a => a.appointmentDate === todayDateStr)
 
-    const nextPatient = todaysAppointments.find(a => a.status === 'CheckedIn') || todaysAppointments.find(a => a.status === 'Confirmed' || a.status === 'Pending')
+    const nextPatient = todaysAppointments.find(a => a.status === 'CheckedIn') || todaysAppointments.find(a => a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending')
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -170,7 +170,7 @@ const DoctorOverview = () => {
 
                 <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
                     <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-slate-700">Pending</span>
+                        <span className="text-sm font-semibold text-slate-700">Booked</span>
                         <span className="text-3xl font-extrabold text-slate-900 mt-1">{stats.pendingApprovals}</span>
                     </div>
                     <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600">
@@ -252,7 +252,7 @@ const DoctorOverview = () => {
                                                 <span className={`text-xs font-semibold ${
                                                     appt.status === 'CheckedIn'
                                                         ? 'text-slate-950 font-bold'
-                                                        : appt.status === 'Confirmed'
+                                                        : appt.status === 'Booked' || appt.status === 'Confirmed'
                                                         ? 'text-slate-800'
                                                         : appt.status === 'Completed'
                                                         ? 'text-slate-600'

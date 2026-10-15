@@ -32,7 +32,7 @@ public class AdminExtraService : IAdminExtra
             var oneMonthAgo = nowPkt.AddMonths(-1);
 
             await _context.Appointments
-                .Where(a => (a.Status == "Pending" || a.Status == "Confirmed") && 
+                .Where(a => (a.Status == "Pending" || a.Status == "Confirmed" || a.Status == "Booked") && 
                             (a.AppointmentDate < today || (a.AppointmentDate == today && a.TimeSlot < nowTimePkt)))
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
@@ -45,8 +45,7 @@ public class AdminExtraService : IAdminExtra
                 .Where(a => a.AppointmentDate == today && a.Status == "Completed")
                 .SumAsync(a => a.Doctor!.ConsultationFee);
 
-            var pending = await _context.Appointments.CountAsync(a => a.Status == "Pending");
-            var confirmed = await _context.Appointments.CountAsync(a => a.Status == "Confirmed");
+            var booked = await _context.Appointments.CountAsync(a => a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending");
             var completed = await _context.Appointments.CountAsync(a => a.Status == "Completed");
             var cancelled = await _context.Appointments.CountAsync(a => a.Status == "Cancelled");
             var missed = await _context.Appointments.CountAsync(a => a.Status == "Missed");
@@ -65,7 +64,7 @@ public class AdminExtraService : IAdminExtra
             var departmentWorkload = await _context.Departments.AsNoTracking().Select(d => new DepartmentWorkloadDto
             {
                 DepartmentName = d.Name,
-                AppointmentCount = d.Doctors.SelectMany(doc => doc.Appointments.Where(a => a.AppointmentDate == today && a.Status == "Confirmed")).Count()
+                AppointmentCount = d.Doctors.SelectMany(doc => doc.Appointments.Where(a => a.AppointmentDate == today && (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "CheckedIn"))).Count()
             }).ToListAsync();
 
             var todayStartUtc = today.ToDateTime(TimeOnly.MinValue).AddHours(-5);
@@ -78,9 +77,9 @@ public class AdminExtraService : IAdminExtra
                     Timestamp = a.CreatedAt,
                     Time = a.CreatedAt.AddHours(5).ToString("hh:mm tt"),
                     User = a.Patient != null && a.Patient.User != null ? a.Patient.User.Name : "Patient",
-                    Action = a.Status == "CheckedIn" ? "Checked-In at Triage" : (a.Status == "Confirmed" ? "Scheduled Appointment" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : (a.Status == "Missed" ? "Missed Appointment" : "Requested Appointment")))),
+                    Action = a.Status == "CheckedIn" ? "Checked-In at Triage" : ((a.Status == "Booked" || a.Status == "Confirmed") ? "Booked Consultation" : (a.Status == "Completed" ? "Completed Consultation" : (a.Status == "Cancelled" ? "Cancelled Appointment" : (a.Status == "Missed" ? "Missed Appointment" : "Booked Appointment")))),
                     Module = a.Status == "CheckedIn" ? "Triage" : "Appointments",
-                    Status = a.Status == "Pending" ? "Pending" : (a.Status == "Missed" ? "Missed" : "Success")
+                    Status = a.Status == "Missed" ? "Missed" : "Success"
                 })
                 .ToListAsync();
 
@@ -159,8 +158,8 @@ public class AdminExtraService : IAdminExtra
                 TotalPatients = totalPatients,
                 TodayAppointments = todayAppointments,
                 DailyRevenue = dailyRevenue,
-                PendingAppointments = pending,
-                ConfirmedAppointments = confirmed,
+                PendingAppointments = booked,
+                ConfirmedAppointments = booked,
                 CompletedAppointments = completed,
                 CancelledAppointments = cancelled,
                 MissedAppointments = missed,
@@ -656,6 +655,47 @@ public class AdminExtraService : IAdminExtra
         }
     }
 
+    public async Task<string> DeleteAdmin(int adminId, int currentUserId)
+    {
+        if (adminId == currentUserId)
+        {
+            throw new InvalidOperationException("You cannot delete your own SuperAdmin account.");
+        }
+
+        var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == adminId);
+        if (adminUser == null)
+        {
+            throw new KeyNotFoundException("Administrator account not found.");
+        }
+
+        if (adminUser.Role == "SuperAdmin")
+        {
+            throw new InvalidOperationException("SuperAdmin accounts cannot be deleted.");
+        }
+
+        if (adminUser.Role != "Admin")
+        {
+            throw new InvalidOperationException("Only administrator accounts can be deleted through this governance portal.");
+        }
+
+        var sessions = await _context.Session.Where(s => s.UserId == adminId).ToListAsync();
+        if (sessions.Any())
+        {
+            _context.Session.RemoveRange(sessions);
+        }
+
+        var verifications = await _context.Verification.Where(v => v.Email == adminUser.Email).ToListAsync();
+        if (verifications.Any())
+        {
+            _context.Verification.RemoveRange(verifications);
+        }
+
+        _context.Users.Remove(adminUser);
+        await _context.SaveChangesAsync();
+
+        return $"Administrator {adminUser.Name} ({adminUser.Email}) was permanently deleted from the database.";
+    }
+
     public async Task<DiversionCandidatesResponseDto> GetAdminDiversionCandidates(int appointmentId)
     {
         var appointment = await _context.Appointments
@@ -685,7 +725,7 @@ public class AdminExtraService : IAdminExtra
             .Where(a => a.DoctorId == appointment.DoctorId &&
                         a.AppointmentDate == appDate &&
                         a.Id != appointment.Id &&
-                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
             .Select(a => a.TimeSlot)
             .ToListAsync();
 
@@ -709,7 +749,7 @@ public class AdminExtraService : IAdminExtra
             .AsNoTracking()
             .Where(a => peerDoctorIds.Contains(a.DoctorId) &&
                         a.AppointmentDate == appDate &&
-                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
             .Select(a => new { a.DoctorId, a.TimeSlot })
             .ToListAsync();
 
@@ -848,7 +888,7 @@ public class AdminExtraService : IAdminExtra
             a.AppointmentDate == targetDate &&
             a.TimeSlot == dto.NewTimeSlot &&
             a.Id != appointment.Id &&
-            (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"));
+            (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"));
 
         if (isSlotBooked)
         {
@@ -871,7 +911,7 @@ public class AdminExtraService : IAdminExtra
         appointment.DiversionReason = string.IsNullOrWhiteSpace(dto.DiversionReason) ? "Administrative diversion" : dto.DiversionReason.Trim();
         appointment.DivertedAt = DateTime.UtcNow;
         appointment.DivertedBy = $"Admin ({adminUser.Name})";
-        appointment.Status = "Confirmed";
+        appointment.Status = "Booked";
 
         await _context.SaveChangesAsync();
 

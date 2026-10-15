@@ -252,6 +252,18 @@ public class AssistantService : IAssistant
 
         if (assistant.User != null)
         {
+            var sessions = await _context.Session.Where(s => s.UserId == assistant.User.Id).ToListAsync();
+            if (sessions.Any())
+            {
+                _context.Session.RemoveRange(sessions);
+            }
+
+            var verifications = await _context.Verification.Where(v => v.Email == assistant.User.Email).ToListAsync();
+            if (verifications.Any())
+            {
+                _context.Verification.RemoveRange(verifications);
+            }
+
             _context.Users.Remove(assistant.User);
         }
         else
@@ -317,7 +329,7 @@ public class AssistantService : IAssistant
         }
 
         await _context.Appointments
-            .Where(a => (a.Status == "Pending" || a.Status == "Confirmed") &&
+            .Where(a => (a.Status == "Booked" || a.Status == "Pending" || a.Status == "Confirmed") &&
                         (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
@@ -434,7 +446,7 @@ public class AssistantService : IAssistant
             throw new InvalidOperationException("Cannot record or modify vitals for past, completed, or cancelled appointments");
         }
 
-        if (appointment.Status == "Confirmed" || appointment.Status == "Pending")
+        if (appointment.Status == "Booked" || appointment.Status == "Confirmed" || appointment.Status == "Pending")
         {
             appointment.Status = "CheckedIn";
         }
@@ -891,7 +903,7 @@ public class AssistantService : IAssistant
             u.DoctorId == dto.DoctorId && 
             u.AppointmentDate == dto.AppointmentDate && 
             u.TimeSlot == dto.TimeSlot && 
-            (u.Status == "Confirmed" || u.Status == "Pending" || u.Status == "Completed"));
+            (u.Status == "Booked" || u.Status == "Confirmed" || u.Status == "Pending" || u.Status == "CheckedIn" || u.Status == "Completed"));
 
         if (isAlreadyBooked)
         {
@@ -960,7 +972,7 @@ public class AssistantService : IAssistant
             AppointmentDate = dto.AppointmentDate,
             TimeSlot = dto.TimeSlot,
             Symptoms = !string.IsNullOrWhiteSpace(dto.Symptoms) ? dto.Symptoms.Trim() : "Phone Booking via Assistant",
-            Status = "Confirmed"
+            Status = "Booked"
         };
 
         await _context.Appointments.AddAsync(appointment);
@@ -1156,7 +1168,7 @@ public class AssistantService : IAssistant
             .Where(a => a.DoctorId == appointment.DoctorId &&
                         a.AppointmentDate == todayPkt &&
                         a.Id != appointment.Id &&
-                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
             .Select(a => a.TimeSlot)
             .ToListAsync();
 
@@ -1180,7 +1192,7 @@ public class AssistantService : IAssistant
             .AsNoTracking()
             .Where(a => peerDoctorIds.Contains(a.DoctorId) &&
                         a.AppointmentDate == todayPkt &&
-                        (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
+                        (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"))
             .Select(a => new { a.DoctorId, a.TimeSlot })
             .ToListAsync();
 
@@ -1336,7 +1348,7 @@ public class AssistantService : IAssistant
             a.AppointmentDate == todayPkt &&
             a.TimeSlot == dto.NewTimeSlot &&
             a.Id != appointment.Id &&
-            (a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"));
+            (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "Completed" || a.Status == "CheckedIn"));
 
         if (isSlotBooked)
         {
@@ -1358,7 +1370,7 @@ public class AssistantService : IAssistant
         appointment.DiversionReason = string.IsNullOrWhiteSpace(dto.DiversionReason) ? "Clinical diversion" : dto.DiversionReason.Trim();
         appointment.DivertedAt = DateTime.UtcNow;
         appointment.DivertedBy = $"Assistant ({assistant.User!.Name})";
-        appointment.Status = "Confirmed";
+        appointment.Status = "Booked";
 
         await _context.SaveChangesAsync();
 

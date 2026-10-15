@@ -155,10 +155,10 @@ const AdminOverview = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Top KPI Cards
+                        Hospital Operations Overview
                     </h1>
                     <p className="text-sm text-slate-600 font-medium mt-0.5">
-                        Hospital activity and key performance metrics.
+                        Real-time clinical metrics, department workload, and practitioner activity
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -214,9 +214,6 @@ const AdminOverview = () => {
                         <span className="text-xs sm:text-sm font-semibold text-slate-600">Appointments Today</span>
                         <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                             {todayAppointmentsCount}
-                        </span>
-                        <span className="text-xs font-medium text-slate-500 mt-0.5">
-                            {pendingAppointmentsCount} pending review
                         </span>
                     </div>
                 </div>

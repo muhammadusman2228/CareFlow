@@ -46,7 +46,7 @@ const PatientOverview = () => {
         fetchPatientData()
     }, [])
 
-    const upcomingAppointments = appointments.filter(a => a.status === 'Confirmed' || a.status === 'Pending')
+    const upcomingAppointments = appointments.filter(a => a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending' || a.status === 'CheckedIn')
     const completedAppointments = appointments.filter(a => a.status === 'Completed')
     const nextAppointment = upcomingAppointments[0]
 
@@ -97,7 +97,7 @@ const PatientOverview = () => {
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Next Upcoming Consultation</span>
                         {nextAppointment && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                                {nextAppointment.status}
+                                {nextAppointment.status === 'CheckedIn' ? 'Checked In' : (nextAppointment.status === 'Confirmed' || nextAppointment.status === 'Pending') ? 'Booked' : nextAppointment.status}
                             </span>
                         )}
                     </div>
@@ -218,7 +218,7 @@ const PatientOverview = () => {
                                             </td>
                                             <td className="px-5 py-4">
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                                                    {appt.status}
+                                                    {appt.status === 'CheckedIn' ? 'Checked In' : (appt.status === 'Confirmed' || appt.status === 'Pending') ? 'Booked' : appt.status}
                                                 </span>
                                             </td>
                                         </tr>

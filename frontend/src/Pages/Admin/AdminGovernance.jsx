@@ -17,7 +17,8 @@ import {
     ShieldAlert, 
     Users, 
     Calendar,
-    ArrowRight
+    ArrowRight,
+    Trash2
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import useAuth from '../../hooks/useAuth'
@@ -53,6 +54,29 @@ const AdminGovernance = () => {
     const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
     const [otpError, setOtpError] = useState('')
     const [feedbackBanner, setFeedbackBanner] = useState({ type: '', message: '' })
+
+    const [adminToDelete, setAdminToDelete] = useState(null)
+    const [isDeletingAdmin, setIsDeletingAdmin] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
+
+    const handleConfirmDeleteAdmin = async () => {
+        if (!adminToDelete) return
+        setIsDeletingAdmin(true)
+        setDeleteError('')
+        try {
+            const response = await axiosPrivate.delete(`/Admin/admin/${adminToDelete.id}`)
+            setFeedbackBanner({
+                type: 'success',
+                message: response.data?.message || `Administrator ${adminToDelete.name} was successfully deleted.`
+            })
+            setAdminToDelete(null)
+            await fetchAdmins()
+        } catch (err) {
+            setDeleteError(err?.response?.data?.message || 'Failed to delete administrator.')
+        } finally {
+            setIsDeletingAdmin(false)
+        }
+    }
 
     const fetchAdmins = async () => {
         setIsLoading(true)
@@ -165,21 +189,6 @@ const AdminGovernance = () => {
         setIsOtpModalOpen(true)
     }
 
-    if (!isSuperAdmin) {
-        return (
-            <div className="max-w-4xl mx-auto py-12 px-4">
-                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
-                        <ShieldAlert size={32} />
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900 mb-2">SuperAdmin Clearance Required</h2>
-                    <p className="text-slate-600 max-w-md">
-                        The Administrator Governance module is restricted strictly to root SuperAdmin accounts. Standard administrators cannot provision or verify peer accounts.
-                    </p>
-                </div>
-            </div>
-        )
-    }
 
     const filteredAdmins = admins.filter(a => {
         const query = searchQuery.trim().toLowerCase()
@@ -385,6 +394,19 @@ const AdminGovernance = () => {
                                                             className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
                                                         >
                                                             Verify OTP
+                                                        </button>
+                                                    )}
+                                                    {isSuperAdmin && adm.role !== 'SuperAdmin' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setAdminToDelete(adm)
+                                                                setDeleteError('')
+                                                            }}
+                                                            className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                                                            title={`Delete administrator ${adm.name}`}
+                                                        >
+                                                            <Trash2 size={13} />
+                                                            <span>Delete</span>
                                                         </button>
                                                     )}
                                                 </div>
@@ -594,6 +616,65 @@ const AdminGovernance = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {adminToDelete && (
+                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <div className="p-6">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900">Confirm Administrator Deletion</h3>
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                                Are you sure you want to permanently delete administrator <strong className="text-slate-900 font-semibold">{adminToDelete.name}</strong> (<span className="text-slate-700 font-mono text-[11px]">{adminToDelete.email}</span>)?
+                            </p>
+                            <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-start gap-2.5">
+                                <AlertCircle size={15} className="shrink-0 mt-0.5 text-slate-500" />
+                                <span className="leading-relaxed">This record and all associated active sessions will be permanently purged from the database. This action cannot be reversed.</span>
+                            </div>
+
+                            {deleteError && (
+                                <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                                    <AlertCircle size={15} className="shrink-0 text-red-600" />
+                                    <span>{deleteError}</span>
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    disabled={isDeletingAdmin}
+                                    onClick={() => {
+                                        setAdminToDelete(null)
+                                        setDeleteError('')
+                                    }}
+                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isDeletingAdmin}
+                                    onClick={handleConfirmDeleteAdmin}
+                                    className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                    {isDeletingAdmin ? (
+                                        <>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 size={13} />
+                                            <span>Confirm Delete</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
