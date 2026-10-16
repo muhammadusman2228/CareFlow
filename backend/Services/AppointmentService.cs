@@ -49,15 +49,16 @@ public class AppointmentService : IAppointment
             var doctors = doctorsQuery
                 .Where(u =>
                 {
+                    if (!u.IsAvailable) return false;
                     if (dateSchedules.TryGetValue(u.Id, out var ds))
                     {
                         return ds.IsAvailable && ds.DailyStatus != "OffDuty";
                     }
                     if (date == todayPkt && u.DailyStatusDate == todayPkt)
                     {
-                        return u.IsAvailable && u.DailyStatus != "OffDuty";
+                        return u.DailyStatus != "OffDuty";
                     }
-                    return u.IsAvailable;
+                    return true;
                 })
                 .Select(u => new ResponseAppointmentDto
                 {
@@ -107,6 +108,11 @@ public class AppointmentService : IAppointment
                 throw new KeyNotFoundException("Doctor does not exist or is not verified");
             }
 
+            if (!doctor.IsAvailable)
+            {
+                throw new InvalidOperationException("Doctor is currently unavailable or inactive in the hospital registry");
+            }
+
             var dateSchedule = await _context.DoctorDateSchedules
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.DoctorId == dto.DoctorId && s.ScheduleDate == dto.AppointmentDate);
@@ -121,10 +127,6 @@ public class AppointmentService : IAppointment
             else if (dto.AppointmentDate == todayPkt && doctor.DailyStatusDate == todayPkt && doctor.DailyStatus == "OffDuty")
             {
                 throw new InvalidOperationException("Doctor is Off Duty on the selected date");
-            }
-            else if (!doctor.IsAvailable)
-            {
-                throw new InvalidOperationException("Doctor is currently unavailable");
             }
 
             if (dto.TimeSlot < doctor.ShiftStart || dto.TimeSlot >= doctor.ShiftEnd)

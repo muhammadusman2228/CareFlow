@@ -356,6 +356,11 @@ public class DoctorApisService : IDoctorApis
             throw new InvalidDataException("Doctor does not exist");
         }
 
+        if (!doctor.IsAvailable)
+        {
+            throw new InvalidOperationException("Doctor profile is currently deactivated by hospital administration. You cannot update daily shift status.");
+        }
+
         var status = dto.DailyStatus?.Trim() ?? "OnDuty";
         if (status != "OnDuty" && status != "Delayed" && status != "OffDuty")
         {
@@ -371,7 +376,6 @@ public class DoctorApisService : IDoctorApis
             doctor.DelayMinutes = dto.DelayMinutes <= 0 ? 30 : dto.DelayMinutes;
             doctor.DelayReason = string.IsNullOrWhiteSpace(dto.DelayReason) ? "Doctor is delayed" : dto.DelayReason.Trim();
             doctor.DailyStatusDate = todayPkt;
-            doctor.IsAvailable = true;
         }
         else if (status == "OffDuty")
         {
@@ -380,7 +384,6 @@ public class DoctorApisService : IDoctorApis
             doctor.DelayMinutes = 0;
             doctor.DelayReason = string.IsNullOrWhiteSpace(dto.DelayReason) ? "Off duty today" : dto.DelayReason.Trim();
             doctor.DailyStatusDate = todayPkt;
-            doctor.IsAvailable = false;
         }
         else
         {
@@ -389,11 +392,12 @@ public class DoctorApisService : IDoctorApis
             doctor.DelayMinutes = 0;
             doctor.DelayReason = null;
             doctor.DailyStatusDate = todayPkt;
-            doctor.IsAvailable = true;
         }
 
         var dateSchedule = await _context.DoctorDateSchedules
             .FirstOrDefaultAsync(s => s.DoctorId == doctor.Id && s.ScheduleDate == todayPkt);
+
+        var isTodayAvailable = status != "OffDuty";
 
         if (dateSchedule == null)
         {
@@ -401,7 +405,7 @@ public class DoctorApisService : IDoctorApis
             {
                 DoctorId = doctor.Id,
                 ScheduleDate = todayPkt,
-                IsAvailable = doctor.IsAvailable,
+                IsAvailable = isTodayAvailable,
                 DailyStatus = doctor.DailyStatus,
                 IsLate = doctor.IsLateToday,
                 DelayMinutes = doctor.DelayMinutes,
@@ -412,7 +416,7 @@ public class DoctorApisService : IDoctorApis
         }
         else
         {
-            dateSchedule.IsAvailable = doctor.IsAvailable;
+            dateSchedule.IsAvailable = isTodayAvailable;
             dateSchedule.DailyStatus = doctor.DailyStatus;
             dateSchedule.IsLate = doctor.IsLateToday;
             dateSchedule.DelayMinutes = doctor.DelayMinutes;
@@ -473,20 +477,25 @@ public class DoctorApisService : IDoctorApis
 
             bool dayAvail;
             string dayStatus;
-            if (upcomingDateSchedules.TryGetValue(dayDate, out var ds))
+            if (!doctor.IsAvailable)
             {
-                dayAvail = ds.IsAvailable;
+                dayAvail = false;
+                dayStatus = "OffDuty";
+            }
+            else if (upcomingDateSchedules.TryGetValue(dayDate, out var ds))
+            {
+                dayAvail = ds.IsAvailable && ds.DailyStatus != "OffDuty";
                 dayStatus = ds.DailyStatus;
             }
             else if (dayDate == todayPkt && isToday)
             {
-                dayAvail = doctor.IsAvailable && doctor.DailyStatus != "OffDuty";
+                dayAvail = doctor.DailyStatus != "OffDuty";
                 dayStatus = doctor.DailyStatus;
             }
             else
             {
-                dayAvail = doctor.IsAvailable;
-                dayStatus = doctor.IsAvailable ? "OnDuty" : "OffDuty";
+                dayAvail = true;
+                dayStatus = "OnDuty";
             }
 
             upcomingDays.Add(new DoctorDailyRosterDayDto
@@ -502,12 +511,16 @@ public class DoctorApisService : IDoctorApis
         }
 
         var todayDateSchedule = upcomingDateSchedules.TryGetValue(todayPkt, out var tds) ? tds : null;
-        var effectiveStatus = todayDateSchedule != null
-            ? todayDateSchedule.DailyStatus
-            : (!doctor.IsAvailable ? "OffDuty" : (isToday ? doctor.DailyStatus : "OnDuty"));
-        var effectiveAvailable = todayDateSchedule != null
-            ? todayDateSchedule.IsAvailable
-            : (doctor.IsAvailable && effectiveStatus != "OffDuty");
+        var effectiveStatus = !doctor.IsAvailable
+            ? "OffDuty"
+            : (todayDateSchedule != null
+                ? todayDateSchedule.DailyStatus
+                : (isToday ? doctor.DailyStatus : "OnDuty"));
+        var effectiveAvailable = !doctor.IsAvailable
+            ? false
+            : (todayDateSchedule != null
+                ? (todayDateSchedule.IsAvailable && todayDateSchedule.DailyStatus != "OffDuty")
+                : (effectiveStatus != "OffDuty"));
         var isLateToday = todayDateSchedule != null
             ? (effectiveStatus == "Delayed" && todayDateSchedule.IsLate)
             : (effectiveStatus == "Delayed" && isToday && doctor.IsLateToday);

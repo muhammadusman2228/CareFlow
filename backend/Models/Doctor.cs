@@ -64,4 +64,5 @@ public class Doctor
     public virtual ICollection<Assistant> Assistants { get; set; } = new List<Assistant>();
     public virtual ICollection<Labs> LabOrders { get; set; } = new List<Labs>();
     public virtual ICollection<DoctorDepartment> DoctorDepartments { get; set; } = new List<DoctorDepartment>();
+    public virtual ICollection<DoctorDateSchedule> DateSchedules { get; set; } = new List<DoctorDateSchedule>();
 }

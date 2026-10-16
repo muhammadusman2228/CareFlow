@@ -57,6 +57,7 @@ const AdminDoctors = () => {
     const [editingDeptIds, setEditingDeptIds] = useState([])
     const [isSavingDepts, setIsSavingDepts] = useState(false)
     const [deptsModalError, setDeptsModalError] = useState('')
+    const [togglingDoctorId, setTogglingDoctorId] = useState(null)
 
     const [formData, setFormData] = useState({
         name: '',
@@ -174,6 +175,19 @@ const AdminDoctors = () => {
             setDeptsModalError(err.response?.data?.message || 'Failed to update department allocations.')
         } finally {
             setIsSavingDepts(false)
+        }
+    }
+
+    const handleToggleDoctorPermanent = async (doc) => {
+        try {
+            setErrorMessage('')
+            setTogglingDoctorId(doc.id)
+            await axiosPrivate.patch(`/Admin/doctor/${doc.id}/availability`)
+            await fetchData()
+        } catch (err) {
+            setErrorMessage(err.response?.data?.message || 'Failed to update doctor availability.')
+        } finally {
+            setTogglingDoctorId(null)
         }
     }
 
@@ -878,6 +892,21 @@ const AdminDoctors = () => {
                 />
             </div>
 
+            {errorMessage && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-150 shadow-xs">
+                    <div className="flex items-center gap-2.5">
+                        <AlertCircle size={18} className="shrink-0 text-rose-600" />
+                        <span>{errorMessage}</span>
+                    </div>
+                    <button
+                        onClick={() => setErrorMessage('')}
+                        className="text-xs text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer shrink-0"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
                     <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
@@ -930,9 +959,22 @@ const AdminDoctors = () => {
                                         <span className="text-xs font-bold text-slate-400 font-mono">
                                             #{(page - 1) * 20 + index + 1}
                                         </span>
-                                        <span className="text-xs sm:text-sm font-semibold text-slate-600">
-                                            {doc.isAvailable ? 'Available' : 'Off-duty'}
-                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleDoctorPermanent(doc)}
+                                            disabled={togglingDoctorId === doc.id}
+                                            title={doc.isAvailable ? "Click to set doctor Inactive (Resigned or Left)" : "Click to activate doctor"}
+                                            className={`px-3 py-1 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-xs ${
+                                                doc.isAvailable
+                                                    ? 'bg-sky-600 hover:bg-sky-700 text-white'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                                            }`}
+                                        >
+                                            {togglingDoctorId === doc.id && (
+                                                <Loader2 size={12} className={`animate-spin ${doc.isAvailable ? 'text-white' : 'text-slate-600'}`} />
+                                            )}
+                                            <span>{doc.isAvailable ? 'Active' : 'Inactive'}</span>
+                                        </button>
                                     </div>
                                 </div>
 

@@ -212,7 +212,7 @@ modelBuilder.Entity<DoctorDateSchedule>()
 
 modelBuilder.Entity<DoctorDateSchedule>()
     .HasOne(ds => ds.Doctor)
-    .WithMany()
+    .WithMany(d => d.DateSchedules)
     .HasForeignKey(ds => ds.DoctorId)
     .OnDelete(DeleteBehavior.Cascade);
             

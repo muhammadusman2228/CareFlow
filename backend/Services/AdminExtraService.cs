@@ -255,9 +255,13 @@ public class AdminExtraService : IAdminExtra
             var roster = doctors.Select(d =>
             {
                 bool isAvail;
-                if (dateSchedules.TryGetValue(d.Id, out var dateSchedule))
+                if (!d.IsAvailable)
                 {
-                    isAvail = dateSchedule.IsAvailable;
+                    isAvail = false;
+                }
+                else if (dateSchedules.TryGetValue(d.Id, out var dateSchedule))
+                {
+                    isAvail = dateSchedule.IsAvailable && dateSchedule.DailyStatus != "OffDuty";
                 }
                 else if (date == todayPkt && d.DailyStatusDate == todayPkt)
                 {
@@ -370,7 +374,7 @@ public class AdminExtraService : IAdminExtra
                 _context.DoctorDateSchedules.Add(existingSchedule);
             }
 
-            if (targetDate == todayPkt)
+            if (targetDate == todayPkt || date == null)
             {
                 doctor.DailyStatusDate = todayPkt;
                 doctor.DailyStatus = dto.IsAvailable ? "OnDuty" : "OffDuty";
@@ -385,6 +389,25 @@ public class AdminExtraService : IAdminExtra
                     doctor.IsLateToday = false;
                     doctor.DelayMinutes = 0;
                     doctor.DelayReason = null;
+                }
+            }
+
+            if (date == null)
+            {
+                doctor.IsAvailable = dto.IsAvailable;
+                if (!dto.IsAvailable)
+                {
+                    var futureSchedules = await _context.DoctorDateSchedules
+                        .Where(s => s.DoctorId == doctorId && s.ScheduleDate > todayPkt)
+                        .ToListAsync();
+
+                    foreach (var fs in futureSchedules)
+                    {
+                        fs.IsAvailable = false;
+                        fs.DailyStatus = "OffDuty";
+                        fs.DelayReason = "Doctor inactive in hospital registry";
+                        fs.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
 
@@ -422,7 +445,11 @@ public class AdminExtraService : IAdminExtra
                 .FirstOrDefaultAsync(s => s.DoctorId == doctorId && s.ScheduleDate == targetDate);
 
             bool currentIsAvailable;
-            if (existingSchedule != null)
+            if (date == null)
+            {
+                currentIsAvailable = doctor.IsAvailable;
+            }
+            else if (existingSchedule != null)
             {
                 currentIsAvailable = existingSchedule.IsAvailable;
             }
@@ -439,67 +466,150 @@ public class AdminExtraService : IAdminExtra
             {
                 var activeBookings = await _context.Appointments.CountAsync(a =>
                     a.DoctorId == doctorId &&
-                    a.AppointmentDate == targetDate &&
+                    (date == null ? a.AppointmentDate >= todayPkt : a.AppointmentDate == targetDate) &&
                     a.Status != "Cancelled" &&
                     a.Status != "Completed");
 
                 if (activeBookings > 0)
                 {
-                    throw new InvalidOperationException($"Cannot set doctor Off Duty on {targetDate:yyyy-MM-dd}. Doctor has {activeBookings} active appointment(s) that must be diverted first.");
+                    var msg = date == null
+                        ? $"Cannot deactivate doctor. Doctor has {activeBookings} active upcoming appointment(s) that must be diverted first."
+                        : $"Cannot set doctor Off Duty on {targetDate:yyyy-MM-dd}. Doctor has {activeBookings} active appointment(s) that must be diverted first.";
+                    throw new InvalidOperationException(msg);
                 }
             }
 
             var newStatus = !currentIsAvailable;
 
-            if (existingSchedule != null)
+            if (date == null)
             {
-                existingSchedule.IsAvailable = newStatus;
-                existingSchedule.DailyStatus = newStatus ? "OnDuty" : "OffDuty";
-                if (!newStatus)
-                {
-                    existingSchedule.IsLate = false;
-                    existingSchedule.DelayMinutes = 0;
-                    existingSchedule.DelayReason = "Turned off by administration";
-                }
-                else
-                {
-                    existingSchedule.IsLate = false;
-                    existingSchedule.DelayMinutes = 0;
-                    existingSchedule.DelayReason = null;
-                }
-                existingSchedule.UpdatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                existingSchedule = new DoctorDateSchedule
-                {
-                    DoctorId = doctorId,
-                    ScheduleDate = targetDate,
-                    IsAvailable = newStatus,
-                    DailyStatus = newStatus ? "OnDuty" : "OffDuty",
-                    IsLate = false,
-                    DelayMinutes = 0,
-                    DelayReason = newStatus ? null : "Turned off by administration",
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.DoctorDateSchedules.Add(existingSchedule);
-            }
-
-            if (targetDate == todayPkt)
-            {
-                doctor.DailyStatusDate = todayPkt;
+                // 1. Update Doctor master row
+                doctor.IsAvailable = newStatus;
                 doctor.DailyStatus = newStatus ? "OnDuty" : "OffDuty";
+                doctor.DailyStatusDate = todayPkt;
                 if (!newStatus)
                 {
                     doctor.IsLateToday = false;
                     doctor.DelayMinutes = 0;
-                    doctor.DelayReason = "Turned off by administration";
+                    doctor.DelayReason = "Deactivated permanently by administration";
                 }
                 else
                 {
                     doctor.IsLateToday = false;
                     doctor.DelayMinutes = 0;
                     doctor.DelayReason = null;
+                }
+
+                // 2. Synchronize today's schedule row in DoctorDateSchedules
+                if (existingSchedule != null)
+                {
+                    existingSchedule.IsAvailable = newStatus;
+                    existingSchedule.DailyStatus = newStatus ? "OnDuty" : "OffDuty";
+                    existingSchedule.IsLate = false;
+                    existingSchedule.DelayMinutes = 0;
+                    existingSchedule.DelayReason = newStatus ? null : "Turned off by administration";
+                    existingSchedule.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    existingSchedule = new DoctorDateSchedule
+                    {
+                        DoctorId = doctorId,
+                        ScheduleDate = todayPkt,
+                        IsAvailable = newStatus,
+                        DailyStatus = newStatus ? "OnDuty" : "OffDuty",
+                        IsLate = false,
+                        DelayMinutes = 0,
+                        DelayReason = newStatus ? null : "Turned off by administration",
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.DoctorDateSchedules.Add(existingSchedule);
+                }
+
+                // 3. Synchronize upcoming future schedule rows in DoctorDateSchedules
+                var futureSchedules = await _context.DoctorDateSchedules
+                    .Where(s => s.DoctorId == doctorId && s.ScheduleDate > todayPkt)
+                    .ToListAsync();
+
+                foreach (var fs in futureSchedules)
+                {
+                    if (!newStatus)
+                    {
+                        fs.IsAvailable = false;
+                        fs.DailyStatus = "OffDuty";
+                        fs.DelayReason = "Doctor inactive in hospital registry";
+                        fs.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        if (fs.DelayReason == "Doctor inactive in hospital registry" || fs.DailyStatus == "OffDuty")
+                        {
+                            fs.IsAvailable = true;
+                            fs.DailyStatus = "OnDuty";
+                            fs.DelayReason = null;
+                            fs.UpdatedAt = DateTime.UtcNow;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Calendar date toggle
+                if (!doctor.IsAvailable && newStatus == true)
+                {
+                    throw new InvalidOperationException("Cannot set doctor On Duty for this date. The doctor is currently Inactive in Doctors Management. Please activate doctor profile first.");
+                }
+
+                if (existingSchedule != null)
+                {
+                    existingSchedule.IsAvailable = newStatus;
+                    existingSchedule.DailyStatus = newStatus ? "OnDuty" : "OffDuty";
+                    if (!newStatus)
+                    {
+                        existingSchedule.IsLate = false;
+                        existingSchedule.DelayMinutes = 0;
+                        existingSchedule.DelayReason = "Turned off by administration";
+                    }
+                    else
+                    {
+                        existingSchedule.IsLate = false;
+                        existingSchedule.DelayMinutes = 0;
+                        existingSchedule.DelayReason = null;
+                    }
+                    existingSchedule.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    existingSchedule = new DoctorDateSchedule
+                    {
+                        DoctorId = doctorId,
+                        ScheduleDate = targetDate,
+                        IsAvailable = newStatus,
+                        DailyStatus = newStatus ? "OnDuty" : "OffDuty",
+                        IsLate = false,
+                        DelayMinutes = 0,
+                        DelayReason = newStatus ? null : "Turned off by administration",
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.DoctorDateSchedules.Add(existingSchedule);
+                }
+
+                if (targetDate == todayPkt)
+                {
+                    doctor.DailyStatusDate = todayPkt;
+                    doctor.DailyStatus = newStatus ? "OnDuty" : "OffDuty";
+                    if (!newStatus)
+                    {
+                        doctor.IsLateToday = false;
+                        doctor.DelayMinutes = 0;
+                        doctor.DelayReason = "Turned off by administration";
+                    }
+                    else
+                    {
+                        doctor.IsLateToday = false;
+                        doctor.DelayMinutes = 0;
+                        doctor.DelayReason = null;
+                    }
                 }
             }
 
