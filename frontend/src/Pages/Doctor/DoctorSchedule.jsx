@@ -227,10 +227,10 @@ const DoctorSchedule = () => {
                                                     {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                 </td>
                                                 <td className="py-4 px-6 text-slate-800 font-mono text-xs">
-                                                    {schedule.shiftStart?.substring(0, 5)}
+                                                    {(day.shiftStart || schedule.shiftStart)?.substring(0, 5)}
                                                 </td>
                                                 <td className="py-4 px-6 text-slate-800 font-mono text-xs">
-                                                    {schedule.shiftEnd?.substring(0, 5)}
+                                                    {(day.shiftEnd || schedule.shiftEnd)?.substring(0, 5)}
                                                 </td>
                                                 <td className="py-4 px-6 text-slate-700 text-xs">
                                                     {day.totalAppointments} booked ({day.confirmedCount} confirmed, {day.completedCount} completed)

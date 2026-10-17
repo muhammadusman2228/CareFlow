@@ -28,7 +28,7 @@ public class AppointmentService : IAppointment
 
             var doctorsQuery = await _context.Doctors
                 .AsNoTracking()
-                .Where(d => (d.DepartmentId == departmentId || d.DoctorDepartments.Any(dd => dd.DepartmentId == departmentId)) && d.ShiftStart <= timeSlot && timeSlot < d.ShiftEnd && d.User!.IsVerified)
+                .Where(d => (d.DepartmentId == departmentId || d.DoctorDepartments.Any(dd => dd.DepartmentId == departmentId)) && d.User!.IsVerified)
                 .Select(u => new
                 {
                     u.Id,
@@ -38,6 +38,8 @@ public class AppointmentService : IAppointment
                     u.DailyStatus,
                     u.DailyStatusDate,
                     u.ConsultationFee,
+                    u.ShiftStart,
+                    u.ShiftEnd,
                     IsSlotBooked = _context.Appointments.Any(a => 
                         a.DoctorId == u.Id && 
                         a.AppointmentDate == date && 
@@ -50,7 +52,14 @@ public class AppointmentService : IAppointment
                 .Where(u =>
                 {
                     if (!u.IsAvailable) return false;
-                    if (dateSchedules.TryGetValue(u.Id, out var ds))
+
+                    dateSchedules.TryGetValue(u.Id, out var ds);
+                    var effectiveShiftStart = (ds != null && ds.ShiftStart.HasValue) ? ds.ShiftStart.Value : u.ShiftStart;
+                    var effectiveShiftEnd = (ds != null && ds.ShiftEnd.HasValue) ? ds.ShiftEnd.Value : u.ShiftEnd;
+
+                    if (timeSlot < effectiveShiftStart || timeSlot >= effectiveShiftEnd) return false;
+
+                    if (ds != null)
                     {
                         return ds.IsAvailable && ds.DailyStatus != "OffDuty";
                     }
@@ -129,9 +138,12 @@ public class AppointmentService : IAppointment
                 throw new InvalidOperationException("Doctor is Off Duty on the selected date");
             }
 
-            if (dto.TimeSlot < doctor.ShiftStart || dto.TimeSlot >= doctor.ShiftEnd)
+            var effectiveShiftStart = (dateSchedule != null && dateSchedule.ShiftStart.HasValue) ? dateSchedule.ShiftStart.Value : doctor.ShiftStart;
+            var effectiveShiftEnd = (dateSchedule != null && dateSchedule.ShiftEnd.HasValue) ? dateSchedule.ShiftEnd.Value : doctor.ShiftEnd;
+
+            if (dto.TimeSlot < effectiveShiftStart || dto.TimeSlot >= effectiveShiftEnd)
             {
-                throw new InvalidOperationException("Selected time slot is outside the doctor's shift hours");
+                throw new InvalidOperationException("Selected time slot is outside the doctor's shift hours for this date");
             }
 
             var isAlreadyBooked = await _context.Appointments.AnyAsync(u => 

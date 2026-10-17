@@ -172,4 +172,6 @@ public class DoctorDailyRosterDayDto
     public int CompletedCount { get; set; }
     public bool IsAvailable { get; set; } = true;
     public string DailyStatus { get; set; } = "OnDuty";
+    public TimeOnly ShiftStart { get; set; }
+    public TimeOnly ShiftEnd { get; set; }
 }

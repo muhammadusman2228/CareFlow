@@ -29,5 +29,9 @@ public class DoctorDateSchedule
     [MaxLength(255)]
     public string? DelayReason { get; set; }
 
+    public TimeOnly? ShiftStart { get; set; }
+
+    public TimeOnly? ShiftEnd { get; set; }
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

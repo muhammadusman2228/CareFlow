@@ -333,6 +333,9 @@ public class DoctorApisService : IDoctorApis
             ? (effectiveStatus == "Delayed" ? todaySchedule.DelayReason : (effectiveStatus == "OffDuty" ? (todaySchedule.DelayReason ?? "Doctor is marked off duty") : null))
             : (effectiveStatus == "Delayed" && isToday ? doctor.DelayReason : (effectiveStatus == "OffDuty" ? (doctor.DelayReason ?? "Doctor is marked off duty") : null));
 
+        var effectiveShiftStart = (todaySchedule != null && todaySchedule.ShiftStart.HasValue) ? todaySchedule.ShiftStart.Value : doctor.ShiftStart;
+        var effectiveShiftEnd = (todaySchedule != null && todaySchedule.ShiftEnd.HasValue) ? todaySchedule.ShiftEnd.Value : doctor.ShiftEnd;
+
         return new DoctorDailyStatusResponseDto
         {
             DoctorId = doctor.Id,
@@ -343,8 +346,8 @@ public class DoctorApisService : IDoctorApis
             DelayReason = delayReason,
             StatusDate = todayPkt,
             IsAvailable = effectiveAvailable,
-            ShiftStart = doctor.ShiftStart,
-            ShiftEnd = doctor.ShiftEnd
+            ShiftStart = effectiveShiftStart,
+            ShiftEnd = effectiveShiftEnd
         };
     }
 
@@ -405,6 +408,8 @@ public class DoctorApisService : IDoctorApis
             {
                 DoctorId = doctor.Id,
                 ScheduleDate = todayPkt,
+                ShiftStart = doctor.ShiftStart,
+                ShiftEnd = doctor.ShiftEnd,
                 IsAvailable = isTodayAvailable,
                 DailyStatus = doctor.DailyStatus,
                 IsLate = doctor.IsLateToday,
@@ -477,6 +482,9 @@ public class DoctorApisService : IDoctorApis
 
             bool dayAvail;
             string dayStatus;
+            TimeOnly dayShiftStart = doctor.ShiftStart;
+            TimeOnly dayShiftEnd = doctor.ShiftEnd;
+
             if (!doctor.IsAvailable)
             {
                 dayAvail = false;
@@ -486,6 +494,8 @@ public class DoctorApisService : IDoctorApis
             {
                 dayAvail = ds.IsAvailable && ds.DailyStatus != "OffDuty";
                 dayStatus = ds.DailyStatus;
+                if (ds.ShiftStart.HasValue) dayShiftStart = ds.ShiftStart.Value;
+                if (ds.ShiftEnd.HasValue) dayShiftEnd = ds.ShiftEnd.Value;
             }
             else if (dayDate == todayPkt && isToday)
             {
@@ -506,11 +516,16 @@ public class DoctorApisService : IDoctorApis
                 ConfirmedCount = dayApps.Count(a => a.Status == "Confirmed"),
                 CompletedCount = dayApps.Count(a => a.Status == "Completed"),
                 IsAvailable = dayAvail,
-                DailyStatus = dayStatus
+                DailyStatus = dayStatus,
+                ShiftStart = dayShiftStart,
+                ShiftEnd = dayShiftEnd
             });
         }
 
         var todayDateSchedule = upcomingDateSchedules.TryGetValue(todayPkt, out var tds) ? tds : null;
+        var todayShiftStart = (todayDateSchedule != null && todayDateSchedule.ShiftStart.HasValue) ? todayDateSchedule.ShiftStart.Value : doctor.ShiftStart;
+        var todayShiftEnd = (todayDateSchedule != null && todayDateSchedule.ShiftEnd.HasValue) ? todayDateSchedule.ShiftEnd.Value : doctor.ShiftEnd;
+
         var effectiveStatus = !doctor.IsAvailable
             ? "OffDuty"
             : (todayDateSchedule != null
@@ -537,8 +552,8 @@ public class DoctorApisService : IDoctorApis
             DoctorName = doctor.User != null ? doctor.User.Name : string.Empty,
             DepartmentName = doctor.Department != null ? doctor.Department.Name : string.Empty,
             DepartmentNames = allDeptNames,
-            ShiftStart = doctor.ShiftStart,
-            ShiftEnd = doctor.ShiftEnd,
+            ShiftStart = todayShiftStart,
+            ShiftEnd = todayShiftEnd,
             IsAvailable = effectiveAvailable,
             DailyStatus = effectiveStatus,
             IsLateToday = isLateToday,

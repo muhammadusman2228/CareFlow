@@ -301,6 +301,12 @@ namespace backend.Migrations
                     b.Property<DateOnly>("ScheduleDate")
                         .HasColumnType("date");
 
+                    b.Property<TimeOnly?>("ShiftEnd")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeOnly?>("ShiftStart")
+                        .HasColumnType("time(6)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -754,7 +760,7 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.DoctorDateSchedule", b =>
                 {
                     b.HasOne("backend.Models.Doctor", "Doctor")
-                        .WithMany()
+                        .WithMany("DateSchedules")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -914,6 +920,8 @@ namespace backend.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("Assistants");
+
+                    b.Navigation("DateSchedules");
 
                     b.Navigation("DoctorDepartments");
 

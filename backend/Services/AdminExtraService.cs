@@ -255,21 +255,31 @@ public class AdminExtraService : IAdminExtra
             var roster = doctors.Select(d =>
             {
                 bool isAvail;
-                if (!d.IsAvailable)
+                TimeOnly shiftStart;
+                TimeOnly shiftEnd;
+
+                if (dateSchedules.TryGetValue(d.Id, out var dateSchedule))
                 {
-                    isAvail = false;
-                }
-                else if (dateSchedules.TryGetValue(d.Id, out var dateSchedule))
-                {
-                    isAvail = dateSchedule.IsAvailable && dateSchedule.DailyStatus != "OffDuty";
-                }
-                else if (date == todayPkt && d.DailyStatusDate == todayPkt)
-                {
-                    isAvail = d.DailyStatus != "OffDuty" && d.IsAvailable;
+                    shiftStart = dateSchedule.ShiftStart ?? d.ShiftStart;
+                    shiftEnd = dateSchedule.ShiftEnd ?? d.ShiftEnd;
+                    isAvail = !d.IsAvailable ? false : (dateSchedule.IsAvailable && dateSchedule.DailyStatus != "OffDuty");
                 }
                 else
                 {
-                    isAvail = d.IsAvailable;
+                    shiftStart = d.ShiftStart;
+                    shiftEnd = d.ShiftEnd;
+                    if (!d.IsAvailable)
+                    {
+                        isAvail = false;
+                    }
+                    else if (date == todayPkt && d.DailyStatusDate == todayPkt)
+                    {
+                        isAvail = d.DailyStatus != "OffDuty";
+                    }
+                    else
+                    {
+                        isAvail = d.IsAvailable;
+                    }
                 }
 
                 return new DoctorScheduleResponseDto
@@ -277,8 +287,8 @@ public class AdminExtraService : IAdminExtra
                     DoctorId = d.Id,
                     DoctorName = d.DoctorName,
                     DepartmentName = d.DepartmentName,
-                    ShiftStart = d.ShiftStart,
-                    ShiftEnd = d.ShiftEnd,
+                    ShiftStart = shiftStart,
+                    ShiftEnd = shiftEnd,
                     IsAvailable = isAvail,
                     BookedSlotsCount = d.BookedSlotsCount,
                     CompletedSlotsCount = d.CompletedSlotsCount
@@ -306,8 +316,11 @@ public class AdminExtraService : IAdminExtra
             var todayPkt = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
             var targetDate = date ?? todayPkt;
 
-            doctor.ShiftStart = dto.ShiftStart;
-            doctor.ShiftEnd = dto.ShiftEnd;
+            if (date == null)
+            {
+                doctor.ShiftStart = dto.ShiftStart;
+                doctor.ShiftEnd = dto.ShiftEnd;
+            }
 
             var existingSchedule = await _context.DoctorDateSchedules
                 .FirstOrDefaultAsync(s => s.DoctorId == doctorId && s.ScheduleDate == targetDate);
@@ -342,6 +355,8 @@ public class AdminExtraService : IAdminExtra
 
             if (existingSchedule != null)
             {
+                existingSchedule.ShiftStart = dto.ShiftStart;
+                existingSchedule.ShiftEnd = dto.ShiftEnd;
                 existingSchedule.IsAvailable = dto.IsAvailable;
                 existingSchedule.DailyStatus = dto.IsAvailable ? "OnDuty" : "OffDuty";
                 if (!dto.IsAvailable)
@@ -364,6 +379,8 @@ public class AdminExtraService : IAdminExtra
                 {
                     DoctorId = doctorId,
                     ScheduleDate = targetDate,
+                    ShiftStart = dto.ShiftStart,
+                    ShiftEnd = dto.ShiftEnd,
                     IsAvailable = dto.IsAvailable,
                     DailyStatus = dto.IsAvailable ? "OnDuty" : "OffDuty",
                     IsLate = false,
