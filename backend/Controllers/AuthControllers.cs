@@ -21,9 +21,28 @@ public class AuthController : ControllerBase
 {
 
     private readonly IAuth _authService;
+
     public AuthController(IAuth authService)
     {
         _authService = authService;
+    }
+
+    private CookieOptions GetRefreshTokenCookieOptions(DateTime? expires = null)
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/"
+        };
+
+        if (expires.HasValue)
+        {
+            options.Expires = expires.Value;
+        }
+
+        return options;
     }
     [HttpPost("patient/register")]
     public async Task<ActionResult<PatientResponseDto>> Register([FromBody] RegisterDtos dto)
@@ -83,13 +102,7 @@ public class AuthController : ControllerBase
 
             var (responseDto, refreshToken, refreshExpiry) = await _authService.login(dto, ip, userAgent);
 
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-                Expires = refreshExpiry
-            };
+            var cookieOptions = GetRefreshTokenCookieOptions(refreshExpiry);
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
             return Ok(responseDto);
@@ -147,12 +160,7 @@ public class AuthController : ControllerBase
         
             }
             
-            Response.Cookies.Delete("refreshToken",new CookieOptions{
-                SameSite=SameSiteMode.Lax,
-                Secure=true,
-                HttpOnly=true
-
-            });
+            Response.Cookies.Delete("refreshToken", GetRefreshTokenCookieOptions());
             return Ok(new {message="Log out Successfully"});
         }
         catch (Exception)
@@ -176,13 +184,8 @@ public class AuthController : ControllerBase
             {
                 await _authService.logoutAllByUserId(userId);
             }
-             Response.Cookies.Delete("refreshToken",new CookieOptions
-             {
-                 SameSite=SameSiteMode.Lax,
-                 Secure=true,
-                 HttpOnly=true
-             }) ;
-             return Ok(new {message="Logout from all devices"});
+            Response.Cookies.Delete("refreshToken", GetRefreshTokenCookieOptions());
+            return Ok(new {message="Logout from all devices"});
         }
         catch (Exception)
         {

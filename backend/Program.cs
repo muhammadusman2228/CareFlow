@@ -5,6 +5,7 @@ using backend.Interfaces;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -55,12 +56,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddCors(option=>
-option.AddPolicy("React",policy=>
-policy.WithOrigins("http://localhost:5173")
-.AllowAnyHeader()
-.AllowAnyMethod()
-.AllowCredentials()));
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
+
+builder.Services.AddCors(option =>
+    option.AddPolicy("React", policy =>
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -81,6 +85,11 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseCors("React");
 app.UseRateLimiter();
