@@ -27,6 +27,7 @@ const AssistantDashboard = () => {
     const navigate = useNavigate()
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
     const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const [showLogoutAllModal, setShowLogoutAllModal] = useState(false)
 
     const handleLogout = async () => {
         try {
@@ -38,8 +39,12 @@ const AssistantDashboard = () => {
         }
     }
 
-    const handleLogoutAll = async () => {
-        if (!window.confirm('Are you sure you want to sign out from all devices? All other sessions will be revoked.')) return
+    const handleLogoutAll = () => {
+        setIsProfileOpen(false)
+        setShowLogoutAllModal(true)
+    }
+
+    const confirmLogoutAll = async () => {
         try {
             await axios.post('/auth/logout-all')
         } catch {
@@ -211,6 +216,39 @@ const AssistantDashboard = () => {
                     <Outlet />
                 </main>
             </div>
+
+            {showLogoutAllModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-100">
+                    <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                                <ShieldAlert size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900">Sign Out All Devices</h3>
+                                <p className="text-xs text-slate-500">Revoke all active sessions</p>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Are you sure you want to sign out from all devices? All other active sessions and login tokens will be immediately revoked.
+                        </p>
+                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                            <button
+                                onClick={() => setShowLogoutAllModal(false)}
+                                className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmLogoutAll}
+                                className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                            >
+                                Sign out all devices
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

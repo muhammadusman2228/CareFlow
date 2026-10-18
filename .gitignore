@@ -1,5 +1,9 @@
 **/bin/
 **/obj/
+**/publish/
+publish/
+*.tar.gz
+**/*.tar.gz
 **/*.dll
 **/*.pdb
 **/*.exe
@@ -7,6 +11,10 @@
 **/appsettings.json
 **/appsettings.*.json
 !**/appsettings.Example.json
+.env
+.env.*
+!.env.example
+!**/frontend/.env.example
 
 .vs/
 .vscode/*

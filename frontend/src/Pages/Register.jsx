@@ -32,42 +32,44 @@ const navigate=useNavigate()
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  const payload = {
-    name: formData.fullName,
-    email: formData.email,
-    password: formData.password,
-    gender: formData.gender,
-    bloodGroup: formData.bloodGroup,
-    phoneNumber: formData.number,
-    emergencyContact: formData.EmergencyContact,
-    dateOfBirth: formData.dob
-}
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true)
-    const registeredEmail = (formData.email || '').trim()
+    setErrorMsg("");
+    setLoading(true);
+    const registeredEmail = (formData.email || '').trim();
+    const payload = {
+      name: formData.fullName.trim(),
+      email: registeredEmail,
+      password: formData.password,
+      gender: formData.gender,
+      bloodGroup: formData.bloodGroup,
+      phoneNumber: formData.number.trim(),
+      emergencyContact: formData.EmergencyContact.trim(),
+      dateOfBirth: formData.dob
+    };
+
     try {
-      await axios.post("/auth/patient/register", payload)
-      navigate(`/verifyEmail?email=${encodeURIComponent(registeredEmail)}`)
- 
- } catch (error) {
-  if(!error?.response){
-    setErrorMsg("Maintenace is going on. Try again after some time ")
-  }
-  else if (error?.response.status===429){
-    setErrorMsg(error.response?.data?.message || "Too many attempts. Please try again after 15 minutes.")
-  }
-  else if (error?.response.status===409){
-    setErrorMsg("This email is already taken ")
-  }
-  else{
-    setErrorMsg("Try again later")
-  }
- }
- finally{
-  setLoading(false)
-  setFormData(initialFormState)
- }
+      await axios.post("/auth/patient/register", payload);
+      setFormData(initialFormState);
+      navigate(`/verifyEmail?email=${encodeURIComponent(registeredEmail)}`);
+    } catch (error) {
+      if (!error?.response) {
+        setErrorMsg("Service temporarily unavailable. Please check your connection or try again in a few moments.");
+      } else if (error?.response.status === 429) {
+        setErrorMsg(error.response?.data?.message || "Too many attempts. Please try again in a few minutes.");
+      } else if (error?.response.status === 409) {
+        setErrorMsg("This email is already taken. Please login or use a different email.");
+      } else if (error?.response.data?.errors) {
+        const validationMsgs = Object.values(error.response.data.errors).flat().join(". ");
+        setErrorMsg(validationMsgs || "Invalid registration details.");
+      } else if (error?.response.data?.message) {
+        setErrorMsg(error.response.data.message);
+      } else {
+        setErrorMsg("Registration failed. Please check your inputs and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
