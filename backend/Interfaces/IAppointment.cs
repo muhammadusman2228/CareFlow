@@ -9,4 +9,5 @@ public interface IAppointment
     Task<ResponseBookingDto> BookAppointment(RequestBookingDto dto, int userId);
 
     Task<List<string>> GetBookedSlots(int doctorId, DateOnly date);
+    Task<DoctorDayScheduleResponseDto> GetDoctorDaySchedule(int doctorId, DateOnly date);
 }

@@ -75,7 +75,7 @@ const DepartmentsSection = ({ onSelectDepartment }) => {
                     return (
                         <div
                             key={dept.id}
-                            className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between group cursor-pointer"
+                            className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all flex flex-col justify-between group cursor-pointer"
                             onClick={() => onSelectDepartment?.(dept.name)}
                         >
                             <div>

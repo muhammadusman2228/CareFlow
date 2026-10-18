@@ -101,6 +101,7 @@ const AssistantTriageQueue = () => {
     const [bookingError, setBookingError] = useState(null)
     const [doctorsList, setDoctorsList] = useState([])
     const [bookedSlots, setBookedSlots] = useState([])
+    const [doctorDaySchedule, setDoctorDaySchedule] = useState(null)
 
     const initialBookingForm = {
         patientName: '',
@@ -135,15 +136,27 @@ const AssistantTriageQueue = () => {
 
     useEffect(() => {
         if (!bookingForm.doctorId || !bookingForm.appointmentDate) return
-        const fetchBooked = async () => {
+        const fetchSchedule = async () => {
+            try {
+                const res = await axiosPrivate.get(`/Appointment/doctor-day-schedule?doctorId=${bookingForm.doctorId}&date=${bookingForm.appointmentDate}`)
+                if (res.data) {
+                    setDoctorDaySchedule(res.data)
+                    setBookedSlots(Array.isArray(res.data.bookedSlots) ? res.data.bookedSlots : [])
+                    return
+                }
+            } catch {
+                // Fallback to booked-slots
+            }
+
             try {
                 const res = await axiosPrivate.get(`/Appointment/booked-slots?doctorId=${bookingForm.doctorId}&date=${bookingForm.appointmentDate}`)
                 setBookedSlots(Array.isArray(res.data) ? res.data : [])
             } catch {
                 setBookedSlots([])
             }
+            setDoctorDaySchedule(null)
         }
-        fetchBooked()
+        fetchSchedule()
     }, [bookingForm.doctorId, bookingForm.appointmentDate])
 
     const handleOpenBookingModal = async () => {
@@ -458,7 +471,7 @@ const AssistantTriageQueue = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden flex flex-col">
                 <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/70">
                     <div className="relative flex-1 max-w-md">
                         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -509,7 +522,7 @@ const AssistantTriageQueue = () => {
                                 <th className="py-3.5 px-4">Slot (PKT)</th>
                                 <th className="py-3.5 px-4">Patient Name</th>
                                 <th className="py-3.5 px-4">Consultant Doctor</th>
-                                <th className="py-3.5 px-4">Visit Status</th>
+                                <th className="py-3.5 px-4 text-center">Visit Status</th>
                                 <th className="py-3.5 px-4">Triage Vitals Check</th>
                                 <th className="py-3.5 px-4 sm:px-6 text-center">Triage Actions</th>
                             </tr>
@@ -576,17 +589,21 @@ const AssistantTriageQueue = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-4">
-                                                <span className={`text-xs font-semibold ${
+                                            <td className="py-4 px-4 text-center">
+                                                <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
                                                     item.status === 'CheckedIn'
-                                                        ? 'text-slate-950 font-bold'
-                                                        : item.status === 'Confirmed'
-                                                        ? 'text-slate-800'
+                                                        ? 'text-sky-800 bg-sky-100'
+                                                        : (item.status === 'Confirmed' || item.status === 'Booked' || item.status === 'Pending')
+                                                        ? 'text-slate-800 bg-slate-100'
                                                         : item.status === 'Completed'
-                                                        ? 'text-slate-600'
-                                                        : 'text-slate-500'
+                                                        ? 'text-slate-700 bg-slate-100'
+                                                        : item.status === 'Missed'
+                                                        ? 'text-slate-600 bg-slate-100'
+                                                        : item.status === 'Cancelled'
+                                                        ? 'text-slate-500 bg-slate-100'
+                                                        : 'text-slate-700 bg-slate-100'
                                                 }`}>
-                                                    {item.status === 'CheckedIn' ? 'Checked In' : item.status}
+                                                    {item.status === 'CheckedIn' ? 'Checked In' : ((item.status === 'Confirmed' || item.status === 'Pending') ? 'Booked' : item.status)}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4">
@@ -1109,7 +1126,17 @@ const AssistantTriageQueue = () => {
 
                                     {(() => {
                                         const doc = doctorsList.find(d => String(d.id) === String(bookingForm.doctorId))
-                                        const slots = doc ? generateSlots(doc.shiftStart, doc.shiftEnd) : []
+                                        const effectiveStart = doctorDaySchedule?.shiftStart || doc?.shiftStart
+                                        const effectiveEnd = doctorDaySchedule?.shiftEnd || doc?.shiftEnd
+                                        const slots = (effectiveStart && effectiveEnd) ? generateSlots(effectiveStart, effectiveEnd) : []
+
+                                        if (doctorDaySchedule?.dailyStatus === 'OffDuty') {
+                                            return (
+                                                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+                                                    Physician is marked Off-Duty on {bookingForm.appointmentDate}. Please choose another date or doctor.
+                                                </div>
+                                            )
+                                        }
 
                                         if (slots.length === 0) {
                                             return (

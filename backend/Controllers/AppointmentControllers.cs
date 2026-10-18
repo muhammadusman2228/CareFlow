@@ -51,6 +51,25 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    [HttpGet("doctor-day-schedule")]
+    [AllowAnonymous]
+    public async Task<ActionResult<DoctorDayScheduleResponseDto>> GetDoctorDaySchedule([FromQuery] int doctorId, [FromQuery] DateOnly date)
+    {
+        try
+        {
+            var schedule = await _appointmentService.GetDoctorDaySchedule(doctorId, date);
+            return Ok(schedule);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
     [HttpPost("booking")]
     [Authorize(Roles = "Patient")]
     public async Task<ActionResult<ResponseBookingDto>> BookAppointment(RequestBookingDto dto)

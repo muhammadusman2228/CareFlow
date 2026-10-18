@@ -92,7 +92,7 @@ const PatientOverview = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 flex flex-col justify-between">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Next Upcoming Consultation</span>
                         {nextAppointment && (
@@ -138,7 +138,7 @@ const PatientOverview = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                    <div className="bg-white rounded-2xl p-4 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all flex items-center justify-between">
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-slate-500">Upcoming Visits</span>
                             <span className="text-2xl font-extrabold text-slate-900 mt-0.5">{upcomingAppointments.length}</span>
@@ -148,7 +148,7 @@ const PatientOverview = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                    <div className="bg-white rounded-2xl p-4 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all flex items-center justify-between">
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-slate-500">Past Consultations</span>
                             <span className="text-2xl font-extrabold text-slate-900 mt-0.5">{completedAppointments.length}</span>
@@ -158,7 +158,7 @@ const PatientOverview = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                    <div className="bg-white rounded-2xl p-4 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-0.5 transition-all flex items-center justify-between">
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-slate-500">Prescriptions</span>
                             <span className="text-2xl font-extrabold text-slate-900 mt-0.5">{prescriptions.length}</span>
@@ -171,7 +171,7 @@ const PatientOverview = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden flex flex-col">
                     <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-base font-bold text-slate-900">My Appointments Roster</h2>
@@ -191,7 +191,7 @@ const PatientOverview = () => {
                                 <tr className="border-b border-slate-100 bg-slate-50/75">
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Doctor</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Date & Time</th>
-                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -216,9 +216,23 @@ const PatientOverview = () => {
                                                     <span className="text-[11px] font-medium text-slate-500">{appt.timeSlot}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                                                    {appt.status === 'CheckedIn' ? 'Checked In' : (appt.status === 'Confirmed' || appt.status === 'Pending') ? 'Booked' : appt.status}
+                                            <td className="px-5 py-4 text-center">
+                                                <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                                                    appt.status === 'InProgress'
+                                                        ? 'text-amber-800 bg-amber-100 animate-pulse'
+                                                        : appt.status === 'CheckedIn'
+                                                        ? 'text-sky-800 bg-sky-100'
+                                                        : (appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending')
+                                                        ? 'text-slate-800 bg-slate-100'
+                                                        : appt.status === 'Completed'
+                                                        ? 'text-slate-700 bg-slate-100'
+                                                        : appt.status === 'Missed'
+                                                        ? 'text-slate-600 bg-slate-100'
+                                                        : appt.status === 'Cancelled'
+                                                        ? 'text-slate-500 bg-slate-100'
+                                                        : 'text-slate-700 bg-slate-100'
+                                                }`}>
+                                                    {appt.status === 'InProgress' ? 'In Consultation' : appt.status === 'CheckedIn' ? 'Checked In' : ((appt.status === 'Confirmed' || appt.status === 'Pending' || appt.status === 'Booked') ? 'Booked' : appt.status)}
                                                 </span>
                                             </td>
                                         </tr>
@@ -229,7 +243,7 @@ const PatientOverview = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 flex flex-col gap-4">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
                             <h3 className="text-sm font-bold text-slate-900">Recent Prescriptions</h3>

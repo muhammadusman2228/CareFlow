@@ -3,6 +3,7 @@
 
 using System.Data;
 using System.Security.Authentication;
+using System.Security.Claims;
 using backend.Data;
 using backend.DTOs;
 using backend.Interfaces;
@@ -167,10 +168,13 @@ public class AuthController : ControllerBase
         try
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if(!string.IsNullOrWhiteSpace(refreshToken))
+            if (!string.IsNullOrWhiteSpace(refreshToken))
             {
-             await _authService.logoutAll(refreshToken);
-           
+                await _authService.logoutAll(refreshToken);
+            }
+            else if (User.Identity?.IsAuthenticated == true && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+            {
+                await _authService.logoutAllByUserId(userId);
             }
              Response.Cookies.Delete("refreshToken",new CookieOptions
              {

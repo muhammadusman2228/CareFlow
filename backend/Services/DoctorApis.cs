@@ -50,7 +50,9 @@ public class DoctorApisService : IDoctorApis
                     AppointmentDate = u.AppointmentDate,
                     TimeSlot = u.TimeSlot,
                     Symptoms = u.Symptoms,
-                    Status = u.Status
+                    Status = u.Status,
+                    PrescriptionTitle = u.Prescriptions != null ? u.Prescriptions.Title : null,
+                    PrescriptionNote = u.Prescriptions != null ? u.Prescriptions.Note : null
                 }).ToListAsync();
 
             return appointments;
@@ -72,7 +74,7 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidDataException("Doctor does not exist");
             }
 
-            if (dto.Status != "Booked" && dto.Status != "Confirmed" && dto.Status != "CheckedIn" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
+            if (dto.Status != "Booked" && dto.Status != "Confirmed" && dto.Status != "CheckedIn" && dto.Status != "InProgress" && dto.Status != "Completed" && dto.Status != "Cancelled" && dto.Status != "Missed")
             {
                 throw new InvalidOperationException("Invalid appointment status");
             }
@@ -83,9 +85,22 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidOperationException("Appointment not found or does not belong to you");
             }
 
+            if (dto.Status == "Missed")
+            {
+                var todayPkt = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+                if (existingAppointment.AppointmentDate > todayPkt)
+                {
+                    throw new InvalidOperationException("Cannot mark a future appointment as Missed (No-Show). The appointment date has not arrived yet.");
+                }
+            }
+
             if (existingAppointment.Status == "Missed" && dto.Status != "Missed")
             {
-                throw new InvalidOperationException("Cannot change the status of a missed appointment");
+                // Allow restoring accidental Missed back to Booked
+                if (dto.Status != "Booked" && dto.Status != "Confirmed")
+                {
+                    throw new InvalidOperationException("Cannot change the status of a missed appointment except restoring to Booked.");
+                }
             }
 
             if (existingAppointment.Status == "Cancelled" && dto.Status != "Cancelled")
@@ -263,13 +278,13 @@ public class DoctorApisService : IDoctorApis
                 throw new InvalidKeyException("Doctor does not exist");
             }
 
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
 
             var todayAppointments = await _context.Appointments
                 .CountAsync(u => u.DoctorId == doctor.Id && u.AppointmentDate == today);
 
             var pendingApprovals = await _context.Appointments
-                .CountAsync(a => a.DoctorId == doctor.Id && (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending") && a.AppointmentDate == today);
+                .CountAsync(a => a.DoctorId == doctor.Id && (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn" || a.Status == "InProgress") && a.AppointmentDate == today);
 
             var todayCompletedCount = await _context.Appointments
                 .CountAsync(a => a.DoctorId == doctor.Id && a.Status == "Completed" && a.AppointmentDate == today);

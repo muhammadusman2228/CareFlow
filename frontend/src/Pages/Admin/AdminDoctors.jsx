@@ -939,7 +939,7 @@ const AdminDoctors = () => {
                         {filteredDoctors.slice((page - 1) * 20, page * 20).map((doc, index) => (
                             <div
                                 key={doc.id}
-                                className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+                                className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-between gap-4"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">

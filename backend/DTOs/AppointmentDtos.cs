@@ -40,3 +40,14 @@ public class ResponseBookingDto
     public TimeOnly TimeSlot { get; set; }
     public string Status { get; set; } = string.Empty;
 }
+
+public class DoctorDayScheduleResponseDto
+{
+    public int DoctorId { get; set; }
+    public DateOnly Date { get; set; }
+    public TimeOnly ShiftStart { get; set; }
+    public TimeOnly ShiftEnd { get; set; }
+    public bool IsAvailable { get; set; }
+    public string DailyStatus { get; set; } = "OnDuty";
+    public List<string> BookedSlots { get; set; } = new();
+}

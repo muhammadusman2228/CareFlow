@@ -98,11 +98,32 @@ const DoctorOverview = () => {
     const todayDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     const todaysAppointments = appointments.filter(a => a.appointmentDate === todayDateStr)
 
-    const nextPatient = todaysAppointments.find(a => a.status === 'CheckedIn') || todaysAppointments.find(a => a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending')
+    const handleStartConsultation = async (appt) => {
+        if (appt.status === 'CheckedIn') {
+            try {
+                await axiosPrivate.patch('/Doctor/appointment-status', {
+                    appointmentId: appt.appointmentId,
+                    status: 'InProgress'
+                })
+                setAppointments(prev => prev.map(a => 
+                    a.appointmentId === appt.appointmentId ? { ...a, status: 'InProgress' } : a
+                ))
+                setActiveAppointment({ ...appt, status: 'InProgress' })
+            } catch {
+                setActiveAppointment(appt)
+            }
+        } else {
+            setActiveAppointment(appt)
+        }
+    }
+
+    const nextPatient = todaysAppointments.find(a => a.status === 'InProgress') ||
+                        todaysAppointments.find(a => a.status === 'CheckedIn') || 
+                        todaysAppointments.find(a => a.status === 'Booked' || a.status === 'Confirmed' || a.status === 'Pending')
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                         {dailyStatusData?.dailyStatus === 'Delayed' ? <Hourglass size={20} /> : <CheckCircle2 size={20} />}
@@ -158,7 +179,7 @@ const DoctorOverview = () => {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-700">Appointments</span>
                         <span className="text-3xl font-extrabold text-slate-900 mt-1">{stats.todayAppointments}</span>
@@ -168,7 +189,7 @@ const DoctorOverview = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-700">Booked</span>
                         <span className="text-3xl font-extrabold text-slate-900 mt-1">{stats.pendingApprovals}</span>
@@ -178,7 +199,7 @@ const DoctorOverview = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-700">Completed</span>
                         <span className="text-3xl font-extrabold text-slate-900 mt-1">{stats.todayCompletedCount}</span>
@@ -188,7 +209,7 @@ const DoctorOverview = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-700">Total Patients</span>
                         <span className="text-3xl font-extrabold text-slate-900 mt-1">{stats.totalUniquePatients}</span>
@@ -200,7 +221,7 @@ const DoctorOverview = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden flex flex-col">
                     <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-base font-bold text-slate-900">Today's Consultation Schedule</h2>
@@ -222,7 +243,7 @@ const DoctorOverview = () => {
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Patient</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Time</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Chief Complaint</th>
-                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                                    <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Status</th>
                                     <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Action</th>
                                 </tr>
                             </thead>
@@ -248,17 +269,23 @@ const DoctorOverview = () => {
                                             <td className="px-5 py-4 text-xs font-medium text-slate-600 max-w-xs truncate">
                                                 {appt.symptoms || 'General routine consultation'}
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className={`text-xs font-semibold ${
-                                                    appt.status === 'CheckedIn'
-                                                        ? 'text-slate-950 font-bold'
-                                                        : appt.status === 'Booked' || appt.status === 'Confirmed'
-                                                        ? 'text-slate-800'
+                                            <td className="px-5 py-4 text-center">
+                                                <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                                                    appt.status === 'InProgress'
+                                                        ? 'text-amber-800 bg-amber-100 animate-pulse'
+                                                        : appt.status === 'CheckedIn'
+                                                        ? 'text-sky-800 bg-sky-100'
+                                                        : (appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending')
+                                                        ? 'text-slate-800 bg-slate-100'
                                                         : appt.status === 'Completed'
-                                                        ? 'text-slate-600'
-                                                        : 'text-slate-500'
+                                                        ? 'text-slate-700 bg-slate-100'
+                                                        : appt.status === 'Missed'
+                                                        ? 'text-slate-600 bg-slate-100'
+                                                        : appt.status === 'Cancelled'
+                                                        ? 'text-slate-500 bg-slate-100'
+                                                        : 'text-slate-700 bg-slate-100'
                                                 }`}>
-                                                    {appt.status === 'CheckedIn' ? 'Checked In' : appt.status}
+                                                    {appt.status === 'InProgress' ? 'In Consultation' : appt.status === 'CheckedIn' ? 'Checked In' : ((appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending') ? 'Booked' : appt.status)}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4 text-center">
@@ -278,9 +305,16 @@ const DoctorOverview = () => {
                                                         <span className="text-xs font-semibold text-slate-400">
                                                             Missed
                                                         </span>
-                                                    ) : appt.status === 'CheckedIn' ? (
+                                                    ) : appt.status === 'InProgress' ? (
                                                         <button
                                                             onClick={() => setActiveAppointment(appt)}
+                                                            className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer animate-pulse"
+                                                        >
+                                                            Continue Consultation
+                                                        </button>
+                                                    ) : appt.status === 'CheckedIn' ? (
+                                                        <button
+                                                            onClick={() => handleStartConsultation(appt)}
                                                             className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                                                         >
                                                             Start Consultation
@@ -305,7 +339,7 @@ const DoctorOverview = () => {
                 </div>
 
                 <div className="flex flex-col gap-6">
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+                    <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 flex flex-col gap-4">
                         <h3 className="text-sm font-bold text-slate-900">Duty Shift & Fee</h3>
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
@@ -314,7 +348,9 @@ const DoctorOverview = () => {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-medium text-slate-500">Duty Shift</span>
-                                    <span className="text-sm font-bold text-slate-800">09:00 AM - 05:00 PM</span>
+                                    <span className="text-sm font-bold text-slate-800">
+                                        {dailyStatusData?.shiftStart ? `${dailyStatusData.shiftStart} - ${dailyStatusData.shiftEnd}` : '09:00 AM - 05:00 PM'}
+                                    </span>
                                 </div>
                             </div>
 
@@ -330,14 +366,18 @@ const DoctorOverview = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3.5">
+                    <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 flex flex-col gap-3.5">
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Next Patient</span>
                             {nextPatient && (
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                    nextPatient.status === 'CheckedIn' ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-slate-100 text-slate-600'
+                                    nextPatient.status === 'InProgress'
+                                        ? 'bg-amber-50 text-amber-800 border border-amber-200 animate-pulse'
+                                        : nextPatient.status === 'CheckedIn'
+                                        ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                        : 'bg-slate-100 text-slate-600'
                                 }`}>
-                                    {nextPatient.status === 'CheckedIn' ? 'Checked In' : 'Awaiting Check-in'}
+                                    {nextPatient.status === 'InProgress' ? 'In Consultation' : nextPatient.status === 'CheckedIn' ? 'Checked In' : 'Awaiting Check-in'}
                                 </span>
                             )}
                         </div>
@@ -349,11 +389,25 @@ const DoctorOverview = () => {
                                 </div>
                                 <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 w-fit">
                                     <Clock size={13} />
-                                    <span>{nextPatient.status === 'CheckedIn' ? 'Ready for Consultation' : 'Scheduled Slot'}</span>
+                                    <span>
+                                        {nextPatient.status === 'InProgress' 
+                                            ? 'Consultation in progress' 
+                                            : nextPatient.status === 'CheckedIn' 
+                                            ? 'Ready for Consultation' 
+                                            : 'Scheduled Slot'}
+                                    </span>
                                 </div>
-                                {nextPatient.status === 'CheckedIn' ? (
+                                {nextPatient.status === 'InProgress' ? (
                                     <button
                                         onClick={() => setActiveAppointment(nextPatient)}
+                                        className="w-full mt-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer animate-pulse"
+                                    >
+                                        <span>Resume Consultation</span>
+                                        <ArrowRight size={14} />
+                                    </button>
+                                ) : nextPatient.status === 'CheckedIn' ? (
+                                    <button
+                                        onClick={() => handleStartConsultation(nextPatient)}
                                         className="w-full mt-1 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                                     >
                                         <span>Start Consultation</span>

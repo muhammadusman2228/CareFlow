@@ -24,6 +24,10 @@ public class DoctorAppointmentsDto
     public string Symptoms { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
+
+    public string? PrescriptionTitle { get; set; }
+
+    public string? PrescriptionNote { get; set; }
 }
 
 

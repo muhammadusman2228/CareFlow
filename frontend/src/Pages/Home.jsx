@@ -19,7 +19,7 @@ const Home = () => {
     }
 
     return (
-        <div className="bg-white w-full overflow-x-hidden relative min-h-screen flex flex-col">
+        <div className="bg-slate-100 w-full overflow-x-hidden relative min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-1 flex flex-col gap-10">
                 <Hero />

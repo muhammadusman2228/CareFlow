@@ -3,7 +3,7 @@
 const Bottom=()=>{
     return(
  <div className="bottom grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="cardiology flex flex-col bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+                    <div className="cardiology flex flex-col bg-white p-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all duration-300">
                       <svg 
   xmlns="http://www.w3.org/2000/svg" 
   width="55" 
@@ -28,7 +28,7 @@ const Bottom=()=>{
                       </p>
                     
                     </div>
-                    <div className="pediatrics flex flex-col bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+                    <div className="pediatrics flex flex-col bg-white p-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all duration-300">
                         <svg 
   xmlns="http://www.w3.org/2000/svg" 
   width="55" 
@@ -67,7 +67,7 @@ const Bottom=()=>{
                        Comprehensive care for infants, children, and adolescents, ensuring healthy growth.
                       </p>
                     </div>
-                    <div className="neurology flex flex-col bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+                    <div className="neurology flex flex-col bg-white p-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all duration-300">
                          <svg 
   xmlns="http://www.w3.org/2000/svg" 
   width="55" 
@@ -83,7 +83,7 @@ const Bottom=()=>{
                         Diagnosis and treatment of neurological disorders with cutting-edge technology.
                       </p>
                     </div>
-                    <div className="orthopedics flex flex-col bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+                    <div className="orthopedics flex flex-col bg-white p-6 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all duration-300">
                         <svg 
   xmlns="http://www.w3.org/2000/svg" 
   width="55" 

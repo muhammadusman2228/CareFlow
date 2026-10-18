@@ -82,14 +82,14 @@ const Login=()=>{
        
     }
     return(
-        <div className="div grid grid-cols-1 lg:grid-cols-12 min-h-screen w-full bg-slate-50 overflow-y-auto">
+        <div className="div grid grid-cols-1 lg:grid-cols-12 min-h-screen w-full bg-slate-100 overflow-y-auto">
             <div className="hidden lg:flex lg:relative col-span-6 justify-center items-center w-full h-full bg-slate-100 overflow-hidden">
                 <img className="w-full h-full object-cover object-center" src={LoginImage} alt="CareFlow Clinical Portal" />
             </div>
             <div className="col-span-1 lg:col-span-6 w-full min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 py-8 sm:py-12">
                 <div className="group relative w-full max-w-110 p-0.5 rounded-2xl overflow-hidden transition-all duration-300 ease-out hover:scale-[1.015] hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-sky-500/15">
                     <div className="absolute -inset-full bg-[conic-gradient(from_0deg,transparent_0_300deg,#38bdf8_360deg)] animate-[spin_4s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="loginCenter relative w-full bg-white rounded-[14px] p-6 sm:p-7 flex flex-col gap-4 sm:gap-5 shadow-xl shadow-slate-900/5">
+                    <div className="loginCenter relative w-full bg-white rounded-[14px] p-6 sm:p-7 flex flex-col gap-4 sm:gap-5 shadow-2xl shadow-slate-900/15">
                         <div className="logo flex justify-center mb-1">
                             <AppLogo/>
                         </div>

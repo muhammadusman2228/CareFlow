@@ -89,6 +89,7 @@ const PatientBooking = () => {
 
     const [selectedDoctor, setSelectedDoctor] = useState(null)
     const [bookedSlots, setBookedSlots] = useState([])
+    const [doctorDaySchedule, setDoctorDaySchedule] = useState(null)
     const [selectedSlot, setSelectedSlot] = useState(null)
     const [symptoms, setSymptoms] = useState('')
     const [bookingLoading, setBookingLoading] = useState(false)
@@ -101,23 +102,37 @@ const PatientBooking = () => {
 
     useEffect(() => {
         if (!selectedDoctor || !selectedDate) return
-        const fetchBooked = async () => {
+        const fetchSchedule = async () => {
             try {
-                const res = await axios.get(`/Appointment/booked-slots?doctorId=${selectedDoctor.id}&date=${selectedDate}`)
-                setBookedSlots(Array.isArray(res.data) ? res.data : [])
+                const res = await axios.get(`/Appointment/doctor-day-schedule?doctorId=${selectedDoctor.id}&date=${selectedDate}`)
+                if (res.data) {
+                    setDoctorDaySchedule(res.data)
+                    setBookedSlots(Array.isArray(res.data.bookedSlots) ? res.data.bookedSlots : [])
+                    return
+                }
+            } catch {
+                // Fallback to booked-slots
+            }
+
+            try {
+                const fallback = await axios.get(`/Appointment/booked-slots?doctorId=${selectedDoctor.id}&date=${selectedDate}`)
+                setBookedSlots(Array.isArray(fallback.data) ? fallback.data : [])
             } catch {
                 setBookedSlots([])
             }
+            setDoctorDaySchedule(null)
         }
-        fetchBooked()
+        fetchSchedule()
     }, [selectedDoctor, selectedDate])
 
     useEffect(() => {
         if (!selectedDoctor) return
-        const allSlots = generateDoctorSlots(selectedDoctor.shiftStart, selectedDoctor.shiftEnd)
+        const effectiveStart = doctorDaySchedule?.shiftStart || selectedDoctor.shiftStart
+        const effectiveEnd = doctorDaySchedule?.shiftEnd || selectedDoctor.shiftEnd
+        const allSlots = generateDoctorSlots(effectiveStart, effectiveEnd)
         const firstAvailable = allSlots.find(s => !bookedSlots.includes(s.value) && !isPastSlot(s.value, selectedDate))
         setSelectedSlot(firstAvailable || null)
-    }, [selectedDate, bookedSlots, selectedDoctor])
+    }, [selectedDate, bookedSlots, selectedDoctor, doctorDaySchedule])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -189,7 +204,7 @@ const PatientBooking = () => {
                 <p className="text-xs text-slate-500">Book appointments with available medical specialists</p>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl p-4 shadow-xl shadow-slate-900/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 flex-1">
                     <Search size={16} className="text-slate-400 shrink-0" />
                     <input
@@ -231,12 +246,12 @@ const PatientBooking = () => {
             </div>
 
             {loading ? (
-                <div className="p-16 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200/90">
+                <div className="p-16 flex flex-col items-center justify-center bg-white rounded-2xl shadow-xl shadow-slate-900/10">
                     <div className="w-8 h-8 border-3 border-sky-600 border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs font-semibold text-slate-600 mt-3">Loading available physicians...</span>
                 </div>
             ) : filteredDoctors.length === 0 ? (
-                <div className="p-12 bg-white rounded-xl border border-slate-200/90 text-center flex flex-col items-center gap-2">
+                <div className="p-12 bg-white rounded-2xl shadow-xl shadow-slate-900/10 text-center flex flex-col items-center gap-2">
                     <Stethoscope size={28} className="text-slate-400" />
                     <p className="text-sm font-semibold text-slate-700">No doctors match your criteria.</p>
                     <p className="text-xs text-slate-500">Try modifying your search or department filter.</p>
@@ -249,7 +264,7 @@ const PatientBooking = () => {
                             return (
                                 <div
                                     key={doc.id}
-                                    className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4 relative"
+                                    className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-between gap-4 relative"
                                 >
                                     <span className="absolute top-3.5 right-3.5 text-xs font-mono font-bold text-slate-400">
                                         #{(page - 1) * 20 + idx + 1}
@@ -354,9 +369,16 @@ const PatientBooking = () => {
                                     </div>
                                     
                                     <div className="flex flex-col gap-1.5">
-                                        <span className="text-slate-500 font-semibold">Select Time Slot:</span>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500 font-semibold">Select Time Slot:</span>
+                                            {doctorDaySchedule?.dailyStatus === 'OffDuty' ? (
+                                                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">Off-Duty</span>
+                                            ) : doctorDaySchedule?.shiftEnd ? (
+                                                <span className="text-[10px] text-slate-500 font-medium">Shift: {doctorDaySchedule.shiftStart.substring(0,5)} - {doctorDaySchedule.shiftEnd.substring(0,5)}</span>
+                                            ) : null}
+                                        </div>
                                         <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto pr-1">
-                                            {generateDoctorSlots(selectedDoctor.shiftStart, selectedDoctor.shiftEnd).map(slot => {
+                                            {generateDoctorSlots(doctorDaySchedule?.shiftStart || selectedDoctor.shiftStart, doctorDaySchedule?.shiftEnd || selectedDoctor.shiftEnd).map(slot => {
                                                 const isBooked = bookedSlots.includes(slot.value)
                                                 const isPast = isPastSlot(slot.value, selectedDate)
                                                 const isUnavailable = isBooked || isPast

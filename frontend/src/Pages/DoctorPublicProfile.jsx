@@ -93,6 +93,7 @@ const DoctorPublicProfile = () => {
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     const [selectedDate, setSelectedDate] = useState(todayStr)
     const [bookedSlots, setBookedSlots] = useState([])
+    const [doctorDaySchedule, setDoctorDaySchedule] = useState(null)
     const [selectedSlot, setSelectedSlot] = useState(null)
     const [symptoms, setSymptoms] = useState('')
     const [bookingLoading, setBookingLoading] = useState(false)
@@ -101,23 +102,37 @@ const DoctorPublicProfile = () => {
 
     useEffect(() => {
         if (!id || !selectedDate) return
-        const fetchBookedSlots = async () => {
+        const fetchSchedule = async () => {
             try {
-                const res = await axios.get(`/Appointment/booked-slots?doctorId=${id}&date=${selectedDate}`)
-                setBookedSlots(Array.isArray(res.data) ? res.data : [])
+                const res = await axios.get(`/Appointment/doctor-day-schedule?doctorId=${id}&date=${selectedDate}`)
+                if (res.data) {
+                    setDoctorDaySchedule(res.data)
+                    setBookedSlots(Array.isArray(res.data.bookedSlots) ? res.data.bookedSlots : [])
+                    return
+                }
+            } catch {
+                // Fallback to booked-slots
+            }
+
+            try {
+                const fallback = await axios.get(`/Appointment/booked-slots?doctorId=${id}&date=${selectedDate}`)
+                setBookedSlots(Array.isArray(fallback.data) ? fallback.data : [])
             } catch {
                 setBookedSlots([])
             }
+            setDoctorDaySchedule(null)
         }
-        fetchBookedSlots()
+        fetchSchedule()
     }, [id, selectedDate])
 
     useEffect(() => {
         if (!doctor) return
-        const allSlots = generateDoctorSlots(doctor.shiftStart, doctor.shiftEnd)
+        const effectiveStart = doctorDaySchedule?.shiftStart || doctor.shiftStart
+        const effectiveEnd = doctorDaySchedule?.shiftEnd || doctor.shiftEnd
+        const allSlots = generateDoctorSlots(effectiveStart, effectiveEnd)
         const firstAvailable = allSlots.find(s => !bookedSlots.includes(s.value) && !isPastSlot(s.value, selectedDate))
         setSelectedSlot(firstAvailable || null)
-    }, [selectedDate, bookedSlots, doctor])
+    }, [selectedDate, bookedSlots, doctor, doctorDaySchedule])
 
     useEffect(() => {
         const fetchDoctor = async () => {
@@ -196,10 +211,12 @@ const DoctorPublicProfile = () => {
         return `${hour12.toString().padStart(2, '0')}:${m} ${ampm}`
     }
 
-    const availableSlots = doctor ? generateDoctorSlots(doctor.shiftStart, doctor.shiftEnd) : []
+    const availableSlots = doctor 
+        ? generateDoctorSlots(doctorDaySchedule?.shiftStart || doctor.shiftStart, doctorDaySchedule?.shiftEnd || doctor.shiftEnd) 
+        : []
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
             <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-18 flex items-center justify-between">
                     <div className="flex items-center gap-6">
@@ -264,7 +281,7 @@ const DoctorPublicProfile = () => {
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         <div className="lg:col-span-7 flex flex-col gap-6">
-                            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-sm flex flex-col gap-6">
+                            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-900/10 flex flex-col gap-6">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6 border-b border-slate-100">
                                     <div className="w-20 h-20 rounded-2xl bg-sky-50 border border-sky-100 text-sky-700 font-extrabold text-2xl flex items-center justify-center shrink-0 shadow-2xs">
                                         {(formatDoctorName(doctor.name) || 'D').replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D'}
@@ -358,7 +375,7 @@ const DoctorPublicProfile = () => {
                         </div>
 
                         <div className="lg:col-span-5 flex flex-col gap-4">
-                            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-sm flex flex-col gap-5 sticky top-24">
+                            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xl shadow-slate-900/10 flex flex-col gap-5 sticky top-24">
                                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                                     <div>
                                         <h2 className="text-base font-bold text-slate-900 tracking-tight">
@@ -491,7 +508,7 @@ const DoctorPublicProfile = () => {
                             </div>
 
                             {doctor.assistantPhone && (
-                                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm flex flex-col gap-3.5">
+                                <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-xl shadow-slate-900/10 flex flex-col gap-3.5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
                                             <PhoneCall size={18} />

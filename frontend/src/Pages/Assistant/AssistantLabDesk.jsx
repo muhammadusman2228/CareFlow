@@ -72,6 +72,23 @@ const AssistantLabDesk = () => {
         }
     }
 
+    const handleStartProcessing = async (order) => {
+        if (order.isAppointmentCompleted || order.appointmentStatus === 'Completed') {
+            setErrorMessage('Cannot modify lab orders for completed appointments.')
+            return
+        }
+        try {
+            await axiosPrivate.put(`/Assistant/lab-order/${order.id}/status`, {
+                status: 'InProgress',
+                resultsSummary: order.resultsSummary || null
+            })
+            setSuccessMessage(`Pathology analysis started for ${order.patientName} (${order.testName}). Status set to In Progress.`)
+            await fetchLabOrders()
+        } catch (err) {
+            setErrorMessage(err.response?.data?.message || 'Failed to update lab order status.')
+        }
+    }
+
     const handleOpenCompleteModal = (order) => {
         if (order.isAppointmentCompleted || order.appointmentStatus === 'Completed') {
             setErrorMessage('Cannot modify lab orders for completed appointments.')
@@ -159,7 +176,7 @@ const AssistantLabDesk = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden flex flex-col">
                 <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/70">
                     <div className="relative flex-1 max-w-md">
                         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -183,6 +200,7 @@ const AssistantLabDesk = () => {
                             <option value="ALL">All Lab Statuses</option>
                             <option value="Ordered">Ordered (Pending Collection)</option>
                             <option value="Sample Collected">Sample Collected (In Lab)</option>
+                            <option value="InProgress">In Progress (Analyzing)</option>
                             <option value="Completed">Completed</option>
                         </select>
                     </div>
@@ -247,12 +265,14 @@ const AssistantLabDesk = () => {
                                             <td className="py-4 px-4">
                                                 <span className={`text-xs font-semibold ${
                                                     order.status === 'Completed'
-                                                        ? 'text-slate-950 font-bold'
+                                                        ? 'text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md font-semibold'
+                                                        : order.status === 'InProgress'
+                                                        ? 'text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-md font-semibold animate-pulse'
                                                         : order.status === 'Sample Collected'
-                                                        ? 'text-slate-800'
-                                                        : 'text-slate-500'
+                                                        ? 'text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-md font-semibold'
+                                                        : 'text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md font-semibold'
                                                 }`}>
-                                                    {order.status}
+                                                    {order.status === 'InProgress' ? 'In Progress' : order.status}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4 text-slate-900 text-xs font-medium max-w-xs truncate" title={order.resultsSummary}>
@@ -270,6 +290,16 @@ const AssistantLabDesk = () => {
                                                                 title="Mark specimen collected"
                                                             >
                                                                 Collect Specimen
+                                                            </button>
+                                                        )}
+
+                                                        {(order.status === 'Ordered' || order.status === 'Sample Collected') && (
+                                                            <button
+                                                                onClick={() => handleStartProcessing(order)}
+                                                                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition-colors shadow-xs"
+                                                                title="Begin laboratory testing and analysis"
+                                                            >
+                                                                Start Processing
                                                             </button>
                                                         )}
 

@@ -340,7 +340,7 @@ const AdminSchedules = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Doctors on Duty</p>
                         <p className="text-2xl font-bold text-slate-900 mt-1">{totalDoctorsCount}</p>
@@ -351,7 +351,7 @@ const AdminSchedules = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                             {isPastDate ? 'Scheduled Slots' : isToday ? 'Today\'s Booked Slots' : 'Scheduled Slots'}
@@ -370,7 +370,7 @@ const AdminSchedules = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Roster Status</p>
                         <p className="text-2xl font-bold text-slate-900 mt-1">Operational</p>
@@ -404,7 +404,7 @@ const AdminSchedules = () => {
                 </div>
             ) : (
                 <div className="flex flex-col gap-6">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden">
                         <div className="overflow-x-auto w-full">
                             <table className="w-full text-left border-collapse min-w-[1100px]">
                                 <thead>

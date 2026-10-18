@@ -4,9 +4,9 @@ import Upper from './Upper.Home'
 
 const Hero = () => {
     return (
-        <div className="hero w-full flex mt-6 flex-col bg-slate-50/80 px-[6%] lg:px-[8%] py-8 rounded-3xl border border-slate-200/60 max-w-7xl mx-auto relative">
+        <div className="hero w-full flex mt-6 flex-col bg-slate-200/50 px-[6%] lg:px-[8%] py-8 sm:py-10 rounded-3xl max-w-7xl mx-auto relative shadow-sm">
             <Upper />
-            <div className="mt-12">
+            <div className="mt-10 sm:mt-12">
                 <Bottom />
             </div>
             <a 

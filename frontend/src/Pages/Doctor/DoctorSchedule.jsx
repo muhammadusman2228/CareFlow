@@ -149,7 +149,7 @@ const DoctorSchedule = () => {
             ) : schedule ? (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                        <div className="bg-white p-5 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Official Shift Timing</p>
                                 <p className="text-lg font-bold text-slate-900 mt-0.5">
@@ -162,7 +162,7 @@ const DoctorSchedule = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                        <div className="bg-white p-5 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Department Coverage</p>
                                 <p className="text-sm font-semibold text-slate-900 mt-1 capitalize truncate">
@@ -177,7 +177,7 @@ const DoctorSchedule = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                        <div className="bg-white p-5 rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current Duty Status</p>
                                 <p className="text-sm font-semibold text-slate-900 mt-1">
@@ -195,7 +195,7 @@ const DoctorSchedule = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden">
                         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h2 className="text-base font-bold text-slate-900">Weekly Shift Schedule & Consultation Timetable</h2>

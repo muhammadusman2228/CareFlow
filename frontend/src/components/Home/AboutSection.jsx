@@ -10,7 +10,7 @@ import {
 
 const AboutSection = () => {
     return (
-        <section id="about" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full border-t border-slate-200/80">
+        <section id="about" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 <div className="lg:col-span-6 flex flex-col gap-6">
                     <div>
@@ -27,7 +27,7 @@ const AboutSection = () => {
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white shadow-md shadow-slate-900/5">
                             <ShieldCheck size={20} className="text-sky-600 shrink-0 mt-0.5" />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">Accredited Specialists</span>
@@ -35,7 +35,7 @@ const AboutSection = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white shadow-md shadow-slate-900/5">
                             <FileText size={20} className="text-sky-600 shrink-0 mt-0.5" />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">Instant Digital Rx</span>
@@ -43,7 +43,7 @@ const AboutSection = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white shadow-md shadow-slate-900/5">
                             <Clock size={20} className="text-sky-600 shrink-0 mt-0.5" />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">24/7 Availability</span>
@@ -51,7 +51,7 @@ const AboutSection = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white shadow-md shadow-slate-900/5">
                             <HeartPulse size={20} className="text-sky-600 shrink-0 mt-0.5" />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">Full EHR History</span>
@@ -62,25 +62,25 @@ const AboutSection = () => {
                 </div>
 
                 <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-center text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-center text-center">
                         <span className="text-3xl sm:text-4xl font-extrabold text-sky-700 tracking-tight">100+</span>
                         <span className="text-xs sm:text-sm font-bold text-slate-800 mt-1">Certified Specialists</span>
                         <span className="text-xs text-slate-500 mt-0.5">Across 10 hospital disciplines</span>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-center text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-center text-center">
                         <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">10+</span>
                         <span className="text-xs sm:text-sm font-bold text-slate-800 mt-1">Clinical Departments</span>
                         <span className="text-xs text-slate-500 mt-0.5">Equipped with state-of-the-art tech</span>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-center text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-center text-center">
                         <span className="text-3xl sm:text-4xl font-extrabold text-emerald-600 tracking-tight">99.8%</span>
                         <span className="text-xs sm:text-sm font-bold text-slate-800 mt-1">Satisfaction Rate</span>
                         <span className="text-xs text-slate-500 mt-0.5">Rated by treated outpatients</span>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-center text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex flex-col justify-center text-center">
                         <span className="text-3xl sm:text-4xl font-extrabold text-sky-600 tracking-tight">&lt; 15m</span>
                         <span className="text-xs sm:text-sm font-bold text-slate-800 mt-1">Average Wait Time</span>
                         <span className="text-xs text-slate-500 mt-0.5">Real-time schedule allocation</span>

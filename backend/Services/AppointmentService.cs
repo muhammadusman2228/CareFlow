@@ -226,4 +226,58 @@ public class AppointmentService : IAppointment
             throw;
         }
     }
+
+    public async Task<DoctorDayScheduleResponseDto> GetDoctorDaySchedule(int doctorId, DateOnly date)
+    {
+        try
+        {
+            var doctor = await _context.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.Id == doctorId);
+            if (doctor == null)
+            {
+                throw new KeyNotFoundException("Doctor not found");
+            }
+
+            var dateSchedule = await _context.DoctorDateSchedules
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.DoctorId == doctorId && s.ScheduleDate == date);
+
+            var effectiveShiftStart = (dateSchedule != null && dateSchedule.ShiftStart.HasValue) 
+                ? dateSchedule.ShiftStart.Value 
+                : doctor.ShiftStart;
+
+            var effectiveShiftEnd = (dateSchedule != null && dateSchedule.ShiftEnd.HasValue) 
+                ? dateSchedule.ShiftEnd.Value 
+                : doctor.ShiftEnd;
+
+            var isAvailable = dateSchedule != null 
+                ? (dateSchedule.IsAvailable && dateSchedule.DailyStatus != "OffDuty") 
+                : doctor.IsAvailable;
+
+            var dailyStatus = dateSchedule != null ? dateSchedule.DailyStatus : (doctor.IsAvailable ? "OnDuty" : "OffDuty");
+
+            var bookedSlots = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => a.DoctorId == doctorId && 
+                            a.AppointmentDate == date && 
+                            (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn" || a.Status == "Completed"))
+                .Select(a => a.TimeSlot.ToString("HH:mm:ss"))
+                .Distinct()
+                .ToListAsync();
+
+            return new DoctorDayScheduleResponseDto
+            {
+                DoctorId = doctorId,
+                Date = date,
+                ShiftStart = effectiveShiftStart,
+                ShiftEnd = effectiveShiftEnd,
+                IsAvailable = isAvailable,
+                DailyStatus = dailyStatus,
+                BookedSlots = bookedSlots
+            };
+        }
+        catch
+        {
+            throw;
+        }
+    }
 }

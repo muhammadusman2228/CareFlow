@@ -894,9 +894,16 @@ public class AssistantService : IAssistant
             throw new UnauthorizedAccessException("You are only authorized to schedule appointments for physicians within your assigned department pool");
         }
 
-        if (dto.TimeSlot < doctor.ShiftStart || dto.TimeSlot >= doctor.ShiftEnd)
+        var dateSchedule = await _context.DoctorDateSchedules
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.DoctorId == dto.DoctorId && s.ScheduleDate == dto.AppointmentDate);
+
+        var effectiveShiftStart = (dateSchedule != null && dateSchedule.ShiftStart.HasValue) ? dateSchedule.ShiftStart.Value : doctor.ShiftStart;
+        var effectiveShiftEnd = (dateSchedule != null && dateSchedule.ShiftEnd.HasValue) ? dateSchedule.ShiftEnd.Value : doctor.ShiftEnd;
+
+        if (dto.TimeSlot < effectiveShiftStart || dto.TimeSlot >= effectiveShiftEnd)
         {
-            throw new InvalidOperationException("Selected time slot is outside the doctor's shift hours");
+            throw new InvalidOperationException("Selected time slot is outside the doctor's shift hours for this date");
         }
 
         var isAlreadyBooked = await _context.Appointments.AnyAsync(u => 

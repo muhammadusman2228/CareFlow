@@ -11,7 +11,8 @@ import {
     UserCheck,
     ClipboardList,
     Clock,
-    X
+    X,
+    ShieldAlert
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
@@ -30,6 +31,17 @@ const AssistantDashboard = () => {
     const handleLogout = async () => {
         try {
             await axios.post('/auth/logout')
+        } catch {
+        } finally {
+            setAuth({})
+            navigate('/login', { replace: true })
+        }
+    }
+
+    const handleLogoutAll = async () => {
+        if (!window.confirm('Are you sure you want to sign out from all devices? All other sessions will be revoked.')) return
+        try {
+            await axios.post('/auth/logout-all')
         } catch {
         } finally {
             setAuth({})
@@ -176,10 +188,18 @@ const AssistantDashboard = () => {
                                     </div>
                                     <button 
                                         onClick={handleLogout}
-                                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                                        className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition-colors cursor-pointer"
                                     >
-                                        <LogOut size={14} />
+                                        <LogOut size={14} className="text-slate-500" />
                                         <span>Sign out</span>
+                                    </button>
+                                    <button 
+                                        onClick={handleLogoutAll}
+                                        className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100"
+                                        title="Revoke all active sessions across all devices"
+                                    >
+                                        <ShieldAlert size={14} className="text-slate-500" />
+                                        <span>Sign out all devices</span>
                                     </button>
                                 </div>
                             )}

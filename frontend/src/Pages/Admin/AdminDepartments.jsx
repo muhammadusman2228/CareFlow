@@ -181,7 +181,7 @@ const AdminDepartments = () => {
             </div>
 
             <div className="kpi-summary-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                <div className="kpi-card bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-4">
                     <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Layers size={22} />
                     </div>
@@ -198,7 +198,7 @@ const AdminDepartments = () => {
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                <div className="kpi-card bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-4">
                     <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Users size={22} />
                     </div>
@@ -215,7 +215,7 @@ const AdminDepartments = () => {
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                <div className="kpi-card bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-4">
                     <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <Activity size={22} />
                     </div>
@@ -232,7 +232,7 @@ const AdminDepartments = () => {
                     </div>
                 </div>
 
-                <div className="kpi-card bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                <div className="kpi-card bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-4">
                     <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
                         <ShieldCheck size={22} />
                     </div>
@@ -250,7 +250,7 @@ const AdminDepartments = () => {
                 </div>
             </div>
 
-            <div className="toolbar-section flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-xl border border-slate-200/80 p-3 sm:p-4 shadow-sm shadow-slate-200/80">
+            <div className="toolbar-section flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-2xl p-3 sm:p-4 shadow-xl shadow-slate-900/10">
                 <div className="search-box relative flex items-center flex-1 max-w-md border border-slate-300 rounded-xl px-3 py-2 bg-white shadow-xs focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/10 transition-all">
                     <Search size={18} className="text-slate-400 shrink-0 mr-2.5" />
                     <input
@@ -339,7 +339,7 @@ const AdminDepartments = () => {
                         {filteredDepartments.slice((page - 1) * 20, page * 20).map((dept, index) => (
                             <div 
                                 key={dept.id}
-                                className="department-card bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-sm shadow-slate-200/80 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
+                                className="department-card bg-white rounded-2xl p-5 sm:p-6 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1.5 transition-all flex flex-col justify-between group"
                             >
                                 <div className="card-top-content flex flex-col gap-3.5">
                                     <div className="card-header flex items-center justify-between">

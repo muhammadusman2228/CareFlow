@@ -46,6 +46,186 @@ const PatientPrescriptions = () => {
         p.note?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+    const handlePrintSlip = (rx) => {
+        const printWindow = window.open('', '_blank', 'width=800,height=900')
+        if (!printWindow) {
+            window.print()
+            return
+        }
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>CareFlow Medical Prescription - ${formatDoctorName(rx.doctorName)}</title>
+                <style>
+                    @page { size: A4; margin: 15mm; }
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        color: #0f172a;
+                        margin: 0;
+                        padding: 30px;
+                        background: #ffffff;
+                    }
+                    .rx-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        border-bottom: 2px solid #0284c7;
+                        padding-bottom: 16px;
+                        margin-bottom: 20px;
+                    }
+                    .hospital-title {
+                        font-size: 24px;
+                        font-weight: 800;
+                        color: #0f172a;
+                        letter-spacing: -0.5px;
+                    }
+                    .hospital-sub {
+                        font-size: 11px;
+                        color: #64748b;
+                        margin-top: 2px;
+                    }
+                    .rx-meta-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 12px;
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        padding: 14px;
+                        margin-bottom: 24px;
+                        font-size: 12px;
+                    }
+                    .meta-row {
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                    .meta-label {
+                        color: #64748b;
+                        font-weight: 600;
+                    }
+                    .meta-val {
+                        color: #0f172a;
+                        font-weight: 700;
+                    }
+                    .rx-symbol {
+                        font-size: 30px;
+                        font-weight: 900;
+                        color: #0284c7;
+                        margin-bottom: 10px;
+                        font-style: italic;
+                        font-family: Georgia, serif;
+                    }
+                    .section-title {
+                        font-size: 11px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        color: #475569;
+                        font-weight: 700;
+                        margin-bottom: 4px;
+                    }
+                    .diagnosis-text {
+                        font-size: 15px;
+                        font-weight: 700;
+                        color: #0f172a;
+                        margin-bottom: 16px;
+                    }
+                    .notes-box {
+                        border-left: 3px solid #0284c7;
+                        padding-left: 14px;
+                        margin-top: 8px;
+                        min-height: 120px;
+                        white-space: pre-line;
+                        font-size: 13px;
+                        line-height: 1.6;
+                        color: #334155;
+                        background: #fdfdfd;
+                    }
+                    .rx-footer {
+                        margin-top: 60px;
+                        padding-top: 20px;
+                        border-top: 1px dashed #cbd5e1;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-end;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #475569;
+                        width: 220px;
+                        text-align: center;
+                        padding-top: 6px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #475569;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="rx-header">
+                    <div>
+                        <div class="hospital-title">CareFlow Health System</div>
+                        <div class="hospital-sub">Official Outpatient Prescription & Clinical Directive</div>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: #64748b;">
+                        <div>Attending Physician: ${formatDoctorName(rx.doctorName)}</div>
+                        <div>Date: ${rx.appointmentDate}</div>
+                    </div>
+                </div>
+
+                <div class="rx-meta-grid">
+                    <div class="meta-row">
+                        <span class="meta-label">Attending Doctor:</span>
+                        <span class="meta-val">${formatDoctorName(rx.doctorName)}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Prescription Date:</span>
+                        <span class="meta-val">${rx.appointmentDate}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Consultation Status:</span>
+                        <span class="meta-val">Verified & Issued</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Patient Record:</span>
+                        <span class="meta-val">CareFlow EHR Validated</span>
+                    </div>
+                </div>
+
+                <div class="rx-symbol">&#8478;</div>
+
+                <div style="margin-bottom: 20px;">
+                    <div class="section-title">Clinical Diagnosis / Prescription Title:</div>
+                    <div class="diagnosis-text">${rx.title || 'General Prescription'}</div>
+                </div>
+
+                <div>
+                    <div class="section-title">Medications, Dosage & Clinical Notes:</div>
+                    <div class="notes-box">${rx.note || 'Take prescribed medications as clinically advised.'}</div>
+                </div>
+
+                <div class="rx-footer">
+                    <div style="font-size: 10px; color: #94a3b8;">
+                        CareFlow Hospital Management System • Verified Electronic Record<br/>
+                        For dispensing at hospital dispensary or retail pharmacy.
+                    </div>
+                    <div>
+                        <div class="signature-line">Attending Physician Signature / Stamp</div>
+                    </div>
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    };
+                </script>
+            </body>
+            </html>
+        `
+        printWindow.document.open()
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+    }
+
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -139,8 +319,8 @@ const PatientPrescriptions = () => {
                                         <span>View Slip</span>
                                     </button>
                                     <button
-                                        onClick={() => window.print()}
-                                        className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
+                                        onClick={() => handlePrintSlip(rx)}
+                                        className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                                     >
                                         <Printer size={13} />
                                         <span>Print Rx</span>
@@ -169,7 +349,7 @@ const PatientPrescriptions = () => {
                             </div>
                             <button
                                 onClick={() => setSelectedRx(null)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                             >
                                 <X size={18} />
                             </button>
@@ -197,8 +377,8 @@ const PatientPrescriptions = () => {
 
                             <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                                 <button
-                                    onClick={() => window.print()}
-                                    className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+                                    onClick={() => handlePrintSlip(selectedRx)}
+                                    className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                                 >
                                     <Printer size={14} />
                                     <span>Print Slip</span>

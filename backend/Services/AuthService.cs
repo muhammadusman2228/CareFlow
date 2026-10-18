@@ -275,6 +275,12 @@ return (responseDto,refreshToken,refreshExpiry);
            
         }
     }
+
+    public async Task logoutAllByUserId(int userId)
+    {
+        await _context.Session.Where(s => s.UserId == userId && !s.IsRevoked)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsRevoked, true));
+    }
     public async Task resendOtp(ResendOtpDtos dto)
     {
         var normalMail= dto.Email.Trim().ToLower();

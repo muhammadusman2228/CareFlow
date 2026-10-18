@@ -3,7 +3,7 @@ import { PhoneCall, Ambulance, MapPin, Clock } from 'lucide-react'
 const EmergencySection = () => {
     return (
         <section id="emergency" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full">
-            <div className="bg-slate-900 rounded-3xl p-6 sm:p-10 lg:p-12 text-white border border-slate-800 shadow-xl">
+            <div className="bg-slate-900 rounded-3xl p-6 sm:p-10 lg:p-12 text-white shadow-2xl shadow-slate-900/30">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                     <div className="flex flex-col gap-2 max-w-2xl">
                         <span className="text-xs font-bold uppercase tracking-wider text-sky-400">

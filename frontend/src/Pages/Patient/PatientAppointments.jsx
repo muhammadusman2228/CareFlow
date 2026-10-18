@@ -117,7 +117,7 @@ const PatientAppointments = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
                         {tabs.map((tab) => {
@@ -169,7 +169,7 @@ const PatientAppointments = () => {
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Physician</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Department</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Schedule</th>
-                                <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                                <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Status</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
@@ -203,19 +203,27 @@ const PatientAppointments = () => {
                                                 <span className="text-[11px] font-medium text-slate-500">{appt.appointmentDate}</span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-4">
-                                            <span className={`text-xs font-semibold ${
-                                                appt.status === 'CheckedIn'
-                                                    ? 'text-slate-950 font-bold'
-                                                    : appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending'
-                                                    ? 'text-slate-800'
+                                        <td className="px-5 py-4 text-center">
+                                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                                                appt.status === 'InProgress'
+                                                    ? 'text-amber-800 bg-amber-100 animate-pulse'
+                                                    : appt.status === 'CheckedIn'
+                                                    ? 'text-sky-800 bg-sky-100'
+                                                    : (appt.status === 'Booked' || appt.status === 'Confirmed' || appt.status === 'Pending')
+                                                    ? 'text-slate-800 bg-slate-100'
                                                     : appt.status === 'Completed'
-                                                    ? 'text-slate-600'
-                                                    : 'text-slate-500'
+                                                    ? 'text-slate-700 bg-slate-100'
+                                                    : appt.status === 'Missed'
+                                                    ? 'text-slate-600 bg-slate-100'
+                                                    : appt.status === 'Cancelled'
+                                                    ? 'text-slate-500 bg-slate-100'
+                                                    : 'text-slate-700 bg-slate-100'
                                             }`}>
-                                                {appt.status === 'CheckedIn' 
+                                                {appt.status === 'InProgress'
+                                                    ? 'In Consultation'
+                                                    : appt.status === 'CheckedIn' 
                                                     ? 'Checked In' 
-                                                    : (appt.status === 'Confirmed' || appt.status === 'Pending') 
+                                                    : (appt.status === 'Confirmed' || appt.status === 'Pending' || appt.status === 'Booked') 
                                                     ? 'Booked' 
                                                     : appt.status}
                                             </span>

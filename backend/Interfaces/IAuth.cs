@@ -19,6 +19,7 @@ public interface IAuth
 
       Task logout(string refreshToken);
       Task logoutAll(string refreshToken);
+      Task logoutAllByUserId(int userId);
        Task resendOtp(ResendOtpDtos dto);
        Task forgotPassword(ForgotPasswordDto dto);
        Task resetPassword(ResetPasswordDto dto);
