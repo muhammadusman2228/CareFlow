@@ -312,6 +312,29 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpPatch("doctor/{id}/fee")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult> UpdateDoctorFee([FromRoute] int id, [FromBody] UpdateDoctorFeeDto dto)
+    {
+        try
+        {
+            var message = await _doctorService.UpdateDoctorFee(id, dto);
+            return Ok(new { message, consultationFee = dto.ConsultationFee });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidKeyException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Try again later" });
+        }
+    }
+
     [HttpGet("diversion/candidates/{appointmentId:int}")]
     [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<ActionResult<DiversionCandidatesResponseDto>> GetDiversionCandidates([FromRoute] int appointmentId)

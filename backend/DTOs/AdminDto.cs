@@ -218,6 +218,13 @@ public class UpdateDoctorDepartmentsDto
     public List<int> DepartmentIds { get; set; } = new List<int>();
 }
 
+public class UpdateDoctorFeeDto
+{
+    [Required]
+    [Range(0, 1000000, ErrorMessage = "Consultation fee must be a valid positive amount.")]
+    public decimal ConsultationFee { get; set; }
+}
+
 public class AdminDivertAppointmentDto
 {
     [Required]

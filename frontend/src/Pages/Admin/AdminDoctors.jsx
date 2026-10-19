@@ -58,6 +58,11 @@ const AdminDoctors = () => {
     const [isSavingDepts, setIsSavingDepts] = useState(false)
     const [deptsModalError, setDeptsModalError] = useState('')
     const [togglingDoctorId, setTogglingDoctorId] = useState(null)
+    const [isEditFeeModalOpen, setIsEditFeeModalOpen] = useState(false)
+    const [editingDoctorForFee, setEditingDoctorForFee] = useState(null)
+    const [feeInput, setFeeInput] = useState('')
+    const [isSavingFee, setIsSavingFee] = useState(false)
+    const [feeModalError, setFeeModalError] = useState('')
 
     const [formData, setFormData] = useState({
         name: '',
@@ -175,6 +180,32 @@ const AdminDoctors = () => {
             setDeptsModalError(err.response?.data?.message || 'Failed to update department allocations.')
         } finally {
             setIsSavingDepts(false)
+        }
+    }
+
+    const handleSaveDoctorFee = async (e) => {
+        e.preventDefault()
+        if (!editingDoctorForFee) return
+        const parsedFee = Number(feeInput)
+        if (isNaN(parsedFee) || parsedFee < 0) {
+            setFeeModalError('Please enter a valid consultation fee in PKR (e.g. 1500).')
+            return
+        }
+
+        setIsSavingFee(true)
+        setFeeModalError('')
+        try {
+            await axiosPrivate.patch(`/Admin/doctor/${editingDoctorForFee.id}/fee`, {
+                consultationFee: parsedFee
+            })
+            setDoctors(prev => prev.map(d => d.id === editingDoctorForFee.id ? { ...d, consultationFee: parsedFee } : d))
+            setIsEditFeeModalOpen(false)
+            setEditingDoctorForFee(null)
+            setSuccessMessage(`Consultation fee for ${editingDoctorForFee.name} successfully updated to PKR ${parsedFee.toLocaleString()}.`)
+        } catch (err) {
+            setFeeModalError(err.response?.data?.message || 'Failed to update consultation fee.')
+        } finally {
+            setIsSavingFee(false)
         }
     }
 
@@ -1011,7 +1042,20 @@ const AdminDoctors = () => {
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-slate-500 font-medium">Consultation Fee:</span>
-                                        <span className="font-extrabold text-slate-900">PKR {Number(doc.consultationFee).toLocaleString()}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-extrabold text-slate-900">PKR {Number(doc.consultationFee).toLocaleString()}</span>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingDoctorForFee(doc)
+                                                    setFeeInput(String(doc.consultationFee || 1500))
+                                                    setFeeModalError('')
+                                                    setIsEditFeeModalOpen(true)
+                                                }}
+                                                className="text-xs font-bold text-slate-700 hover:text-slate-950 hover:underline cursor-pointer"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1122,6 +1166,107 @@ const AdminDoctors = () => {
                                         </>
                                     ) : (
                                         'Save Allocations'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Consultation Fee Modal */}
+            {isEditFeeModalOpen && editingDoctorForFee && (
+                <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Update Consultation Fee</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">{formatDoctorName(editingDoctorForFee.name)}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsEditFeeModalOpen(false)
+                                    setEditingDoctorForFee(null)
+                                }}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveDoctorFee} className="mt-4 flex flex-col gap-4">
+                            {feeModalError && (
+                                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                                    <AlertCircle size={15} className="shrink-0" />
+                                    <span>{feeModalError}</span>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-slate-700">
+                                    Consultation Fee (PKR)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
+                                        PKR
+                                    </span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="50"
+                                        value={feeInput}
+                                        onChange={(e) => setFeeInput(e.target.value)}
+                                        placeholder="1500"
+                                        className="w-full pl-13 pr-4 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-extrabold text-sm focus:outline-none focus:border-sky-500 focus:bg-white transition-all"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Quick Presets */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[11px] font-semibold text-slate-400">Quick Affordable Presets</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {[1000, 1500, 2000, 2500, 3000].map(preset => (
+                                        <button
+                                            key={preset}
+                                            type="button"
+                                            onClick={() => setFeeInput(String(preset))}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                                                Number(feeInput) === preset
+                                                    ? 'bg-sky-600 text-white border-sky-600 shadow-2xs'
+                                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                            }`}
+                                        >
+                                            PKR {preset.toLocaleString()}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsEditFeeModalOpen(false)
+                                        setEditingDoctorForFee(null)
+                                    }}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingFee}
+                                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isSavingFee ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Saving Fee...
+                                        </>
+                                    ) : (
+                                        'Save Fee'
                                     )}
                                 </button>
                             </div>

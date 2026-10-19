@@ -13,4 +13,5 @@ public interface IDoctor
     Task<List<FindDoctorResponse>> FindDoctors();
     Task<FindDoctorResponse?> GetDoctorById(int id);
     Task<string> UpdateDoctorDepartments(int doctorId, UpdateDoctorDepartmentsDto dto);
+    Task<string> UpdateDoctorFee(int doctorId, UpdateDoctorFeeDto dto);
 }

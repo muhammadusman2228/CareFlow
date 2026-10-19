@@ -12,4 +12,5 @@ public interface IDoctorApis
     Task<DoctorDailyStatusResponseDto> GetDoctorDailyStatus(int userId);
     Task<string> SetDoctorDailyStatus(int userId, DoctorDailyStatusDto dto);
     Task<DoctorMyScheduleDto> GetDoctorMySchedule(int userId);
+    Task<string> UpdateConsultationFee(int userId, decimal fee);
 }

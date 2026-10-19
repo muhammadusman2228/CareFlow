@@ -343,9 +343,9 @@ const AdminAppointments = () => {
                                     className={`
                                         p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-22 cursor-pointer
                                         ${isCardActive 
-                                            ? 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/30 ring-2 ring-sky-600/50' 
+                                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs' 
                                             : isToday 
-                                                ? 'bg-white border-sky-300 hover:border-sky-400 shadow-xs ring-1 ring-sky-200' 
+                                                ? 'bg-white border-sky-300 hover:border-sky-400 shadow-xs' 
                                                 : hasAppts 
                                                     ? 'bg-white border-slate-200 hover:border-sky-300 hover:shadow-xs' 
                                                     : 'bg-slate-50/60 border-slate-200/60 opacity-60 hover:opacity-100'
@@ -353,23 +353,27 @@ const AdminAppointments = () => {
                                     `}
                                 >
                                     <div className="flex items-center justify-between w-full">
-                                        <span className={`text-xs font-medium ${isCardActive ? 'text-sky-100' : 'text-slate-500'}`}>
+                                        <span className={`text-xs font-semibold ${isCardActive ? 'text-white' : 'text-slate-500'}`}>
                                             {weekday}
                                         </span>
                                         {isToday && (
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isCardActive ? 'bg-white text-sky-600' : 'bg-sky-600 text-white'}`}>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                                isCardActive 
+                                                    ? 'bg-white/20 border border-white/30 text-white' 
+                                                    : 'bg-sky-100 text-sky-700 border border-sky-200'
+                                            }`}>
                                                 Today
                                             </span>
                                         )}
                                     </div>
 
                                     <div className="my-1">
-                                        <span className={`text-lg font-extrabold ${isCardActive ? 'text-white' : isToday ? 'text-sky-600' : 'text-slate-900'}`}>
+                                        <span className={`text-xl font-black ${isCardActive ? 'text-white' : isToday ? 'text-sky-600' : 'text-slate-900'}`}>
                                             {dayNumber}
                                         </span>
                                     </div>
 
-                                    <span className={`text-[11px] font-semibold ${isCardActive ? 'text-sky-100' : hasAppts ? 'text-sky-600 font-bold' : 'text-slate-400'}`}>
+                                    <span className={`text-xs ${isCardActive ? 'text-white font-medium' : hasAppts ? 'text-sky-600 font-bold' : 'text-slate-400 font-medium'}`}>
                                         {day.totalCount} {day.totalCount === 1 ? 'appt' : 'appts'}
                                     </span>
                                 </button>
@@ -461,7 +465,7 @@ const AdminAppointments = () => {
                                         <td className="py-3 px-4">
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                                                    <Stethoscope size={13} className="text-sky-600 shrink-0" />
+                                                    <Stethoscope size={13} className="text-slate-400 shrink-0" />
                                                     {appt.doctorName}
                                                 </span>
                                                 {appt.departmentName && (
@@ -480,7 +484,7 @@ const AdminAppointments = () => {
                                                     {formatDateDisplay(appt.appointmentDate)}
                                                 </span>
                                                 <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                                    <Clock size={11} className="text-sky-600" />
+                                                    <Clock size={11} className="text-slate-400" />
                                                     {formatTimeSlot(appt.timeSlot)}
                                                 </span>
                                             </div>

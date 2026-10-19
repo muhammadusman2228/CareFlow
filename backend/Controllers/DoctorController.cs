@@ -193,4 +193,24 @@ public class DoctorController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
+
+    [HttpPatch("consultation-fee")]
+    [Authorize(Roles = "Doctor")]
+    public async Task<ActionResult> UpdateConsultationFee([FromBody] UpdateDoctorFeeDto dto)
+    {
+        try
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _doctorService.UpdateConsultationFee(userId, dto.ConsultationFee);
+            return Ok(new { message = result, consultationFee = dto.ConsultationFee });
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
 }

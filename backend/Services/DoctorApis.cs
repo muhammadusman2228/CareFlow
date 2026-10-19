@@ -578,4 +578,22 @@ public class DoctorApisService : IDoctorApis
             UpcomingDays = upcomingDays
         };
     }
+
+    public async Task<string> UpdateConsultationFee(int userId, decimal fee)
+    {
+        var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+        if (doctor == null)
+        {
+            throw new InvalidDataException("Doctor profile does not exist.");
+        }
+
+        if (fee < 0)
+        {
+            throw new InvalidDataException("Consultation fee cannot be negative.");
+        }
+
+        doctor.ConsultationFee = fee;
+        await _context.SaveChangesAsync();
+        return $"Consultation fee updated successfully to PKR {fee:N0}.";
+    }
 }

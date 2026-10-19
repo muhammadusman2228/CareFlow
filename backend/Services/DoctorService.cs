@@ -345,4 +345,37 @@ public class DoctorService : IDoctor
             throw new Exception("Try again later");
         }
     }
+
+    public async Task<string> UpdateDoctorFee(int doctorId, UpdateDoctorFeeDto dto)
+    {
+        try
+        {
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId);
+            if (doctor == null)
+            {
+                throw new KeyNotFoundException("Doctor does not exist.");
+            }
+
+            if (dto.ConsultationFee < 0)
+            {
+                throw new InvalidKeyException("Consultation fee cannot be negative.");
+            }
+
+            doctor.ConsultationFee = dto.ConsultationFee;
+            await _context.SaveChangesAsync();
+            return "Doctor consultation fee updated successfully.";
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (InvalidKeyException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new Exception("Try again later");
+        }
+    }
 }
