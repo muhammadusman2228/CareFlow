@@ -18,4 +18,5 @@ public interface IAdminExtra
     Task<DiversionCandidatesResponseDto> GetAdminDiversionCandidates(int appointmentId);
     Task<DivertAppointmentResponseDto> DivertFutureAppointment(AdminDivertAppointmentDto dto, int adminUserId);
     Task<List<AdminDoctorAppointmentDto>> GetDoctorAppointments(int doctorId, DateOnly date);
+    Task<MonthlyAppointmentsSummaryDto> GetMonthlyAppointments(int year, int month);
 }

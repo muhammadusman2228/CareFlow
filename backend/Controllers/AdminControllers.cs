@@ -382,4 +382,28 @@ public class AdminController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
+
+    [HttpGet("monthly-appointments")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<MonthlyAppointmentsSummaryDto>> GetMonthlyAppointments([FromQuery] int? year, [FromQuery] int? month)
+    {
+        try
+        {
+            var todayPkt = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+            int targetYear = year ?? todayPkt.Year;
+            int targetMonth = month ?? todayPkt.Month;
+
+            if (targetMonth < 1 || targetMonth > 12)
+            {
+                return BadRequest(new { message = "Invalid month value (1-12)" });
+            }
+
+            var summary = await _adminExtra.GetMonthlyAppointments(targetYear, targetMonth);
+            return Ok(summary);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
 }

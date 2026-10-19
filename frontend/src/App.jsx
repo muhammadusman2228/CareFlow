@@ -26,6 +26,7 @@ import AdminDoctors from "./Pages/Admin/AdminDoctors"
 import AdminAssistants from "./Pages/Admin/AdminAssistants"
 import AdminDepartments from "./Pages/Admin/AdminDepartments"
 import AdminSchedules from "./Pages/Admin/AdminSchedules"
+import AdminAppointments from "./Pages/Admin/AdminAppointments"
 import AdminPatients from "./Pages/Admin/AdminPatients"
 import AssistantDashboard from "./Pages/Assistant/AssistantDashboard"
 import AssistantTriageQueue from "./Pages/Assistant/AssistantTriageQueue"
@@ -85,6 +86,7 @@ const App = () => {
                     <Route path="assistants" element={<AdminAssistants />} />
                     <Route path="departments" element={<AdminDepartments />} />
                     <Route path="schedules" element={<AdminSchedules />} />
+                    <Route path="appointments" element={<AdminAppointments />} />
                     <Route path="patients" element={<AdminPatients />} />
                     <Route path="governance" element={<AdminGovernance />} />
                 </Route>

@@ -278,7 +278,7 @@ const PatientBooking = () => {
                                         <span className="text-[11px] font-medium text-slate-500">{doc.specialization}</span>
 
                                         <div className="mt-3 px-3 py-1 rounded-md bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800">
-                                            Fee: ${doc.consultationFee?.toFixed(2) || '40.00'}
+                                            Fee: PKR {Number(doc.consultationFee || 1500).toLocaleString()}
                                         </div>
                                     </div>
 
@@ -414,7 +414,7 @@ const PatientBooking = () => {
 
                                     <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                                         <span className="text-slate-500 font-semibold">Consultation Fee:</span>
-                                        <span className="text-slate-800 font-bold">${selectedDoctor.consultationFee?.toFixed(2) || '40.00'}</span>
+                                        <span className="text-slate-800 font-bold">PKR {Number(selectedDoctor.consultationFee || 1500).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>

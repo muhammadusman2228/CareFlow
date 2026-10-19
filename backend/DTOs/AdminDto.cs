@@ -251,3 +251,28 @@ public class AdminDoctorAppointmentDto
     public string? OriginalDoctorName { get; set; }
     public string? DiversionReason { get; set; }
 }
+
+public class DailyAppointmentCountDto
+{
+    public DateOnly Date { get; set; }
+    public int TotalCount { get; set; }
+    public int CompletedCount { get; set; }
+    public int BookedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public int MissedCount { get; set; }
+}
+
+public class MonthlyAppointmentsSummaryDto
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public string MonthName { get; set; } = string.Empty;
+    public int TodayAppointmentsCount { get; set; }
+    public int TotalMonthAppointmentsCount { get; set; }
+    public int CompletedCount { get; set; }
+    public int BookedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public int MissedCount { get; set; }
+    public List<DailyAppointmentCountDto> DailyCounts { get; set; } = new List<DailyAppointmentCountDto>();
+    public List<AdminDoctorAppointmentDto> Appointments { get; set; } = new List<AdminDoctorAppointmentDto>();
+}

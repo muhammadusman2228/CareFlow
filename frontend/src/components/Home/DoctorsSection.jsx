@@ -4,7 +4,7 @@ import {
     Search, 
     Stethoscope, 
     Clock, 
-    DollarSign, 
+    Banknote, 
     Calendar, 
     ChevronRight, 
     Building2, 
@@ -215,11 +215,11 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-slate-500 flex items-center gap-1">
-                                            <DollarSign size={12} />
+                                            <Banknote size={12} className="text-slate-500" />
                                             <span>Consultation:</span>
                                         </span>
                                         <span className="font-extrabold text-slate-900">
-                                            ${Number(doc.consultationFee || 0).toFixed(2)}
+                                            PKR {Number(doc.consultationFee || 1500).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>

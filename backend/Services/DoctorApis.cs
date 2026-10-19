@@ -362,7 +362,8 @@ public class DoctorApisService : IDoctorApis
             StatusDate = todayPkt,
             IsAvailable = effectiveAvailable,
             ShiftStart = effectiveShiftStart,
-            ShiftEnd = effectiveShiftEnd
+            ShiftEnd = effectiveShiftEnd,
+            ConsultationFee = doctor.ConsultationFee
         };
     }
 

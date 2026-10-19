@@ -11,7 +11,8 @@ import {
     Layers, 
     Activity, 
     ShieldCheck, 
-    Sparkles 
+    Sparkles,
+    Stethoscope 
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
@@ -148,6 +149,15 @@ const AdminDepartments = () => {
         return (totalSpecialists / departments.length).toFixed(1)
     }, [departments, totalSpecialists])
 
+    const staffedDepartments = useMemo(() => {
+        return departments.filter(d => (d.doctorCounts || 0) > 0).length
+    }, [departments])
+
+    const staffingCoverage = useMemo(() => {
+        if (departments.length === 0) return 0
+        return Math.round((staffedDepartments / departments.length) * 100)
+    }, [departments, staffedDepartments])
+
     return (
         <div className="departments-page flex flex-col gap-6 max-w-7xl mx-auto">
             
@@ -234,17 +244,17 @@ const AdminDepartments = () => {
 
                 <div className="kpi-card bg-white rounded-2xl p-5 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-4">
                     <div className="kpi-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
-                        <ShieldCheck size={22} />
+                        <Activity size={22} />
                     </div>
                     <div className="kpi-details flex flex-col min-w-0">
                         <span className="kpi-label text-xs sm:text-sm font-semibold text-slate-600">
-                            System Status
+                            Staffing Coverage
                         </span>
                         <span className="kpi-value text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-                            100%
+                            {staffingCoverage}%
                         </span>
                         <span className="kpi-subtext text-xs font-medium text-slate-500 mt-0.5">
-                            All departments operational
+                            {staffedDepartments} of {departments.length} units staffed
                         </span>
                     </div>
                 </div>
@@ -346,9 +356,6 @@ const AdminDepartments = () => {
                                         <div className="dept-icon-box w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-colors shrink-0 shadow-xs">
                                             <Building2 size={22} />
                                         </div>
-                                        <span className="dept-status text-xs font-medium text-slate-500">
-                                            Operational
-                                        </span>
                                     </div>
 
                                     <div className="dept-info flex flex-col">
@@ -366,10 +373,6 @@ const AdminDepartments = () => {
                                         <Users size={14} className="text-sky-600" />
                                         <span>{dept.doctorCounts} Specialists</span>
                                     </div>
-
-                                    <span className="dept-id-badge text-[11px] font-bold text-slate-400 font-mono">
-                                        #{(page - 1) * 20 + index + 1}
-                                    </span>
                                 </div>
                             </div>
                         ))}

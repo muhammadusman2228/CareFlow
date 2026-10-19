@@ -1113,4 +1113,103 @@ public class AdminExtraService : IAdminExtra
             DiversionReason = a.DiversionReason
         }).ToList();
     }
+
+    public async Task<MonthlyAppointmentsSummaryDto> GetMonthlyAppointments(int year, int month)
+    {
+        var todayPkt = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5));
+        
+        var startDate = new DateOnly(year, month, 1);
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+        var endDate = new DateOnly(year, month, daysInMonth);
+
+        var appointments = await _context.Appointments
+            .AsNoTracking()
+            .Include(a => a.Patient)!.ThenInclude(p => p.User)
+            .Include(a => a.Doctor)!.ThenInclude(d => d.User)
+            .Include(a => a.Doctor)!.ThenInclude(d => d.Department)
+            .Where(a => a.AppointmentDate >= startDate && a.AppointmentDate <= endDate)
+            .OrderByDescending(a => a.AppointmentDate)
+            .ThenBy(a => a.TimeSlot)
+            .ToListAsync();
+
+        var todayCount = await _context.Appointments
+            .CountAsync(a => a.AppointmentDate == todayPkt && a.Status != "Cancelled");
+
+        var originalDoctorIds = appointments
+            .Where(a => a.OriginalDoctorId.HasValue)
+            .Select(a => a.OriginalDoctorId!.Value)
+            .Distinct()
+            .ToList();
+
+        var origDoctors = await _context.Doctors
+            .AsNoTracking()
+            .Include(d => d.User)
+            .Where(d => originalDoctorIds.Contains(d.Id))
+            .ToDictionaryAsync(d => d.Id, d => d.User != null ? d.User.Name : string.Empty);
+
+        var apptDtos = appointments.Select(a => new AdminDoctorAppointmentDto
+        {
+            AppointmentId = a.Id,
+            PatientId = a.PatientId,
+            PatientName = a.Patient != null && a.Patient.User != null ? a.Patient.User.Name : "Patient",
+            PatientPhone = a.Patient != null ? a.Patient.PhoneNumber : string.Empty,
+            DoctorId = a.DoctorId,
+            DoctorName = a.Doctor != null && a.Doctor.User != null ? a.Doctor.User.Name : string.Empty,
+            DepartmentName = a.Doctor != null && a.Doctor.Department != null ? a.Doctor.Department.Name : string.Empty,
+            AppointmentDate = a.AppointmentDate,
+            TimeSlot = a.TimeSlot,
+            Status = a.Status,
+            IsDiverted = a.IsDiverted,
+            OriginalDoctorName = a.OriginalDoctorId.HasValue && origDoctors.TryGetValue(a.OriginalDoctorId.Value, out var oname) ? oname : null,
+            DiversionReason = a.DiversionReason
+        }).ToList();
+
+        var groupedByDate = appointments.GroupBy(a => a.AppointmentDate).ToDictionary(g => g.Key, g => g.ToList());
+        var dailyCounts = new List<DailyAppointmentCountDto>();
+
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateOnly(year, month, day);
+            if (groupedByDate.TryGetValue(date, out var dayAppts))
+            {
+                dailyCounts.Add(new DailyAppointmentCountDto
+                {
+                    Date = date,
+                    TotalCount = dayAppts.Count,
+                    CompletedCount = dayAppts.Count(a => a.Status == "Completed"),
+                    BookedCount = dayAppts.Count(a => a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn"),
+                    CancelledCount = dayAppts.Count(a => a.Status == "Cancelled"),
+                    MissedCount = dayAppts.Count(a => a.Status == "Missed")
+                });
+            }
+            else
+            {
+                dailyCounts.Add(new DailyAppointmentCountDto
+                {
+                    Date = date,
+                    TotalCount = 0,
+                    CompletedCount = 0,
+                    BookedCount = 0,
+                    CancelledCount = 0,
+                    MissedCount = 0
+                });
+            }
+        }
+
+        var monthDateTime = new DateTime(year, month, 1);
+        return new MonthlyAppointmentsSummaryDto
+        {
+            Year = year,
+            Month = month,
+            MonthName = monthDateTime.ToString("MMMM yyyy"),
+            TodayAppointmentsCount = todayCount,
+            TotalMonthAppointmentsCount = appointments.Count,
+            CompletedCount = appointments.Count(a => a.Status == "Completed"),
+            BookedCount = appointments.Count(a => a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending" || a.Status == "CheckedIn"),
+            CancelledCount = appointments.Count(a => a.Status == "Cancelled"),
+            MissedCount = appointments.Count(a => a.Status == "Missed"),
+            DailyCounts = dailyCounts,
+            Appointments = apptDtos
+        };
+    }
 }

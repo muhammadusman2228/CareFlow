@@ -149,6 +149,7 @@ public class DoctorDailyStatusResponseDto
     public bool IsAvailable { get; set; }
     public TimeOnly ShiftStart { get; set; }
     public TimeOnly ShiftEnd { get; set; }
+    public decimal ConsultationFee { get; set; }
 }
 
 public class DoctorMyScheduleDto

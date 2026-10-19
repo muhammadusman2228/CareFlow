@@ -225,7 +225,7 @@ const AdminOverview = () => {
                     <div className="flex flex-col min-w-0">
                         <span className="text-xs sm:text-sm font-semibold text-slate-600">Daily Revenue</span>
                         <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-                            ${dashboardData?.dailyRevenue ? Number(dashboardData.dailyRevenue).toFixed(2) : '0.00'}
+                            PKR {dashboardData?.dailyRevenue ? Number(dashboardData.dailyRevenue).toLocaleString() : '0'}
                         </span>
                         <span className="text-xs font-medium text-slate-500 mt-0.5">
                             Completed billings

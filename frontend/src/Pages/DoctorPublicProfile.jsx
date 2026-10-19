@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router'
 import { 
     Stethoscope, 
     Clock, 
-    DollarSign, 
+    Banknote, 
     Calendar, 
     Award, 
     GraduationCap, 
@@ -316,7 +316,7 @@ const DoctorPublicProfile = () => {
                                     <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-col gap-1">
                                         <span className="text-slate-400 font-medium text-[11px]">Fee</span>
                                         <span className="font-extrabold text-slate-900 text-sm">
-                                            ${Number(doctor.consultationFee || 0).toFixed(2)}
+                                            PKR {Number(doctor.consultationFee || 1500).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-col gap-1">
@@ -386,7 +386,7 @@ const DoctorPublicProfile = () => {
                                         </p>
                                     </div>
                                     <span className="text-base font-extrabold text-slate-900">
-                                        ${Number(doctor.consultationFee || 0).toFixed(2)}
+                                        PKR {Number(doctor.consultationFee || 1500).toLocaleString()}
                                     </span>
                                 </div>
 
@@ -476,7 +476,7 @@ const DoctorPublicProfile = () => {
                                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col gap-1.5 text-xs text-slate-600">
                                         <div className="flex justify-between">
                                             <span>Doctor Consultation:</span>
-                                            <span className="font-bold text-slate-800">${Number(doctor.consultationFee || 0).toFixed(2)}</span>
+                                            <span className="font-bold text-slate-800">PKR {Number(doctor.consultationFee || 1500).toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>Clinical Registration:</span>
@@ -484,7 +484,7 @@ const DoctorPublicProfile = () => {
                                         </div>
                                         <div className="flex justify-between pt-1.5 border-t border-slate-200 font-bold text-slate-900">
                                             <span>Total Due:</span>
-                                            <span className="text-sm font-extrabold text-sky-700">${Number(doctor.consultationFee || 0).toFixed(2)}</span>
+                                            <span className="text-sm font-extrabold text-sky-700">PKR {Number(doctor.consultationFee || 1500).toLocaleString()}</span>
                                         </div>
                                     </div>
 

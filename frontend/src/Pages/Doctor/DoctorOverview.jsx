@@ -6,7 +6,7 @@ import {
     CheckCircle2, 
     Users, 
     Briefcase, 
-    DollarSign, 
+    Banknote, 
     FileText, 
     ArrowRight,
     RefreshCw,
@@ -356,11 +356,13 @@ const DoctorOverview = () => {
 
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
                                 <div className="w-9 h-9 rounded-md bg-white border border-slate-200 flex items-center justify-center text-slate-600">
-                                    <DollarSign size={18} />
+                                    <Banknote size={18} />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-medium text-slate-500">Consultation Fee</span>
-                                    <span className="text-sm font-bold text-slate-800">$40.00</span>
+                                    <span className="text-sm font-bold text-slate-800">
+                                        PKR {Number(dailyStatusData?.consultationFee || 1500).toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
                         </div>

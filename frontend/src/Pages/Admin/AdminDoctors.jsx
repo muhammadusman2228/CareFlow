@@ -15,7 +15,7 @@ import {
     Eye, 
     EyeOff, 
     Clock, 
-    DollarSign, 
+    Banknote, 
     Info, 
     Check, 
     Building2, 
@@ -259,8 +259,8 @@ const AdminDoctors = () => {
         }
 
         const fee = parseFloat(formData.consultationFee)
-        if (isNaN(fee) || fee < 0 || fee > 99999) {
-            setErrorMessage('Please enter a valid consultation fee (up to $99,999).')
+        if (isNaN(fee) || fee < 0 || fee > 999999) {
+            setErrorMessage('Please enter a valid consultation fee in PKR (e.g., PKR 1,500).')
             return
         }
 
@@ -729,18 +729,18 @@ const AdminDoctors = () => {
                                             Fee per Consultation <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="flex items-center rounded-xl border border-slate-300 shadow-xs overflow-hidden focus-within:border-sky-500">
-                                            <div className="px-3 py-2.5 bg-slate-50 border-r border-slate-200 text-xs font-semibold text-slate-600 shrink-0">
-                                                $
+                                            <div className="px-3 py-2.5 bg-slate-50 border-r border-slate-200 text-xs font-bold text-slate-600 shrink-0">
+                                                PKR
                                             </div>
                                             <input
                                                 type="number"
                                                 min="0"
-                                                max="99999"
-                                                step="0.01"
+                                                max="999999"
+                                                step="1"
                                                 name="consultationFee"
                                                 value={formData.consultationFee}
                                                 onChange={handleInputChange}
-                                                placeholder="250.00"
+                                                placeholder="1500"
                                                 required
                                                 className="w-full px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 outline-none"
                                             />
@@ -1011,7 +1011,7 @@ const AdminDoctors = () => {
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-slate-500 font-medium">Consultation Fee:</span>
-                                        <span className="font-extrabold text-slate-900">${Number(doc.consultationFee).toFixed(2)}</span>
+                                        <span className="font-extrabold text-slate-900">PKR {Number(doc.consultationFee).toLocaleString()}</span>
                                     </div>
                                 </div>
 

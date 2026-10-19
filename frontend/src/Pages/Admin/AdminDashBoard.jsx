@@ -5,6 +5,7 @@ import {
     Stethoscope, 
     Building2, 
     CalendarDays, 
+    CalendarCheck,
     Users, 
     UserCheck,
     HelpCircle,
@@ -28,6 +29,7 @@ const AdminDashBoard = () => {
         { name: 'Assistants', path: '/admin/dashboard/assistants', icon: UserCheck },
         { name: 'Departments', path: '/admin/dashboard/departments', icon: Building2 },
         { name: 'Schedules & Shifts', path: '/admin/dashboard/schedules', icon: CalendarDays },
+        { name: 'Appointments', path: '/admin/dashboard/appointments', icon: CalendarCheck },
         { name: 'Patients', path: '/admin/dashboard/patients', icon: Users },
         ...(isSuperAdmin ? [{ name: 'Admin Governance', path: '/admin/dashboard/governance', icon: ShieldCheck }] : [])
     ]
@@ -48,6 +50,8 @@ const AdminDashBoard = () => {
             navigate('/admin/dashboard/assistants')
         } else if (query.includes('dept') || query.includes('department') || query.includes('unit')) {
             navigate('/admin/dashboard/departments')
+        } else if (query.includes('appoint') || query.includes('booking') || query.includes('slot')) {
+            navigate('/admin/dashboard/appointments')
         } else if (query.includes('sched') || query.includes('shift') || query.includes('timing') || query.includes('hour')) {
             navigate('/admin/dashboard/schedules')
         } else if (query.includes('pat') || query.includes('client')) {
