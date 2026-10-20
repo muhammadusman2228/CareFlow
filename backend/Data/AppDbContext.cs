@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<DoctorDepartment> DoctorDepartments => Set<DoctorDepartment>();
     public DbSet<AssistantDepartment> AssistantDepartments => Set<AssistantDepartment>();
     public DbSet<DoctorDateSchedule> DoctorDateSchedules => Set<DoctorDateSchedule>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<DailySettlementReport> DailySettlementReports => Set<DailySettlementReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -215,6 +217,41 @@ modelBuilder.Entity<DoctorDateSchedule>()
     .WithMany(d => d.DateSchedules)
     .HasForeignKey(ds => ds.DoctorId)
     .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<Payment>()
+    .HasOne(p => p.Appointment)
+    .WithOne(a => a.Payment)
+    .HasForeignKey<Payment>(p => p.AppointmentId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<Payment>()
+    .HasOne(p => p.CollectedByAssistant)
+    .WithMany(a => a.CollectedPayments)
+    .HasForeignKey(p => p.CollectedByAssistantId)
+    .OnDelete(DeleteBehavior.SetNull);
+
+modelBuilder.Entity<Payment>()
+    .HasIndex(p => p.ReceiptNumber)
+    .IsUnique();
+
+modelBuilder.Entity<DailySettlementReport>()
+    .HasOne(r => r.Assistant)
+    .WithMany(a => a.SettlementReports)
+    .HasForeignKey(r => r.AssistantId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+modelBuilder.Entity<DailySettlementReport>()
+    .HasOne(r => r.VerifiedByAdmin)
+    .WithMany()
+    .HasForeignKey(r => r.VerifiedByAdminId)
+    .OnDelete(DeleteBehavior.SetNull);
+
+modelBuilder.Entity<DailySettlementReport>()
+    .HasIndex(r => r.ReportNumber)
+    .IsUnique();
+
+modelBuilder.Entity<DailySettlementReport>()
+    .HasIndex(r => new { r.AssistantId, r.ReportDate });
             
     }
 }

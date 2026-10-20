@@ -33,7 +33,7 @@ public class AdminExtraService : IAdminExtra
 
             await _context.Appointments
                 .Where(a => (a.Status == "Pending" || a.Status == "Confirmed" || a.Status == "Booked") && 
-                            (a.AppointmentDate < today || (a.AppointmentDate == today && a.TimeSlot < nowTimePkt)))
+                            a.AppointmentDate < today)
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
             var totalDoctors = await _context.Doctors.CountAsync(d => d.User!.IsVerified);

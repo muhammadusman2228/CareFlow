@@ -40,4 +40,6 @@ public class Assistant
 
     public virtual ICollection<PatientVitals> RecordedVitals { get; set; } = new List<PatientVitals>();
     public virtual ICollection<AssistantDepartment> AssistantDepartments { get; set; } = new List<AssistantDepartment>();
+    public virtual ICollection<Payment> CollectedPayments { get; set; } = new List<Payment>();
+    public virtual ICollection<DailySettlementReport> SettlementReports { get; set; } = new List<DailySettlementReport>();
 }

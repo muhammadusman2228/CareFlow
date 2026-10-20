@@ -37,7 +37,7 @@ public class PatientService : IPatient
         await _context.Appointments
             .Where(a => a.PatientId == patient.Id && 
                         (a.Status == "Booked" || a.Status == "Confirmed" || a.Status == "Pending") && 
-                        (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
+                        a.AppointmentDate < todayPkt)
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
         var list=await _context.Appointments.AsNoTracking().Where(a=>a.PatientId==patient.Id).OrderByDescending(a=>a.AppointmentDate).ThenByDescending(a=>a.TimeSlot).ThenByDescending(a=>a.Id).Select(u=>new PatientAppointmentDto

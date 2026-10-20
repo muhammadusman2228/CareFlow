@@ -161,6 +161,74 @@ namespace backend.Migrations
                     b.ToTable("AssistantDepartments");
                 });
 
+            modelBuilder.Entity("backend.Models.DailySettlementReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("AssistantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssistantNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<decimal>("CashAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("OnlineAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("ReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReportNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TotalAppointments")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("VerifiedByAdminId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportNumber")
+                        .IsUnique();
+
+                    b.HasIndex("VerifiedByAdminId");
+
+                    b.HasIndex("AssistantId", "ReportDate");
+
+                    b.ToTable("DailySettlementReports");
+                });
+
             modelBuilder.Entity("backend.Models.Departments", b =>
                 {
                     b.Property<int>("Id")
@@ -508,6 +576,65 @@ namespace backend.Migrations
                     b.ToTable("PatientVitals");
                 });
 
+            modelBuilder.Entity("backend.Models.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CollectedByAssistantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("TransactionReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
+
+                    b.HasIndex("CollectedByAssistantId");
+
+                    b.HasIndex("ReceiptNumber")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
+                });
+
             modelBuilder.Entity("backend.Models.Prescriptions", b =>
                 {
                     b.Property<int>("Id")
@@ -738,6 +865,24 @@ namespace backend.Migrations
                     b.Navigation("Department");
                 });
 
+            modelBuilder.Entity("backend.Models.DailySettlementReport", b =>
+                {
+                    b.HasOne("backend.Models.Assistant", "Assistant")
+                        .WithMany("SettlementReports")
+                        .HasForeignKey("AssistantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.User", "VerifiedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByAdminId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Assistant");
+
+                    b.Navigation("VerifiedByAdmin");
+                });
+
             modelBuilder.Entity("backend.Models.Doctor", b =>
                 {
                     b.HasOne("backend.Models.Departments", "Department")
@@ -852,6 +997,24 @@ namespace backend.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("backend.Models.Payment", b =>
+                {
+                    b.HasOne("backend.Models.Appointment", "Appointment")
+                        .WithOne("Payment")
+                        .HasForeignKey("backend.Models.Payment", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Assistant", "CollectedByAssistant")
+                        .WithMany("CollectedPayments")
+                        .HasForeignKey("CollectedByAssistantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("CollectedByAssistant");
+                });
+
             modelBuilder.Entity("backend.Models.Prescriptions", b =>
                 {
                     b.HasOne("backend.Models.Appointment", "Appointment")
@@ -894,6 +1057,8 @@ namespace backend.Migrations
                 {
                     b.Navigation("LabOrders");
 
+                    b.Navigation("Payment");
+
                     b.Navigation("Prescriptions");
 
                     b.Navigation("Vitals");
@@ -903,7 +1068,11 @@ namespace backend.Migrations
                 {
                     b.Navigation("AssistantDepartments");
 
+                    b.Navigation("CollectedPayments");
+
                     b.Navigation("RecordedVitals");
+
+                    b.Navigation("SettlementReports");
                 });
 
             modelBuilder.Entity("backend.Models.Departments", b =>

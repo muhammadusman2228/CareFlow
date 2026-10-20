@@ -28,6 +28,14 @@ public class DoctorAppointmentsDto
     public string? PrescriptionTitle { get; set; }
 
     public string? PrescriptionNote { get; set; }
+
+    public bool IsPaid { get; set; }
+
+    public decimal? ConsultationFee { get; set; }
+
+    public string? PaymentMethod { get; set; }
+
+    public string? ReceiptNumber { get; set; }
 }
 
 

@@ -9,7 +9,8 @@ import {
     RefreshCw, 
     FolderClock,
     AlertCircle,
-    Stethoscope
+    Stethoscope,
+    CheckCircle2
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import DoctorPrescriptionModal from './DoctorPrescriptionModal'
@@ -211,6 +212,7 @@ const DoctorAppointments = () => {
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Patient</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Schedule</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider">Symptoms / Chief Complaint</th>
+                                <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Fee Status</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-center">Status</th>
                                 <th className="px-5 py-3.5 text-xs font-bold text-slate-700 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -218,7 +220,7 @@ const DoctorAppointments = () => {
                         <tbody className="divide-y divide-slate-100">
                             {filteredAppointments.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
+                                    <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500 font-medium">
                                         No appointments match this filter.
                                     </td>
                                 </tr>
@@ -248,6 +250,23 @@ const DoctorAppointments = () => {
                                             </td>
                                             <td className="px-5 py-4 text-xs font-medium text-slate-600 max-w-sm">
                                                 {appt.symptoms || 'Routine checkup / general review'}
+                                            </td>
+                                            <td className="px-5 py-4 text-center">
+                                                {appt.isPaid ? (
+                                                    <div className="inline-flex flex-col items-center">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold text-slate-800 bg-slate-100 border border-slate-200">
+                                                            <CheckCircle2 size={12} className="text-slate-600" />
+                                                            <span>Paid (PKR {appt.consultationFee?.toLocaleString() || '1,500'})</span>
+                                                        </span>
+                                                        {appt.paymentMethod && (
+                                                            <span className="text-[10px] text-slate-400 font-mono mt-0.5">{appt.paymentMethod}</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200">
+                                                        Fee Unpaid
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-5 py-4 text-center">
                                                 <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${

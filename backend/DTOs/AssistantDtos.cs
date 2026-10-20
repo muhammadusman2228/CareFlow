@@ -158,6 +158,12 @@ public class AssistantQueueItemDto
     public string? DiversionReason { get; set; }
     public string? DivertedBy { get; set; }
     public DateTime? DivertedAt { get; set; }
+    public decimal ConsultationFee { get; set; }
+    public bool IsPaid { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? ReceiptNumber { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string? TransactionReference { get; set; }
 }
 
 public class CreateLabOrderDto

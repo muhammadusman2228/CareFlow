@@ -95,6 +95,7 @@ const DoctorPublicProfile = () => {
     const [bookedSlots, setBookedSlots] = useState([])
     const [doctorDaySchedule, setDoctorDaySchedule] = useState(null)
     const [selectedSlot, setSelectedSlot] = useState(null)
+    const [selectedDepartment, setSelectedDepartment] = useState('')
     const [symptoms, setSymptoms] = useState('')
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingError, setBookingError] = useState(null)
@@ -142,6 +143,7 @@ const DoctorPublicProfile = () => {
                 const res = await axios.get(`/Admin/doctor/${id}`)
                 if (res.data) {
                     setDoctor(res.data)
+                    setSelectedDepartment(res.data.departmentName || (res.data.departmentNames && res.data.departmentNames[0]) || '')
                 } else {
                     setError('Physician record not found')
                 }
@@ -152,6 +154,7 @@ const DoctorPublicProfile = () => {
                         const matched = fallbackRes.data.find(d => String(d.id) === String(id))
                         if (matched) {
                             setDoctor(matched)
+                            setSelectedDepartment(matched.departmentName || (matched.departmentNames && matched.departmentNames[0]) || '')
                         } else {
                             setError('Physician record not found')
                         }
@@ -183,12 +186,13 @@ const DoctorPublicProfile = () => {
         try {
             setBookingLoading(true)
             setBookingError(null)
+            const clinicPrefix = selectedDepartment && selectedDepartment !== doctor.departmentName ? `[${selectedDepartment} Clinic] ` : ''
             await axiosPrivate.post('/Appointment/booking', {
                 patientId: 0,
                 doctorId: doctor.id,
                 appointmentDate: selectedDate,
                 timeSlot: selectedSlot.value,
-                symptom: symptoms.trim() || 'General consultation request'
+                symptom: `${clinicPrefix}${symptoms.trim() || 'General consultation request'}`
             })
             setBookingSuccess(true)
             setTimeout(() => {
@@ -419,6 +423,40 @@ const DoctorPublicProfile = () => {
                                             required
                                         />
                                     </div>
+
+                                    {doctor.departmentNames && doctor.departmentNames.length > 1 && (
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                                <Building2 size={13} className="text-slate-500" />
+                                                <span>Consultation Clinic / Department</span>
+                                            </label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {doctor.departmentNames.map((dName) => {
+                                                    const isSelected = (selectedDepartment || doctor.departmentName) === dName
+                                                    const isPrimary = dName === doctor.departmentName
+                                                    return (
+                                                        <button
+                                                            key={dName}
+                                                            type="button"
+                                                            onClick={() => setSelectedDepartment(dName)}
+                                                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border text-left flex items-center justify-between cursor-pointer ${
+                                                                isSelected
+                                                                    ? 'bg-sky-50 border-sky-600 text-sky-900 shadow-2xs'
+                                                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                                                            }`}
+                                                        >
+                                                            <span className="truncate">{dName}</span>
+                                                            {isPrimary && (
+                                                                <span className="text-[10px] font-semibold text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded shrink-0 ml-1">
+                                                                    Primary
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">

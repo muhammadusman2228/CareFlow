@@ -185,6 +185,20 @@ const DoctorPrescriptionModal = ({ appointment, onClose, onSuccess }) => {
                             <span className="font-semibold text-slate-500">Patient Information</span>
                             <span className="font-bold text-slate-900 text-sm">{appointment.patientName}</span>
                         </div>
+                        <div className="flex flex-col gap-0.5 sm:text-center">
+                            <span className="font-semibold text-slate-500">Fee Collection Status</span>
+                            {appointment.isPaid ? (
+                                <span className="inline-flex items-center gap-1 font-bold text-slate-800">
+                                    <CheckCircle2 size={13} className="text-slate-600" />
+                                    <span>Paid &bull; PKR {appointment.consultationFee?.toLocaleString() || '1,500'}</span>
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                                    <AlertCircle size={13} className="text-rose-600" />
+                                    <span>Fee Unpaid / Pending</span>
+                                </span>
+                            )}
+                        </div>
                         <div className="flex flex-col gap-0.5 sm:text-right">
                             <span className="font-semibold text-slate-500">Consultation Schedule</span>
                             <span className="font-medium text-slate-800">{appointment.timeSlot} • {appointment.appointmentDate} (PKT)</span>

@@ -12,7 +12,8 @@ import {
     ClipboardList,
     Clock,
     X,
-    ShieldAlert
+    ShieldAlert,
+    Banknote
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
@@ -21,6 +22,7 @@ const AssistantDashboard = () => {
     const navItems = [
         { name: 'Patient Triage & Vitals', path: '/assistant/dashboard', icon: Activity, end: true },
         { name: 'Diagnostic Lab Desk', path: '/assistant/dashboard/labs', icon: FlaskConical },
+        { name: 'Daily Settlement & Register', path: '/assistant/dashboard/reports', icon: Banknote },
     ]
 
     const { auth, setAuth } = useAuth()

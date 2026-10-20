@@ -23,10 +23,14 @@ import {
     PhoneCall,
     Phone,
     Calendar,
-    ArrowRightLeft
+    ArrowRightLeft,
+    Receipt,
+    Banknote,
+    CreditCard
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import Pagination from '../../components/common/Pagination'
+import PaymentReceiptModal from '../../components/common/PaymentReceiptModal'
 import { formatDoctorName, formatDepartmentName } from '../../utils/formatters'
 
 const generateSlots = (shiftStart, shiftEnd) => {
@@ -129,6 +133,17 @@ const AssistantTriageQueue = () => {
     const [diversionReasonInput, setDiversionReasonInput] = useState('')
     const [isSubmittingDivert, setIsSubmittingDivert] = useState(false)
     const [divertError, setDivertError] = useState('')
+
+    const [selectedPaymentItem, setSelectedPaymentItem] = useState(null)
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+    const [paymentMethod, setPaymentMethod] = useState('Cash')
+    const [transactionReference, setTransactionReference] = useState('')
+    const [paymentNotes, setPaymentNotes] = useState('')
+    const [isCollectingPayment, setIsCollectingPayment] = useState(false)
+    const [paymentError, setPaymentError] = useState(null)
+    const [activeReceipt, setActiveReceipt] = useState(null)
+    const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
+    const [isLoadingReceipt, setIsLoadingReceipt] = useState(false)
 
     useEffect(() => {
         setTriagePage(1)
@@ -239,6 +254,76 @@ const AssistantTriageQueue = () => {
         fetchQueue()
     }, [])
 
+    const handleOpenPaymentModal = (item) => {
+        setSelectedPaymentItem(item)
+        setPaymentMethod('Cash')
+        setTransactionReference('')
+        setPaymentNotes('')
+        setPaymentError(null)
+        setIsPaymentModalOpen(true)
+    }
+
+    const handleCollectPayment = async (e) => {
+        e.preventDefault()
+        if (!selectedPaymentItem) return
+
+        if (paymentMethod !== 'Cash' && !transactionReference.trim()) {
+            setPaymentError(`Transaction Reference / TRX ID is required for ${paymentMethod} payments.`)
+            return
+        }
+
+        setIsCollectingPayment(true)
+        setPaymentError(null)
+
+        try {
+            const payload = {
+                appointmentId: selectedPaymentItem.appointmentId,
+                paymentMethod,
+                transactionReference: paymentMethod === 'Cash' ? null : transactionReference.trim(),
+                notes: paymentNotes.trim() || undefined
+            }
+
+            const res = await axiosPrivate.post('/Assistant/payment/collect', payload)
+            
+            setQueue(prevQueue => prevQueue.map(item => {
+                if (item.appointmentId === selectedPaymentItem.appointmentId) {
+                    return {
+                        ...item,
+                        isPaid: true,
+                        paymentMethod: res.data.paymentMethod,
+                        receiptNumber: res.data.receiptNumber,
+                        paidAt: res.data.paidAt,
+                        transactionReference: res.data.transactionReference,
+                        consultationFee: res.data.amount
+                    }
+                }
+                return item
+            }))
+
+            setIsPaymentModalOpen(false)
+            setActiveReceipt(res.data)
+            setIsReceiptModalOpen(true)
+            setSuccessMessage(`Fee of PKR ${res.data.amount?.toLocaleString()} collected successfully for ${selectedPaymentItem.patientName}! Official slip issued.`)
+        } catch (err) {
+            setPaymentError(err.response?.data?.message || 'Failed to collect payment. Please verify details.')
+        } finally {
+            setIsCollectingPayment(false)
+        }
+    }
+
+    const handleViewReceipt = async (appointmentId) => {
+        setIsLoadingReceipt(true)
+        try {
+            const res = await axiosPrivate.get(`/Assistant/payment/receipt/${appointmentId}`)
+            setActiveReceipt(res.data)
+            setIsReceiptModalOpen(true)
+        } catch (err) {
+            setVitalsError(err.response?.data?.message || 'Could not retrieve payment receipt.')
+        } finally {
+            setIsLoadingReceipt(false)
+        }
+    }
+
     const handleCheckIn = async (appointmentId, patientName) => {
         try {
             setActionLoadingId(appointmentId)
@@ -254,7 +339,7 @@ const AssistantTriageQueue = () => {
     }
 
     const handleOpenVitalsModal = (item) => {
-        if (!item.canRecordVitals || item.isPast || item.status === 'Completed' || item.status === 'Cancelled' || item.status === 'Missed') {
+        if (item.status === 'Completed' || item.status === 'Cancelled' || item.isPast) {
             setVitalsError('This appointment has already passed or concluded. Vitals cannot be modified.')
             return
         }
@@ -523,6 +608,7 @@ const AssistantTriageQueue = () => {
                                 <th className="py-3.5 px-4">Patient Name</th>
                                 <th className="py-3.5 px-4">Consultant Doctor</th>
                                 <th className="py-3.5 px-4 text-center">Visit Status</th>
+                                <th className="py-3.5 px-4 text-center">Fee & Payment</th>
                                 <th className="py-3.5 px-4">Triage Vitals Check</th>
                                 <th className="py-3.5 px-4 sm:px-6 text-center">Triage Actions</th>
                             </tr>
@@ -530,7 +616,7 @@ const AssistantTriageQueue = () => {
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-600">
+                                    <td colSpan={8} className="py-14 text-center text-slate-600">
                                         <div className="flex items-center justify-center gap-2.5">
                                             <Loader2 size={18} className="animate-spin text-slate-900" />
                                             <span className="text-sm font-bold text-slate-700">Loading today's queue...</span>
@@ -539,7 +625,7 @@ const AssistantTriageQueue = () => {
                                 </tr>
                             ) : filteredQueue.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-slate-500">
+                                    <td colSpan={8} className="py-14 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Activity size={36} className="text-slate-400" />
                                             <span className="text-base font-bold text-slate-800">No appointments scheduled for today</span>
@@ -550,7 +636,7 @@ const AssistantTriageQueue = () => {
                             ) : (
                                 filteredQueue.slice((triagePage - 1) * 20, triagePage * 20).map((item, index) => {
                                     const serialNumber = (triagePage - 1) * 20 + index + 1
-                                    const isLocked = !item.canRecordVitals || item.isPast || item.status === 'Completed' || item.status === 'Cancelled' || item.status === 'Missed'
+                                    const isLocked = item.status === 'Completed' || item.status === 'Cancelled' || item.isPast
 
                                     return (
                                         <tr key={item.appointmentId} className="hover:bg-slate-50/70 transition-colors">
@@ -606,6 +692,42 @@ const AssistantTriageQueue = () => {
                                                     {item.status === 'CheckedIn' ? 'Checked In' : ((item.status === 'Confirmed' || item.status === 'Pending') ? 'Booked' : item.status)}
                                                 </span>
                                             </td>
+                                            <td className="py-4 px-4 text-center whitespace-nowrap">
+                                                {item.isPaid ? (
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-200">
+                                                            <CheckCircle2 size={12} className="text-slate-500" />
+                                                            <span>PKR {item.consultationFee?.toLocaleString()}</span>
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleViewReceipt(item.appointmentId)}
+                                                            disabled={isLoadingReceipt}
+                                                            className="text-[11px] font-semibold text-slate-700 hover:text-slate-900 underline flex items-center gap-1 cursor-pointer"
+                                                            title={`Slip: ${item.receiptNumber || 'View Slip'}`}
+                                                        >
+                                                            <Receipt size={12} className="text-slate-500" />
+                                                            <span>Slip ({item.paymentMethod || 'Paid'})</span>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className="text-xs font-bold text-slate-800">
+                                                            PKR {item.consultationFee?.toLocaleString() || '1,500'}
+                                                        </span>
+                                                        {item.status !== 'Cancelled' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenPaymentModal(item)}
+                                                                className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                                                            >
+                                                                <CreditCard size={12} />
+                                                                <span>Collect Fee</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td className="py-4 px-4">
                                                 {item.hasVitals && item.vitals ? (
                                                     <div className="flex flex-col gap-0.5">
@@ -633,11 +755,11 @@ const AssistantTriageQueue = () => {
                                                         </button>
                                                     )}
 
-                                                    {item.status !== 'CheckedIn' && item.status !== 'Completed' && item.status !== 'Cancelled' && !item.isPast && (
+                                                    {(item.status === 'Booked' || item.status === 'Confirmed' || item.status === 'Pending' || item.status === 'Missed') && !item.isPast && (
                                                         <button
                                                             onClick={() => handleCheckIn(item.appointmentId, item.patientName)}
                                                             disabled={actionLoadingId === item.appointmentId}
-                                                            className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                                            className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                                                             title="Mark patient checked in"
                                                         >
                                                             {actionLoadingId === item.appointmentId ? (
@@ -1443,6 +1565,177 @@ const AssistantTriageQueue = () => {
                     </div>
                 </div>
             )}
+
+            {isPaymentModalOpen && selectedPaymentItem && (
+                <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-lg w-full shadow-lg border border-slate-200 overflow-hidden flex flex-col my-6">
+                        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+                                    <Banknote size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900">Collect Consultation Fee</h3>
+                                    <p className="text-xs font-semibold text-slate-500">
+                                        Patient: <span className="text-slate-900 font-bold">{selectedPaymentItem.patientName}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsPaymentModalOpen(false)
+                                    setSelectedPaymentItem(null)
+                                }}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCollectPayment} className="p-6 flex flex-col gap-4">
+                            {paymentError && (
+                                <div className="p-3.5 bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                                    <AlertCircle size={16} className="shrink-0 text-slate-600" />
+                                    <span>{paymentError}</span>
+                                </div>
+                            )}
+
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <span className="text-slate-500 font-medium">Physician:</span>
+                                    <p className="font-bold text-slate-900">{formatDoctorName(selectedPaymentItem.doctorName)}</p>
+                                    <span className="text-[11px] text-slate-500">{selectedPaymentItem.departmentName}</span>
+                                </div>
+                                <div>
+                                    <span className="text-slate-500 font-medium">Scheduled Time:</span>
+                                    <p className="font-bold text-slate-900">{selectedPaymentItem.timeSlot?.substring(0, 5)} (PKT)</p>
+                                </div>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Total Consultation Fee</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-2xl font-bold font-mono text-white">
+                                        PKR {selectedPaymentItem.consultationFee?.toLocaleString() || '1,500'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                    Select Payment Method <span className="text-slate-900">*</span>
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { id: 'Cash', label: 'Cash', icon: Banknote },
+                                        { id: 'JazzCash', label: 'JazzCash', icon: CreditCard },
+                                        { id: 'EasyPaisa', label: 'EasyPaisa', icon: CreditCard },
+                                        { id: 'BankTransfer', label: 'Bank / Raast', icon: CreditCard },
+                                        { id: 'Card', label: 'Debit / Card', icon: CreditCard },
+                                    ].map(method => {
+                                        const Icon = method.icon
+                                        const isSelected = paymentMethod === method.id
+                                        return (
+                                            <button
+                                                key={method.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setPaymentMethod(method.id)
+                                                    setPaymentError(null)
+                                                }}
+                                                className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                                                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <Icon size={16} className={isSelected ? 'text-white' : 'text-slate-500'} />
+                                                <span>{method.label}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {paymentMethod !== 'Cash' && (
+                                <div className="flex flex-col gap-1.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
+                                        <span>Transaction Reference / TRX ID <span className="text-rose-600">*</span></span>
+                                        <span className="text-[11px] font-semibold text-slate-500">Required for {paymentMethod}</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={100}
+                                        placeholder={`Enter ${paymentMethod} transaction reference number...`}
+                                        value={transactionReference}
+                                        onChange={(e) => setTransactionReference(e.target.value)}
+                                        className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 bg-white focus:outline-none focus:border-sky-500"
+                                    />
+                                    <p className="text-[11px] text-slate-500 font-medium">
+                                        Verify transaction confirmation on patient device before confirming.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-bold text-slate-700">
+                                    Internal Notes (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    maxLength={250}
+                                    placeholder="Optional billing remarks..."
+                                    value={paymentNotes}
+                                    onChange={(e) => setPaymentNotes(e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:border-sky-500 font-medium"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsPaymentModalOpen(false)
+                                        setSelectedPaymentItem(null)
+                                    }}
+                                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isCollectingPayment || (paymentMethod !== 'Cash' && !transactionReference.trim())}
+                                    className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isCollectingPayment ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>Processing Fee...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 size={14} className="text-white" />
+                                            <span>Confirm & Issue Official Slip</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <PaymentReceiptModal
+                receipt={activeReceipt}
+                isOpen={isReceiptModalOpen}
+                onClose={() => {
+                    setIsReceiptModalOpen(false)
+                    setActiveReceipt(null)
+                }}
+            />
         </div>
     )
 }

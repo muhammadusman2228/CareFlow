@@ -57,11 +57,13 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
         const matchesSearch = 
             (doc.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (doc.specialization || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (doc.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase())
+            (doc.departmentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (doc.departmentNames && doc.departmentNames.some(d => (d || '').toLowerCase().includes(searchQuery.toLowerCase())))
 
         const matchesDept = 
             activeDept === 'All' || 
-            (doc.departmentName || '').toLowerCase() === activeDept.toLowerCase()
+            (doc.departmentName || '').toLowerCase() === activeDept.toLowerCase() ||
+            (doc.departmentNames && doc.departmentNames.some(d => (d || '').toLowerCase() === activeDept.toLowerCase()))
 
         return matchesSearch && matchesDept
     })
@@ -192,8 +194,13 @@ const DoctorsSection = ({ selectedDepartmentFilter, onClearDepartmentFilter }) =
                                         <h3 className="text-sm font-bold text-slate-900 truncate">
                                             {formatDoctorName(doc.name)}
                                         </h3>
-                                        <span className="text-xs font-semibold text-sky-700 truncate capitalize">
-                                            {formatDepartmentName(doc.departmentName)}
+                                        <span className="text-xs font-semibold text-sky-700 truncate capitalize flex items-center gap-1.5">
+                                            <span>{formatDepartmentName(doc.departmentName)}</span>
+                                            {doc.departmentNames && doc.departmentNames.length > 1 && (
+                                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                    +{doc.departmentNames.length - 1} more
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
                                 </div>

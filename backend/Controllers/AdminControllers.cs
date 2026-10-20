@@ -18,12 +18,14 @@ public class AdminController : ControllerBase
 {
     
     private readonly IDoctor _doctorService;
-
     private readonly IAdminExtra _adminExtra;
-    public AdminController(IDoctor doctorService,IAdminExtra adminExtra)
+    private readonly IPaymentService _paymentService;
+
+    public AdminController(IDoctor doctorService, IAdminExtra adminExtra, IPaymentService paymentService)
     {
-        _doctorService=doctorService;
-        _adminExtra=adminExtra;
+        _doctorService = doctorService;
+        _adminExtra = adminExtra;
+        _paymentService = paymentService;
     }
     [HttpPost]
     [Authorize(Roles = "SuperAdmin,Admin")]
@@ -423,6 +425,65 @@ public class AdminController : ControllerBase
 
             var summary = await _adminExtra.GetMonthlyAppointments(targetYear, targetMonth);
             return Ok(summary);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("settlement-reports")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<List<SettlementReportResponseDto>>> GetSettlementReports([FromQuery] DateOnly? date, [FromQuery] string? status, [FromQuery] int? assistantId)
+    {
+        try
+        {
+            var reports = await _paymentService.GetAdminSettlementReports(date, status, assistantId);
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("settlement-reports/{id:int}")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<SettlementReportResponseDto>> GetSettlementReportById(int id)
+    {
+        try
+        {
+            var report = await _paymentService.GetSettlementReportById(id);
+            return Ok(report);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("settlement-reports/{id:int}/verify")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<SettlementReportResponseDto>> VerifySettlementReport(int id, [FromBody] VerifySettlementDto dto)
+    {
+        try
+        {
+            var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(adminIdStr) || !int.TryParse(adminIdStr, out var adminUserId))
+            {
+                return Unauthorized(new { message = "Invalid administrator identity" });
+            }
+
+            var verifiedReport = await _paymentService.VerifySettlementReport(adminUserId, id, dto);
+            return Ok(verifiedReport);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {

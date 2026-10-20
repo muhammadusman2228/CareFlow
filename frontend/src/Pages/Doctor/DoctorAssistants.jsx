@@ -111,21 +111,26 @@ const DoctorAssistants = () => {
                                             </div>
                                         </div>
 
-                                        {ast.isActive ? (
-                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-2xs">
-                                                Active
+                                        <div className="flex flex-col items-end gap-1">
+                                            {ast.isActive ? (
+                                                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-2xs">
+                                                    Active
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                    Off Duty
+                                                </span>
+                                            )}
+                                            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                                                {ast.doctorId ? 'Dedicated' : 'Dept Pool'}
                                             </span>
-                                        ) : (
-                                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                                                Off Duty
-                                            </span>
-                                        )}
+                                        </div>
                                     </div>
 
                                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col gap-2.5 text-xs">
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-500 font-bold uppercase tracking-wider text-[11px]">Department</span>
-                                            <span className="font-bold text-slate-900 text-sm capitalize">{ast.departmentName || 'General OPD'}</span>
+                                            <span className="font-bold text-slate-900 text-sm capitalize">{ast.departmentName || (ast.departmentNames?.length ? ast.departmentNames.join(', ') : 'General OPD')}</span>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-500 font-bold uppercase tracking-wider text-[11px]">Shift (PKT)</span>

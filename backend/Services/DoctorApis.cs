@@ -34,7 +34,7 @@ public class DoctorApisService : IDoctorApis
             await _context.Appointments
                 .Where(u => u.DoctorId == doctor.Id && 
                             (u.Status == "Booked" || u.Status == "Confirmed" || u.Status == "Pending") && 
-                            (u.AppointmentDate < todayPkt || (u.AppointmentDate == todayPkt && u.TimeSlot < nowTimePkt)))
+                            u.AppointmentDate < todayPkt)
                 .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
             var appointments = await _context.Appointments.AsNoTracking()
@@ -52,7 +52,11 @@ public class DoctorApisService : IDoctorApis
                     Symptoms = u.Symptoms,
                     Status = u.Status,
                     PrescriptionTitle = u.Prescriptions != null ? u.Prescriptions.Title : null,
-                    PrescriptionNote = u.Prescriptions != null ? u.Prescriptions.Note : null
+                    PrescriptionNote = u.Prescriptions != null ? u.Prescriptions.Note : null,
+                    IsPaid = u.Payment != null && u.Payment.Status == "Paid",
+                    ConsultationFee = u.Payment != null ? u.Payment.Amount : (u.Doctor != null && u.Doctor.ConsultationFee > 0 ? u.Doctor.ConsultationFee : 1500m),
+                    PaymentMethod = u.Payment != null ? u.Payment.PaymentMethod : null,
+                    ReceiptNumber = u.Payment != null ? u.Payment.ReceiptNumber : null
                 }).ToListAsync();
 
             return appointments;

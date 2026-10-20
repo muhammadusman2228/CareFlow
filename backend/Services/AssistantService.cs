@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using backend.Data;
 using backend.DTOs;
 using backend.Interfaces;
@@ -199,14 +199,24 @@ public class AssistantService : IAssistant
 
             assistant.DepartmentId = departmentIds.First();
 
-            _context.AssistantDepartments.RemoveRange(assistant.AssistantDepartments);
+            var currentAsstDepts = assistant.AssistantDepartments.ToList();
+            var toRemoveAsst = currentAsstDepts.Where(ad => !departmentIds.Contains(ad.DepartmentId)).ToList();
+            if (toRemoveAsst.Count > 0)
+            {
+                _context.AssistantDepartments.RemoveRange(toRemoveAsst);
+            }
+
+            var existingAsstDeptIds = currentAsstDepts.Select(ad => ad.DepartmentId).ToHashSet();
             foreach (var dId in departmentIds)
             {
-                assistant.AssistantDepartments.Add(new AssistantDepartment
+                if (!existingAsstDeptIds.Contains(dId))
                 {
-                    AssistantId = assistant.Id,
-                    DepartmentId = dId
-                });
+                    assistant.AssistantDepartments.Add(new AssistantDepartment
+                    {
+                        AssistantId = assistant.Id,
+                        DepartmentId = dId
+                    });
+                }
             }
         }
         else if (dto.DepartmentId.HasValue)
@@ -279,6 +289,9 @@ public class AssistantService : IAssistant
     {
         var doctor = await _context.Doctors
             .AsNoTracking()
+            .Include(d => d.DoctorDepartments)
+            .Include(d => d.Department)
+            .Include(d => d.User)
             .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
         if (doctor == null)
@@ -286,30 +299,64 @@ public class AssistantService : IAssistant
             throw new KeyNotFoundException("Doctor profile not found");
         }
 
-        return await _context.Assistants
+        var doctorDeptIds = doctor.DoctorDepartments != null
+            ? doctor.DoctorDepartments.Select(dd => dd.DepartmentId).ToList()
+            : new List<int>();
+        if (doctor.DepartmentId > 0 && !doctorDeptIds.Contains(doctor.DepartmentId))
+        {
+            doctorDeptIds.Add(doctor.DepartmentId);
+        }
+
+        var assistants = await _context.Assistants
             .AsNoTracking()
             .Include(a => a.User)
             .Include(a => a.Department)
-            .Where(a => a.DoctorId == doctor.Id)
+            .Include(a => a.Doctor)!.ThenInclude(d => d.User)
+            .Include(a => a.AssistantDepartments)!.ThenInclude(ad => ad.Department)
+            .Where(a => a.DoctorId == doctor.Id ||
+                        (a.DepartmentId.HasValue && doctorDeptIds.Contains(a.DepartmentId.Value)) ||
+                        a.AssistantDepartments.Any(ad => doctorDeptIds.Contains(ad.DepartmentId)))
             .OrderBy(a => a.User!.Name)
-            .Select(a => new ResponseAssistantDto
+            .ToListAsync();
+
+        return assistants.Select(a =>
+        {
+            var deptIds = a.AssistantDepartments != null
+                ? a.AssistantDepartments.Select(ad => ad.DepartmentId).ToList()
+                : new List<int>();
+            if (a.DepartmentId.HasValue && !deptIds.Contains(a.DepartmentId.Value))
+            {
+                deptIds.Add(a.DepartmentId.Value);
+            }
+
+            var deptNames = a.AssistantDepartments != null
+                ? a.AssistantDepartments.Where(ad => ad.Department != null).Select(ad => ad.Department!.Name).ToList()
+                : new List<string>();
+            if (a.Department != null && !deptNames.Contains(a.Department.Name))
+            {
+                deptNames.Add(a.Department.Name);
+            }
+
+            return new ResponseAssistantDto
             {
                 Id = a.Id,
                 UserId = a.UserId,
                 Name = a.User!.Name,
                 Email = a.User.Email,
                 PhoneNumber = a.PhoneNumber,
-                DepartmentId = a.DepartmentId,
-                DepartmentName = a.Department != null ? a.Department.Name : null,
+                DepartmentId = a.DepartmentId ?? deptIds.FirstOrDefault(),
+                DepartmentName = a.Department != null ? a.Department.Name : deptNames.FirstOrDefault(),
+                DepartmentIds = deptIds,
+                DepartmentNames = deptNames,
                 DoctorId = a.DoctorId,
-                DoctorName = doctor.Specialization,
+                DoctorName = a.Doctor != null && a.Doctor.User != null ? a.Doctor.User.Name : (doctor.User != null ? doctor.User.Name : doctor.Specialization),
                 Qualifications = a.Qualifications,
                 ShiftStart = a.ShiftStart,
                 ShiftEnd = a.ShiftEnd,
                 IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt
-            })
-            .ToListAsync();
+            };
+        }).ToList();
     }
 
     public async Task<List<AssistantQueueItemDto>> GetTodayQueue(int assistantUserId)
@@ -330,7 +377,7 @@ public class AssistantService : IAssistant
 
         await _context.Appointments
             .Where(a => (a.Status == "Booked" || a.Status == "Pending" || a.Status == "Confirmed") &&
-                        (a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt)))
+                        a.AppointmentDate < todayPkt)
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, "Missed"));
 
         var deptIds = assistant.AssistantDepartments.Select(ad => ad.DepartmentId).ToList();
@@ -373,9 +420,9 @@ public class AssistantService : IAssistant
                 TimeSlot = a.TimeSlot,
                 Status = a.Status,
                 HasVitals = a.Vitals != null,
-                IsPast = a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt),
-                CanRecordVitals = !(a.AppointmentDate < todayPkt || (a.AppointmentDate == todayPkt && a.TimeSlot < nowTimePkt.AddMinutes(-30))) &&
-                                  a.Status != "Completed" && a.Status != "Cancelled" && a.Status != "Missed",
+                IsPast = a.AppointmentDate < todayPkt,
+                CanRecordVitals = a.AppointmentDate >= todayPkt &&
+                                  a.Status != "Completed" && a.Status != "Cancelled",
                 IsDoctorLateToday = a.Doctor != null && a.Doctor.DailyStatusDate == todayPkt && a.Doctor.IsLateToday,
                 DoctorDelayMinutes = a.Doctor != null && a.Doctor.DailyStatusDate == todayPkt && a.Doctor.IsLateToday ? a.Doctor.DelayMinutes : 0,
                 DoctorDelayReason = a.Doctor != null && a.Doctor.DailyStatusDate == todayPkt ? a.Doctor.DelayReason : null,
@@ -386,6 +433,12 @@ public class AssistantService : IAssistant
                 DiversionReason = a.DiversionReason,
                 DivertedBy = a.DivertedBy,
                 DivertedAt = a.DivertedAt,
+                ConsultationFee = a.Doctor != null ? a.Doctor.ConsultationFee : 1500m,
+                IsPaid = a.Payment != null && a.Payment.Status == "Paid",
+                PaymentMethod = a.Payment != null ? a.Payment.PaymentMethod : null,
+                ReceiptNumber = a.Payment != null ? a.Payment.ReceiptNumber : null,
+                PaidAt = a.Payment != null ? a.Payment.PaidAt : null,
+                TransactionReference = a.Payment != null ? a.Payment.TransactionReference : null,
                 Vitals = a.Vitals != null ? new ResponseVitalsDto
                 {
                     Id = a.Vitals.Id,
@@ -438,15 +491,14 @@ public class AssistantService : IAssistant
         var todayPkt = DateOnly.FromDateTime(nowPkt);
         var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
 
-        var isPassed = appointment.AppointmentDate < todayPkt || 
-                       (appointment.AppointmentDate == todayPkt && appointment.TimeSlot < nowTimePkt.AddMinutes(-30));
+        var isPassed = appointment.AppointmentDate < todayPkt;
 
-        if (isPassed || appointment.Status == "Completed" || appointment.Status == "Cancelled" || appointment.Status == "Missed")
+        if (isPassed || appointment.Status == "Completed" || appointment.Status == "Cancelled")
         {
-            throw new InvalidOperationException("Cannot record or modify vitals for past, completed, or cancelled appointments");
+            throw new InvalidOperationException("Cannot record or modify vitals for past dates, completed, or cancelled appointments");
         }
 
-        if (appointment.Status == "Booked" || appointment.Status == "Confirmed" || appointment.Status == "Pending")
+        if (appointment.Status == "Booked" || appointment.Status == "Confirmed" || appointment.Status == "Pending" || appointment.Status == "Missed")
         {
             appointment.Status = "CheckedIn";
         }
@@ -751,15 +803,19 @@ public class AssistantService : IAssistant
         var todayPkt = DateOnly.FromDateTime(nowPkt);
         var nowTimePkt = TimeOnly.FromDateTime(nowPkt);
 
-        if (appointment.AppointmentDate < todayPkt || 
-            (appointment.AppointmentDate == todayPkt && appointment.TimeSlot < nowTimePkt.AddMinutes(-30)))
+        if (appointment.AppointmentDate < todayPkt)
         {
-            throw new InvalidOperationException("Cannot check in a past appointment");
+            throw new InvalidOperationException("Cannot check in a past date appointment");
         }
 
-        if (appointment.Status == "Cancelled" || appointment.Status == "Missed" || appointment.Status == "Completed")
+        if (appointment.Status == "CheckedIn" || appointment.Status == "InProgress")
         {
-            throw new InvalidOperationException($"Cannot check in an appointment with status '{appointment.Status}'");
+            throw new InvalidOperationException($"Patient is already checked in (current status: '{appointment.Status}').");
+        }
+
+        if (appointment.Status == "Cancelled" || appointment.Status == "Completed")
+        {
+            throw new InvalidOperationException($"Cannot check in an appointment with status '{appointment.Status}'.");
         }
 
         appointment.Status = "CheckedIn";

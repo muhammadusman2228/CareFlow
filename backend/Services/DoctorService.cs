@@ -1,4 +1,4 @@
-
+﻿
 
 
 using System.Data;
@@ -314,20 +314,35 @@ public class DoctorService : IDoctor
             }
 
             var currentLinks = await _context.DoctorDepartments.Where(dd => dd.DoctorId == doctorId).ToListAsync();
-            _context.DoctorDepartments.RemoveRange(currentLinks);
 
-            doctor.DepartmentId = cleanDeptIds.First();
+            var toRemove = currentLinks.Where(l => !cleanDeptIds.Contains(l.DepartmentId)).ToList();
+            if (toRemove.Count > 0)
+            {
+                _context.DoctorDepartments.RemoveRange(toRemove);
+            }
+
+            var existingDeptIds = currentLinks.Select(l => l.DepartmentId).ToHashSet();
+            var primaryDeptId = cleanDeptIds.First();
 
             foreach (var deptId in cleanDeptIds)
             {
-                var docDept = new DoctorDepartment
+                if (!existingDeptIds.Contains(deptId))
                 {
-                    DoctorId = doctorId,
-                    DepartmentId = deptId,
-                    IsPrimary = (deptId == cleanDeptIds.First())
-                };
-                await _context.DoctorDepartments.AddAsync(docDept);
+                    await _context.DoctorDepartments.AddAsync(new DoctorDepartment
+                    {
+                        DoctorId = doctorId,
+                        DepartmentId = deptId,
+                        IsPrimary = (deptId == primaryDeptId)
+                    });
+                }
             }
+
+            foreach (var link in currentLinks.Where(l => cleanDeptIds.Contains(l.DepartmentId)))
+            {
+                link.IsPrimary = (link.DepartmentId == primaryDeptId);
+            }
+
+            doctor.DepartmentId = primaryDeptId;
 
             await _context.SaveChangesAsync();
             return "Doctor departments updated successfully.";

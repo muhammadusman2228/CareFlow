@@ -12,10 +12,12 @@ namespace backend.Controllers;
 public class AssistantController : ControllerBase
 {
     private readonly IAssistant _assistantService;
+    private readonly IPaymentService _paymentService;
 
-    public AssistantController(IAssistant assistantService)
+    public AssistantController(IAssistant assistantService, IPaymentService paymentService)
     {
         _assistantService = assistantService;
+        _paymentService = paymentService;
     }
 
     [HttpPost("register")]
@@ -120,7 +122,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("queue")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<List<AssistantQueueItemDto>>> GetTodayQueue()
     {
         try
@@ -145,7 +147,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("vitals")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<ResponseVitalsDto>> RecordVitals(CreateVitalsDto dto)
     {
         try
@@ -237,7 +239,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("pending-lab-orders")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<List<ResponseLabOrderDto>>> GetPendingLabOrders()
     {
         try
@@ -285,7 +287,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPatch("check-in/{appointmentId:int}")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<AppointmentStatusResponseDto>> CheckIn(int appointmentId)
     {
         try
@@ -329,7 +331,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("book-appointment")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<ResponseAssistantBookingDto>> BookAppointment(AssistantBookAppointmentDto dto)
     {
         try
@@ -366,7 +368,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("schedulable-doctors")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<List<FindDoctorResponse>>> GetSchedulableDoctors()
     {
         try
@@ -391,7 +393,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("department-doctors")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<List<AssistantDepartmentDoctorDto>>> GetDepartmentDoctors()
     {
         try
@@ -416,7 +418,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpGet("diversion/candidates/{appointmentId:int}")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<DiversionCandidatesResponseDto>> GetDiversionCandidates(int appointmentId)
     {
         try
@@ -449,7 +451,7 @@ public class AssistantController : ControllerBase
     }
 
     [HttpPost("divert-appointment")]
-    [Authorize(Roles = "Assistant,SuperAdmin,Admin")]
+    [Authorize(Roles = "Assistant")]
     public async Task<ActionResult<DivertAppointmentResponseDto>> DivertAppointment([FromBody] DivertAppointmentDto dto)
     {
         try
@@ -474,6 +476,122 @@ public class AssistantController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("payment/collect")]
+    [Authorize(Roles = "Assistant")]
+    public async Task<ActionResult<PaymentReceiptDto>> CollectPayment([FromBody] CollectPaymentDto dto)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var receipt = await _paymentService.CollectPayment(userId, dto);
+            return Ok(receipt);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("payment/receipt/{appointmentId:int}")]
+    [Authorize]
+    public async Task<ActionResult<PaymentReceiptDto>> GetReceipt(int appointmentId)
+    {
+        try
+        {
+            var receipt = await _paymentService.GetPaymentReceiptByAppointmentId(appointmentId);
+            if (receipt == null) return NotFound(new { message = "No payment receipt found for this appointment." });
+            return Ok(receipt);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("reports/daily-finance")]
+    [Authorize(Roles = "Assistant")]
+    public async Task<ActionResult<AssistantDailyFinanceSummaryDto>> GetDailyFinanceSummary([FromQuery] DateOnly? date)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var summary = await _paymentService.GetAssistantDailyFinanceSummary(userId, date);
+            return Ok(summary);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("reports/submit-daily")]
+    [Authorize(Roles = "Assistant")]
+    public async Task<ActionResult<SettlementReportResponseDto>> SubmitDailySettlement([FromBody] SubmitDailySettlementDto dto)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var report = await _paymentService.SubmitDailySettlement(userId, dto);
+            return Ok(report);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("reports/history")]
+    [Authorize(Roles = "Assistant")]
+    public async Task<ActionResult<List<SettlementReportResponseDto>>> GetSettlementHistory()
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user identity" });
+            }
+
+            var history = await _paymentService.GetAssistantSettlementHistory(userId);
+            return Ok(history);
         }
         catch (Exception ex)
         {
