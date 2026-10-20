@@ -6,6 +6,7 @@ const getDedicatedPortal = (role) => {
     if (normalized === 'admin' || normalized === 'superadmin') return '/admin/dashboard'
     if (normalized === 'doctor') return '/doctor/dashboard'
     if (normalized === 'assistant') return '/assistant/dashboard'
+    if (normalized === 'cashier') return '/cashier/dashboard'
     return '/patient/dashboard'
 }
 

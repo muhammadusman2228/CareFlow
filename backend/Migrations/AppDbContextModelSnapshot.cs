@@ -161,6 +161,91 @@ namespace backend.Migrations
                     b.ToTable("AssistantDepartments");
                 });
 
+            modelBuilder.Entity("backend.Models.CashierBankDeposit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("AdminVerifiedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("BankAccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("BankDepositSlipNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("CashierId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CashierNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateOnly>("DepositDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("DepositReference")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("DepositedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("GrandTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<decimal>("TotalCashDeposited")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TotalHandoversIncluded")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalOnlineAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("VerifiedByAdminId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashierId");
+
+                    b.HasIndex("DepositDate");
+
+                    b.HasIndex("DepositReference")
+                        .IsUnique();
+
+                    b.HasIndex("VerifiedByAdminId");
+
+                    b.ToTable("CashierBankDeposits");
+                });
+
             modelBuilder.Entity("backend.Models.DailySettlementReport", b =>
                 {
                     b.Property<int>("Id")
@@ -180,8 +265,21 @@ namespace backend.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<int?>("BankDepositId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("CashAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("CashierId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CashierNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("CashierVerifiedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -218,6 +316,10 @@ namespace backend.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankDepositId");
+
+                    b.HasIndex("CashierId");
 
                     b.HasIndex("ReportNumber")
                         .IsUnique();
@@ -613,6 +715,9 @@ namespace backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<int?>("SettlementReportId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -631,6 +736,8 @@ namespace backend.Migrations
 
                     b.HasIndex("ReceiptNumber")
                         .IsUnique();
+
+                    b.HasIndex("SettlementReportId");
 
                     b.ToTable("Payments");
                 });
@@ -865,6 +972,24 @@ namespace backend.Migrations
                     b.Navigation("Department");
                 });
 
+            modelBuilder.Entity("backend.Models.CashierBankDeposit", b =>
+                {
+                    b.HasOne("backend.Models.User", "Cashier")
+                        .WithMany()
+                        .HasForeignKey("CashierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.User", "VerifiedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByAdminId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Cashier");
+
+                    b.Navigation("VerifiedByAdmin");
+                });
+
             modelBuilder.Entity("backend.Models.DailySettlementReport", b =>
                 {
                     b.HasOne("backend.Models.Assistant", "Assistant")
@@ -873,12 +998,26 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.CashierBankDeposit", "BankDeposit")
+                        .WithMany("HandoverReports")
+                        .HasForeignKey("BankDepositId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("backend.Models.User", "Cashier")
+                        .WithMany()
+                        .HasForeignKey("CashierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("backend.Models.User", "VerifiedByAdmin")
                         .WithMany()
                         .HasForeignKey("VerifiedByAdminId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Assistant");
+
+                    b.Navigation("BankDeposit");
+
+                    b.Navigation("Cashier");
 
                     b.Navigation("VerifiedByAdmin");
                 });
@@ -1010,9 +1149,16 @@ namespace backend.Migrations
                         .HasForeignKey("CollectedByAssistantId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("backend.Models.DailySettlementReport", "SettlementReport")
+                        .WithMany("Payments")
+                        .HasForeignKey("SettlementReportId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Appointment");
 
                     b.Navigation("CollectedByAssistant");
+
+                    b.Navigation("SettlementReport");
                 });
 
             modelBuilder.Entity("backend.Models.Prescriptions", b =>
@@ -1073,6 +1219,16 @@ namespace backend.Migrations
                     b.Navigation("RecordedVitals");
 
                     b.Navigation("SettlementReports");
+                });
+
+            modelBuilder.Entity("backend.Models.CashierBankDeposit", b =>
+                {
+                    b.Navigation("HandoverReports");
+                });
+
+            modelBuilder.Entity("backend.Models.DailySettlementReport", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("backend.Models.Departments", b =>

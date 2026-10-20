@@ -20,11 +20,11 @@ public class Payment
 
     [Required]
     [MaxLength(30)]
-    public string PaymentMethod { get; set; } = "Cash"; // Cash, JazzCash, EasyPaisa, BankTransfer, Card
+    public string PaymentMethod { get; set; } = "Cash";
 
     [Required]
     [MaxLength(20)]
-    public string Status { get; set; } = "Paid"; // Paid, Pending, Refunded
+    public string Status { get; set; } = "Paid";
 
     [Required]
     [MaxLength(50)]
@@ -37,6 +37,11 @@ public class Payment
 
     [ForeignKey(nameof(CollectedByAssistantId))]
     public virtual Assistant? CollectedByAssistant { get; set; } = null;
+
+    public int? SettlementReportId { get; set; }
+
+    [ForeignKey(nameof(SettlementReportId))]
+    public virtual DailySettlementReport? SettlementReport { get; set; } = null;
 
     public DateTime PaidAt { get; set; } = DateTime.UtcNow;
 

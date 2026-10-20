@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import useAxiosPrivate from '../../hooks/useAxiosPrivate'
 import PaymentReceiptModal from '../../components/common/PaymentReceiptModal'
-import { formatDoctorName } from '../../utils/formatters'
+import { formatDoctorName, formatPktTime, formatPktDate } from '../../utils/formatters'
 
 const AssistantBillingReports = () => {
     const axiosPrivate = useAxiosPrivate()
@@ -30,7 +30,6 @@ const AssistantBillingReports = () => {
     const [history, setHistory] = useState([])
     const [loading, setLoading] = useState(true)
     const [historyLoading, setHistoryLoading] = useState(false)
-    const [fetchError, setFetchError] = useState('')
     const [selectedDate, setSelectedDate] = useState(() => {
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date())
     })
@@ -40,7 +39,26 @@ const AssistantBillingReports = () => {
     const [submitNotes, setSubmitNotes] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
-    const [successMessage, setSuccessMessage] = useState('')
+
+    const [popupModal, setPopupModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    })
+
+    const showPopup = (message, title = 'Notice', type = 'info') => {
+        setPopupModal({
+            isOpen: true,
+            title,
+            message: typeof message === 'string' ? message : 'An unexpected notice was received.',
+            type
+        })
+    }
+
+    const closePopup = () => {
+        setPopupModal(prev => ({ ...prev, isOpen: false }))
+    }
 
     const [activeReceipt, setActiveReceipt] = useState(null)
     const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
@@ -50,13 +68,12 @@ const AssistantBillingReports = () => {
     const fetchDailyFinance = async (dateStr) => {
         try {
             setLoading(true)
-            setFetchError('')
             const res = await axiosPrivate.get('/Assistant/reports/daily-finance', {
                 params: dateStr ? { date: dateStr } : {}
             })
             setSummary(res.data)
         } catch (err) {
-            setFetchError(err.response?.data?.message || 'Failed to load daily financial register.')
+            showPopup(err.response?.data?.message || 'Failed to load daily financial register.', 'Register Notice', 'error')
         } finally {
             setLoading(false)
         }
@@ -65,11 +82,10 @@ const AssistantBillingReports = () => {
     const fetchHistory = async () => {
         try {
             setHistoryLoading(true)
-            setFetchError('')
             const res = await axiosPrivate.get('/Assistant/reports/history')
             setHistory(Array.isArray(res.data) ? res.data : [])
         } catch (err) {
-            setFetchError(err.response?.data?.message || 'Failed to load settlement reports history.')
+            showPopup(err.response?.data?.message || 'Failed to load settlement reports history.', 'History Notice', 'error')
         } finally {
             setHistoryLoading(false)
         }
@@ -96,7 +112,7 @@ const AssistantBillingReports = () => {
             })
             setIsSubmitModalOpen(false)
             setSubmitNotes('')
-            setSuccessMessage(`Daily settlement report #${res.data.reportNumber} submitted successfully to Hospital Administration.`)
+            showPopup(`Daily settlement report #${res.data.reportNumber} submitted successfully to Main Cashier Treasury Desk.`, 'Handover Submitted', 'success')
             fetchDailyFinance(selectedDate)
             if (activeTab === 'HISTORY') fetchHistory()
         } catch (err) {
@@ -131,7 +147,7 @@ const AssistantBillingReports = () => {
                         Clinical Cash Register & Daily Settlement
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                        Collect consultation fees, issue customer receipts, and reconcile daily cash handoff with Admin.
+                        Collect consultation fees, issue patient receipts, and submit shift cash handoffs to Main Cashier.
                     </p>
                 </div>
 
@@ -177,36 +193,6 @@ const AssistantBillingReports = () => {
                 </div>
             </div>
 
-            {fetchError && (
-                <div className="p-4 rounded-xl bg-slate-100 border border-slate-300 text-slate-800 text-xs sm:text-sm font-semibold flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <AlertCircle size={16} className="text-slate-600 shrink-0" />
-                        <span>{fetchError}</span>
-                    </div>
-                    <button
-                        onClick={() => setFetchError('')}
-                        className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-                    >
-                        <X size={15} />
-                    </button>
-                </div>
-            )}
-
-            {successMessage && (
-                <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 size={16} className="text-slate-600 shrink-0" />
-                        <span>{successMessage}</span>
-                    </div>
-                    <button
-                        onClick={() => setSuccessMessage('')}
-                        className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-                    >
-                        <X size={15} />
-                    </button>
-                </div>
-            )}
-
             {activeTab === 'TODAY' ? (
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -215,7 +201,7 @@ const AssistantBillingReports = () => {
                                 <Banknote size={20} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-slate-500">Total Collections</span>
+                                <span className="text-xs font-semibold text-slate-500">Total Day Revenue</span>
                                 <span className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
                                     PKR {loading ? '...' : Number(summary?.totalCollected || 0).toLocaleString()}
                                 </span>
@@ -227,15 +213,30 @@ const AssistantBillingReports = () => {
 
                         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
                             <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                                <ShieldCheck size={20} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold text-slate-500">Previously Handed Over</span>
+                                <span className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
+                                    PKR {loading ? '...' : Number(summary?.previouslySettledAmount || 0).toLocaleString()}
+                                </span>
+                                <span className="text-xs text-slate-500 font-medium mt-0.5">
+                                    {summary?.settledBatchesCount || 0} batch{summary?.settledBatchesCount === 1 ? '' : 'es'} sealed & audited
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
                                 <Banknote size={20} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-slate-500">Cash in Drawer</span>
+                                <span className="text-xs font-semibold text-slate-500">Current Cash in Drawer</span>
                                 <span className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
-                                    PKR {loading ? '...' : Number(summary?.cashCollected || 0).toLocaleString()}
+                                    PKR {loading ? '...' : Number(summary?.unsettledCash || 0).toLocaleString()}
                                 </span>
                                 <span className="text-xs text-slate-500 font-medium mt-0.5">
-                                    Physical tender to hand over
+                                    {(summary?.unsettledCash || 0) > 0 ? `Ready for Batch ${summary?.nextBatchNumber || 1} handover` : 'All physical cash handed over'}
                                 </span>
                             </div>
                         </div>
@@ -245,27 +246,12 @@ const AssistantBillingReports = () => {
                                 <CreditCard size={20} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-slate-500">Digital / Online</span>
+                                <span className="text-xs font-semibold text-slate-500">Pending Online Inflow</span>
                                 <span className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
-                                    PKR {loading ? '...' : Number(summary?.onlineCollected || 0).toLocaleString()}
+                                    PKR {loading ? '...' : Number(summary?.unsettledOnline || 0).toLocaleString()}
                                 </span>
                                 <span className="text-xs text-slate-500 font-medium mt-0.5">
                                     JazzCash, EasyPaisa, Card
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
-                            <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                                <Clock size={20} />
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-slate-500">Pending Fees</span>
-                                <span className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">
-                                    {loading ? '...' : summary?.pendingPaymentsCount || 0}
-                                </span>
-                                <span className="text-xs text-slate-500 font-medium mt-0.5">
-                                    Awaiting arrival or payment
                                 </span>
                             </div>
                         </div>
@@ -279,44 +265,101 @@ const AssistantBillingReports = () => {
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-base font-bold text-slate-900">
-                                        End-of-Day Settlement Status
+                                        Shift Handover & Treasury Status
                                     </h3>
-                                    {summary?.isReportSubmitted && (
-                                        <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200">
-                                            {summary.reportStatus || 'Submitted'}
+                                    {(summary?.unsettledAmount || 0) > 0 ? (
+                                        <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md border bg-slate-100 text-slate-800 border-slate-300">
+                                            Batch {summary?.nextBatchNumber || 1} Pending
+                                        </span>
+                                    ) : (summary?.settledBatchesCount || 0) > 0 ? (
+                                        <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md border bg-slate-100 text-slate-800 border-slate-300">
+                                            All Batches Audited ({summary.settledBatchesCount})
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200">
+                                            No Collections Yet
                                         </span>
                                     )}
                                 </div>
                                 <p className="text-xs text-slate-500 mt-0.5">
-                                    {summary?.isReportSubmitted ? (
-                                        <>Official report <strong>{summary.reportNumber}</strong> submitted on {new Date(summary.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. {summary.reportStatus === 'Verified' ? 'Reconciled & approved by Admin.' : 'Awaiting administrative cash audit.'}</>
+                                    {(summary?.unsettledAmount || 0) > 0 ? (
+                                        <>You have <strong>PKR {Number(summary?.unsettledAmount || 0).toLocaleString()}</strong> in new consultation collections in your drawer awaiting shift handover envelope to the Main Cashier desk.</>
+                                    ) : (summary?.settledBatchesCount || 0) > 0 ? (
+                                        <>All {summary?.settledBatchesCount} handover batches for {selectedDate} have been handed over to the Main Cashier and logged into hospital treasury.</>
                                     ) : (
-                                        <>Once your clinic shift concludes, freeze today's register and forward this collection report to Administration.</>
+                                        <>Once your clinic shift concludes or fees are collected, submit your physical cash envelope to the Main Cashier desk.</>
                                     )}
                                 </p>
                             </div>
                         </div>
 
                         <div>
-                            {summary?.isReportSubmitted && summary?.reportStatus === 'Verified' ? (
-                                <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 text-xs font-semibold">
-                                    <Check size={15} className="text-slate-600" />
-                                    <span>Register Closed & Verified</span>
-                                </div>
-                            ) : (
+                            {(summary?.unsettledAmount || 0) > 0 ? (
                                 <button
                                     onClick={() => {
                                         setSubmitError('')
                                         setIsSubmitModalOpen(true)
                                     }}
-                                    className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs sm:text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                    className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <Send size={15} />
-                                    <span>{summary?.isReportSubmitted ? 'Resubmit / Update Report' : 'Send Daily Report to Admin'}</span>
+                                    <span>Submit Handover (Batch {summary?.nextBatchNumber || 1} - PKR {Number(summary?.unsettledAmount || 0).toLocaleString()} Pending)</span>
                                 </button>
+                            ) : (summary?.settledBatchesCount || 0) > 0 ? (
+                                <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 text-xs font-semibold">
+                                    <Check size={15} className="text-slate-600" />
+                                    <span>All Batches Sealed & Submitted</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 text-xs font-medium">
+                                    <Clock size={15} className="text-slate-400" />
+                                    <span>Drawer Empty</span>
+                                </div>
                             )}
                         </div>
                     </div>
+
+                    {summary?.batchesToday && summary.batchesToday.length > 0 && (
+                        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-xs flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-900">Today's Shift Handover Envelopes</h3>
+                                    <p className="text-xs text-slate-500">Sequential batches sealed and dispatched to Main Cashier for this date</p>
+                                </div>
+                                <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                                    {summary.batchesToday.length} Batch{summary.batchesToday.length === 1 ? '' : 'es'}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {summary.batchesToday.map((batch, idx) => (
+                                    <div key={batch.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-mono font-bold text-xs text-slate-900">
+                                                {batch.reportNumber}
+                                            </span>
+                                            <span className="text-[11px] font-semibold text-slate-700">
+                                                {batch.status === 'Verified' ? 'Bank Audited' : (batch.status === 'CashierVerified' ? 'Cashier Verified' : 'Awaiting Cashier')}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                                            <span className="text-slate-500">Batch #{idx + 1} Total:</span>
+                                            <span className="font-mono font-bold text-slate-900">
+                                                PKR {Number(batch.totalAmount).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                            <span>Cash: PKR {Number(batch.cashAmount).toLocaleString()}</span>
+                                            <span>Online: PKR {Number(batch.onlineAmount).toLocaleString()}</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 font-medium">
+                                            Dispatched: {formatPktTime(batch.submittedAt)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-xs flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -347,20 +390,21 @@ const AssistantBillingReports = () => {
                                         <th className="py-3 px-4">Attending Doctor</th>
                                         <th className="py-3 px-4">Method & Ref</th>
                                         <th className="py-3 px-4 text-right">Fee (PKR)</th>
+                                        <th className="py-3 px-4 text-center">Batch Status</th>
                                         <th className="py-3 px-4 text-center">Receipt</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={7} className="py-12 text-center text-slate-400">
+                                            <td colSpan={8} className="py-12 text-center text-slate-400">
                                                 <Loader2 size={22} className="animate-spin mx-auto mb-2 text-slate-500" />
                                                 <span>Loading daily transactions...</span>
                                             </td>
                                         </tr>
                                     ) : filteredTransactions.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="py-12 text-center text-slate-400">
+                                            <td colSpan={8} className="py-12 text-center text-slate-400">
                                                 No fee collections recorded yet for this date.
                                             </td>
                                         </tr>
@@ -371,13 +415,13 @@ const AssistantBillingReports = () => {
                                                     {tx.receiptNumber}
                                                 </td>
                                                 <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
-                                                    {new Date(tx.paidAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {formatPktTime(tx.paidAt)}
                                                 </td>
                                                 <td className="py-3.5 px-4">
                                                     <div className="flex flex-col">
                                                         <span className="font-bold text-slate-900">{tx.patientName}</span>
                                                         {tx.patientPhone && (
-                                                            <span className="text-[11px] font-mono text-slate-500">{tx.patientPhone}</span>
+                                                             <span className="text-[11px] font-mono text-slate-500">{tx.patientPhone}</span>
                                                         )}
                                                     </div>
                                                 </td>
@@ -403,6 +447,17 @@ const AssistantBillingReports = () => {
                                                     PKR {Number(tx.amount).toLocaleString()}
                                                 </td>
                                                 <td className="py-3.5 px-4 text-center">
+                                                    {tx.isSettled ? (
+                                                        <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
+                                                            Sealed in Handover
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[11px] font-bold text-slate-900 whitespace-nowrap">
+                                                            Current Drawer
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3.5 px-4 text-center">
                                                     <button
                                                         onClick={() => handleViewReceipt(tx)}
                                                         className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
@@ -425,7 +480,7 @@ const AssistantBillingReports = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-base font-bold text-slate-900">Settlement Reports History</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">Past daily closing registers submitted to Administration</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Past shift closing registers submitted to Main Cashier Treasury</p>
                         </div>
                         <button
                             onClick={fetchHistory}
@@ -439,13 +494,13 @@ const AssistantBillingReports = () => {
                         <table className="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                    <th className="py-3 px-4">Report #</th>
-                                    <th className="py-3 px-4">Date</th>
-                                    <th className="py-3 px-4">Patients</th>
-                                    <th className="py-3 px-4 text-right">Cash (PKR)</th>
-                                    <th className="py-3 px-4 text-right">Online (PKR)</th>
-                                    <th className="py-3 px-4 text-right">Total (PKR)</th>
-                                    <th className="py-3 px-4 text-center">Admin Status</th>
+                                    <th className="py-3 px-4">Report Number</th>
+                                    <th className="py-3 px-4">Date & Time</th>
+                                    <th className="py-3 px-4 text-center">Receipts</th>
+                                    <th className="py-3 px-4 text-right">Cash Handed</th>
+                                    <th className="py-3 px-4 text-right">Online Total</th>
+                                    <th className="py-3 px-4 text-right">Total Revenue</th>
+                                    <th className="py-3 px-4 text-center">Audit Status</th>
                                     <th className="py-3 px-4">Verified By</th>
                                 </tr>
                             </thead>
@@ -460,43 +515,51 @@ const AssistantBillingReports = () => {
                                 ) : history.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="py-12 text-center text-slate-400">
-                                            No past settlement reports found.
+                                            No historical settlement dossiers found.
                                         </td>
                                     </tr>
                                 ) : (
                                     history.map(rep => (
                                         <tr key={rep.id} className="hover:bg-slate-50/70 transition-colors">
-                                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                                                 {rep.reportNumber}
                                             </td>
-                                            <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">
-                                                {rep.reportDate}
+                                            <td className="py-3.5 px-4 text-slate-600">
+                                                {rep.reportDate} {formatPktTime(rep.submittedAt)}
                                             </td>
-                                            <td className="py-3.5 px-4 font-bold text-slate-900">
+                                            <td className="py-3.5 px-4 text-center font-bold text-slate-800">
                                                 {rep.totalAppointments}
                                             </td>
-                                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
                                                 PKR {Number(rep.cashAmount).toLocaleString()}
                                             </td>
-                                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                                            <td className="py-3.5 px-4 text-right font-bold text-slate-700 font-mono">
                                                 PKR {Number(rep.onlineAmount).toLocaleString()}
                                             </td>
-                                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+                                            <td className="py-3.5 px-4 text-right font-black text-slate-900 font-mono">
                                                 PKR {Number(rep.totalAmount).toLocaleString()}
                                             </td>
                                             <td className="py-3.5 px-4 text-center">
-                                                <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold text-slate-800 bg-slate-100 border border-slate-200">
-                                                    {rep.status}
+                                                <span className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">
+                                                    {rep.status === 'CashierVerified' ? 'Cashier Verified' : (rep.status === 'Verified' ? 'Bank Audited' : 'Pending Cashier')}
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-4 text-slate-600">
-                                                {rep.verifiedByAdminName ? (
+                                                {rep.cashierName ? (
                                                     <div className="flex flex-col">
-                                                        <span className="font-semibold text-slate-800">{rep.verifiedByAdminName}</span>
+                                                        <span className="font-semibold text-slate-800">Cashier: {rep.cashierName}</span>
+                                                        <span className="text-[10px] text-slate-400">
+                                                            {rep.cashierVerifiedAt ? new Date(rep.cashierVerifiedAt).toLocaleDateString() : 'Received'}
+                                                            {rep.verifiedByAdminName ? ` • Audited: ${rep.verifiedByAdminName}` : ''}
+                                                        </span>
+                                                    </div>
+                                                ) : rep.verifiedByAdminName ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold text-slate-800">Audited: {rep.verifiedByAdminName}</span>
                                                         <span className="text-[10px] text-slate-400">{new Date(rep.verifiedAt).toLocaleDateString()}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-slate-400 italic">Pending Audit</span>
+                                                    <span className="text-slate-400 italic">Pending Handover</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -513,8 +576,8 @@ const AssistantBillingReports = () => {
                     <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg border border-slate-200">
                         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
                             <div>
-                                <h3 className="text-base font-bold text-slate-900">Submit Daily Financial Report</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Closing Register for {selectedDate}</p>
+                                <h3 className="text-base font-bold text-slate-900">Submit Cash Handover (Batch {summary?.nextBatchNumber || 1})</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Physical Cash Envelope for {selectedDate}</p>
                             </div>
                             <button
                                 onClick={() => setIsSubmitModalOpen(false)}
@@ -534,32 +597,38 @@ const AssistantBillingReports = () => {
 
                             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2 text-xs">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Paid Consultations:</span>
-                                    <span className="font-bold text-slate-900">{summary?.paidAppointmentsCount || 0}</span>
+                                    <span className="text-slate-500">Unsettled Consultations in Drawer:</span>
+                                    <span className="font-bold text-slate-900">{summary?.unsettledAppointmentsCount || 0}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Physical Cash to Hand Over:</span>
-                                    <span className="font-bold text-slate-900">PKR {Number(summary?.cashCollected || 0).toLocaleString()}</span>
+                                    <span className="text-slate-500">Physical Cash in Envelope:</span>
+                                    <span className="font-bold text-slate-900 font-mono">PKR {Number(summary?.unsettledCash || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Digital / Online Collections:</span>
-                                    <span className="font-bold text-slate-900">PKR {Number(summary?.onlineCollected || 0).toLocaleString()}</span>
+                                    <span className="text-slate-500">Digital / Online Inflow:</span>
+                                    <span className="font-bold text-slate-900 font-mono">PKR {Number(summary?.unsettledOnline || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-slate-900">
-                                    <span>Total Day Reconciliation:</span>
-                                    <span>PKR {Number(summary?.totalCollected || 0).toLocaleString()}</span>
+                                    <span>Batch Total Tender:</span>
+                                    <span className="font-mono">PKR {Number(summary?.unsettledAmount || 0).toLocaleString()}</span>
                                 </div>
+                                {(summary?.previouslySettledAmount || 0) > 0 && (
+                                    <div className="flex justify-between pt-1.5 text-[11px] text-slate-500 border-t border-dashed border-slate-200">
+                                        <span>Previously Handed Over Today:</span>
+                                        <span className="font-semibold text-slate-700">PKR {Number(summary?.previouslySettledAmount).toLocaleString()}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs font-bold text-slate-700">
-                                    Closing Remarks / Cashier Handover Notes (Optional)
+                                    Denominations / Cash Envelope Notes (Optional)
                                 </label>
                                 <textarea
                                     rows={3}
                                     value={submitNotes}
                                     onChange={(e) => setSubmitNotes(e.target.value)}
-                                    placeholder="Enter physical cash breakdown, discrepancies, or notes for Admin..."
+                                    placeholder="Enter physical cash denominations, envelope number, or shift notes for Cashier..."
                                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-sky-500 transition-all resize-none font-medium"
                                 />
                             </div>
@@ -575,19 +644,54 @@ const AssistantBillingReports = () => {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                                 >
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 size={14} className="animate-spin" />
-                                            Submitting to Admin...
+                                            Submitting to Cashier...
                                         </>
                                     ) : (
-                                        'Confirm & Submit'
+                                        'Confirm & Hand Over to Cashier'
                                     )}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {popupModal.isOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200 flex flex-col items-center text-center">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3.5 ${
+                            popupModal.type === 'error'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : popupModal.type === 'success'
+                                ? 'bg-slate-100 text-slate-800 border border-slate-300'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                            {popupModal.type === 'error' ? (
+                                <AlertCircle size={24} />
+                            ) : popupModal.type === 'success' ? (
+                                <CheckCircle2 size={24} className="text-slate-700" />
+                            ) : (
+                                <AlertCircle size={24} />
+                            )}
+                        </div>
+                        <h3 className="text-base font-bold text-slate-900">
+                            {popupModal.title}
+                        </h3>
+                        <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                            {popupModal.message}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={closePopup}
+                            className="mt-5 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                        >
+                            OK
+                        </button>
                     </div>
                 </div>
             )}

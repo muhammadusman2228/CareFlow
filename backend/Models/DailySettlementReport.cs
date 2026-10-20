@@ -37,12 +37,27 @@ public class DailySettlementReport
 
     [Required]
     [MaxLength(30)]
-    public string Status { get; set; } = "Submitted"; // Submitted, Verified, Rejected
+    public string Status { get; set; } = "Submitted";
 
     [MaxLength(500)]
     public string? AssistantNotes { get; set; }
 
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+
+    public int? CashierId { get; set; }
+
+    [ForeignKey(nameof(CashierId))]
+    public virtual User? Cashier { get; set; } = null;
+
+    public DateTime? CashierVerifiedAt { get; set; }
+
+    [MaxLength(500)]
+    public string? CashierNotes { get; set; }
+
+    public int? BankDepositId { get; set; }
+
+    [ForeignKey(nameof(BankDepositId))]
+    public virtual CashierBankDeposit? BankDeposit { get; set; } = null;
 
     public int? VerifiedByAdminId { get; set; }
 
@@ -55,4 +70,6 @@ public class DailySettlementReport
     public string? AdminNotes { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

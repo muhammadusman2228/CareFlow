@@ -490,4 +490,147 @@ public class AdminController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
         }
     }
+
+    [HttpGet("bank-deposits")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<List<CashierBankDepositResponseDto>>> GetBankDeposits([FromQuery] DateOnly? date)
+    {
+        try
+        {
+            var deposits = await _paymentService.GetBankDeposits(date);
+            return Ok(deposits);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("bank-deposits/{id:int}")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<CashierBankDepositResponseDto>> GetBankDepositById(int id)
+    {
+        try
+        {
+            var deposit = await _paymentService.GetBankDepositById(id);
+            return Ok(deposit);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("bank-deposits/{id:int}/verify")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<CashierBankDepositResponseDto>> VerifyBankDeposit(int id, [FromBody] AdminVerifyBankDepositDto dto)
+    {
+        try
+        {
+            var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(adminIdStr) || !int.TryParse(adminIdStr, out var adminUserId))
+            {
+                return Unauthorized(new { message = "Invalid administrator identity" });
+            }
+
+            var verifiedDeposit = await _paymentService.AdminVerifyBankDeposit(adminUserId, id, dto);
+            return Ok(verifiedDeposit);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("cashiers")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<List<CashierUserDto>>> GetCashiers()
+    {
+        try
+        {
+            var cashiers = await _paymentService.GetCashiers();
+            return Ok(cashiers);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("cashiers")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<CashierUserDto>> CreateCashier([FromBody] RegisterCashierDto dto)
+    {
+        try
+        {
+            var cashier = await _paymentService.CreateCashier(dto);
+            return StatusCode(StatusCodes.Status201Created, cashier);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("cashiers/{id:int}")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult<CashierUserDto>> UpdateCashier(int id, [FromBody] UpdateCashierDto dto)
+    {
+        try
+        {
+            var cashier = await _paymentService.UpdateCashier(id, dto);
+            return Ok(cashier);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("cashiers/{id:int}")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
+    public async Task<ActionResult> DeleteCashier(int id)
+    {
+        try
+        {
+            var completelyDeleted = await _paymentService.DeleteCashier(id);
+            if (!completelyDeleted)
+            {
+                return Ok(new { message = "Cashier has recorded financial lodgements and has been deactivated to preserve audit compliance." });
+            }
+            return Ok(new { message = "Cashier account permanently removed." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
 }

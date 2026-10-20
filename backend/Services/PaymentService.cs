@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using backend.Data;
 using backend.DTOs;
 using backend.Interfaces;
@@ -152,8 +153,8 @@ public class PaymentService : IPaymentService
             TimeSlot = payment.Appointment?.TimeSlot ?? TimeOnly.MinValue,
             PatientName = payment.Appointment?.Patient?.User?.Name ?? "Patient",
             PatientPhone = payment.Appointment?.Patient?.PhoneNumber ?? string.Empty,
-            DoctorName = payment.Appointment?.Doctor?.User?.Name ?? "Doctor",
-            DepartmentName = payment.Appointment?.Doctor?.Department?.Name ?? "Department",
+            DoctorName = payment.Appointment?.Doctor?.User?.Name ?? "Attending Doctor",
+            DepartmentName = payment.Appointment?.Doctor?.Department?.Name ?? "Clinical Unit",
             Amount = payment.Amount,
             PaymentMethod = payment.PaymentMethod,
             Status = payment.Status,
@@ -168,31 +169,41 @@ public class PaymentService : IPaymentService
     {
         var assistant = await _context.Assistants
             .Include(a => a.User)
-            .Include(a => a.AssistantDepartments)
+            .Include(a => a.Doctor)
+                .ThenInclude(d => d!.User)
+            .Include(a => a.Department)
             .FirstOrDefaultAsync(a => a.UserId == userId);
-
-        var reportDate = date ?? GetPktToday();
 
         if (assistant == null)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user != null && (user.Role == "Admin" || user.Role == "SuperAdmin"))
-            {
-                return await GetHospitalDailyFinanceSummary(reportDate);
-            }
+            assistant = await _context.Assistants
+                .Include(a => a.User)
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d!.User)
+                .Include(a => a.Department)
+                .FirstOrDefaultAsync();
 
-            throw new InvalidOperationException("Assistant record not found.");
+            if (assistant == null)
+            {
+                throw new InvalidOperationException("No assistant profile found.");
+            }
         }
 
+        var reportDate = date ?? GetPktToday();
+        var startUtc = reportDate.ToDateTime(TimeOnly.MinValue).AddHours(-5);
+        var endUtc = reportDate.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
+
         var doctorId = assistant.DoctorId;
-        var deptIds = assistant.AssistantDepartments.Select(ad => ad.DepartmentId).ToList();
-        if (assistant.DepartmentId.HasValue && !deptIds.Contains(assistant.DepartmentId.Value))
+        var assistantDepts = await _context.AssistantDepartments
+            .Where(ad => ad.AssistantId == assistant.Id)
+            .Select(ad => ad.DepartmentId)
+            .ToListAsync();
+
+        var deptIds = new HashSet<int>(assistantDepts);
+        if (assistant.DepartmentId.HasValue && assistant.DepartmentId.Value > 0)
         {
             deptIds.Add(assistant.DepartmentId.Value);
         }
-
-        var startUtc = reportDate.ToDateTime(TimeOnly.MinValue).AddHours(-5);
-        var endUtc = reportDate.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
 
         var collectedPayments = await _context.Payments
             .Include(p => p.Appointment)
@@ -206,9 +217,8 @@ public class PaymentService : IPaymentService
                     .ThenInclude(pt => pt!.User)
             .Include(p => p.CollectedByAssistant)
                 .ThenInclude(ast => ast!.User)
-            .Where(p => (p.CollectedByAssistantId == assistant.Id ||
-                        (p.Appointment != null && ((doctorId.HasValue && p.Appointment.DoctorId == doctorId.Value) ||
-                                                   (deptIds.Count > 0 && p.Appointment.Doctor != null && deptIds.Contains(p.Appointment.Doctor.DepartmentId))))) &&
+            .Include(p => p.SettlementReport)
+            .Where(p => p.CollectedByAssistantId == assistant.Id &&
                        ((p.PaidAt >= startUtc && p.PaidAt <= endUtc) || (p.Appointment != null && p.Appointment.AppointmentDate == reportDate)) &&
                        p.Status == "Paid")
             .OrderBy(p => p.PaidAt)
@@ -234,15 +244,60 @@ public class PaymentService : IPaymentService
         }
 
         var queueAppointments = await queueAppointmentsQuery.ToListAsync();
-
         var pendingCount = queueAppointments.Count(a => a.Payment == null || a.Payment.Status != "Paid");
 
         decimal totalCollected = collectedPayments.Sum(p => p.Amount);
         decimal cashCollected = collectedPayments.Where(p => p.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
         decimal onlineCollected = totalCollected - cashCollected;
 
-        var existingReport = await _context.DailySettlementReports
-            .FirstOrDefaultAsync(r => r.AssistantId == assistant.Id && r.ReportDate == reportDate);
+        var settledPayments = collectedPayments.Where(p => p.SettlementReportId.HasValue).ToList();
+        var unsettledPayments = collectedPayments.Where(p => !p.SettlementReportId.HasValue).ToList();
+
+        decimal prevSettledAmount = settledPayments.Sum(p => p.Amount);
+        decimal prevSettledCash = settledPayments.Where(p => p.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        decimal prevSettledOnline = prevSettledAmount - prevSettledCash;
+
+        decimal unsettledAmount = unsettledPayments.Sum(p => p.Amount);
+        decimal unsettledCash = unsettledPayments.Where(p => p.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        decimal unsettledOnline = unsettledAmount - unsettledCash;
+
+        var existingReports = await _context.DailySettlementReports
+            .Include(r => r.Cashier)
+            .Include(r => r.VerifiedByAdmin)
+            .Where(r => r.AssistantId == assistant.Id && r.ReportDate == reportDate)
+            .OrderBy(r => r.Id)
+            .ToListAsync();
+
+        var batchesToday = existingReports.Select(r => new SettlementReportResponseDto
+        {
+            Id = r.Id,
+            ReportNumber = r.ReportNumber,
+            ReportDate = r.ReportDate,
+            AssistantId = r.AssistantId,
+            AssistantName = assistant.User?.Name ?? "Assistant",
+            DoctorName = assistant.Doctor?.User?.Name,
+            DepartmentName = assistant.Department?.Name,
+            TotalAppointments = r.TotalAppointments,
+            TotalAmount = r.TotalAmount,
+            CashAmount = r.CashAmount,
+            OnlineAmount = r.OnlineAmount,
+            Status = r.Status,
+            AssistantNotes = r.AssistantNotes,
+            SubmittedAt = r.SubmittedAt,
+            CashierId = r.CashierId,
+            CashierName = r.Cashier?.Name,
+            CashierVerifiedAt = r.CashierVerifiedAt,
+            CashierNotes = r.CashierNotes,
+            BankDepositId = r.BankDepositId,
+            VerifiedByAdminId = r.VerifiedByAdminId,
+            VerifiedByAdminName = r.VerifiedByAdmin?.Name,
+            VerifiedAt = r.VerifiedAt,
+            AdminNotes = r.AdminNotes
+        }).ToList();
+
+        int nextBatchNumber = existingReports.Count + 1;
+        var latestReport = existingReports.LastOrDefault();
+        bool isReportSubmitted = unsettledPayments.Count == 0 && existingReports.Count > 0;
 
         var transactions = collectedPayments.Select(p => new PaymentReceiptDto
         {
@@ -259,10 +314,15 @@ public class PaymentService : IPaymentService
             PaymentMethod = p.PaymentMethod,
             Status = p.Status,
             TransactionReference = p.TransactionReference,
-            AssistantName = p.CollectedByAssistant?.User?.Name ?? assistant.User?.Name ?? "Assistant",
+            AssistantName = p.CollectedByAssistant?.User?.Name ?? assistant.User?.Name ?? "Clinical Desk",
             PaidAt = p.PaidAt,
-            Notes = p.Notes
+            Notes = p.Notes,
+            SettlementReportId = p.SettlementReportId,
+            SettlementReportNumber = p.SettlementReport?.ReportNumber,
+            IsSettled = p.SettlementReportId.HasValue
         }).ToList();
+
+
 
         return new AssistantDailyFinanceSummaryDto
         {
@@ -273,86 +333,25 @@ public class PaymentService : IPaymentService
             TotalCollected = totalCollected,
             CashCollected = cashCollected,
             OnlineCollected = onlineCollected,
-            IsReportSubmitted = existingReport != null,
-            ReportStatus = existingReport?.Status,
-            ReportNumber = existingReport?.ReportNumber,
-            SubmittedAt = existingReport?.SubmittedAt,
-            Transactions = transactions
+            PreviouslySettledAmount = prevSettledAmount,
+            PreviouslySettledCash = prevSettledCash,
+            PreviouslySettledOnline = prevSettledOnline,
+            SettledBatchesCount = existingReports.Count,
+            UnsettledAmount = unsettledAmount,
+            UnsettledCash = unsettledCash,
+            UnsettledOnline = unsettledOnline,
+            UnsettledAppointmentsCount = unsettledPayments.Count,
+            NextBatchNumber = nextBatchNumber,
+            IsReportSubmitted = isReportSubmitted,
+            ReportStatus = latestReport?.Status,
+            ReportNumber = latestReport?.ReportNumber,
+            SubmittedAt = latestReport?.SubmittedAt,
+            Transactions = transactions,
+            BatchesToday = batchesToday
         };
     }
 
-    private async Task<AssistantDailyFinanceSummaryDto> GetHospitalDailyFinanceSummary(DateOnly reportDate)
-    {
-        var startUtc = reportDate.ToDateTime(TimeOnly.MinValue).AddHours(-5);
-        var endUtc = reportDate.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
 
-        var collectedPayments = await _context.Payments
-            .Include(p => p.Appointment)
-                .ThenInclude(a => a!.Doctor)
-                    .ThenInclude(d => d!.User)
-            .Include(p => p.Appointment)
-                .ThenInclude(a => a!.Doctor)
-                    .ThenInclude(d => d!.Department)
-            .Include(p => p.Appointment)
-                .ThenInclude(a => a!.Patient)
-                    .ThenInclude(pt => pt!.User)
-            .Include(p => p.CollectedByAssistant)
-                .ThenInclude(ast => ast!.User)
-            .Where(p => ((p.PaidAt >= startUtc && p.PaidAt <= endUtc) || (p.Appointment != null && p.Appointment.AppointmentDate == reportDate)) &&
-                       p.Status == "Paid")
-            .OrderBy(p => p.PaidAt)
-            .ToListAsync();
-
-        var queueAppointments = await _context.Appointments
-            .Include(a => a.Payment)
-            .Where(a => a.AppointmentDate == reportDate && a.Status != "Cancelled" && a.Status != "Missed")
-            .ToListAsync();
-
-        var pendingCount = queueAppointments.Count(a => a.Payment == null || a.Payment.Status != "Paid");
-
-        decimal totalCollected = collectedPayments.Sum(p => p.Amount);
-        decimal cashCollected = collectedPayments.Where(p => p.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
-        decimal onlineCollected = totalCollected - cashCollected;
-
-        var existingReport = await _context.DailySettlementReports
-            .FirstOrDefaultAsync(r => r.ReportDate == reportDate);
-
-        var transactions = collectedPayments.Select(p => new PaymentReceiptDto
-        {
-            PaymentId = p.Id,
-            ReceiptNumber = p.ReceiptNumber,
-            AppointmentId = p.AppointmentId,
-            AppointmentDate = p.Appointment?.AppointmentDate ?? reportDate,
-            TimeSlot = p.Appointment?.TimeSlot ?? TimeOnly.MinValue,
-            PatientName = p.Appointment?.Patient?.User?.Name ?? "Patient",
-            PatientPhone = p.Appointment?.Patient?.PhoneNumber ?? string.Empty,
-            DoctorName = p.Appointment?.Doctor?.User?.Name ?? "Doctor",
-            DepartmentName = p.Appointment?.Doctor?.Department?.Name ?? "Department",
-            Amount = p.Amount,
-            PaymentMethod = p.PaymentMethod,
-            Status = p.Status,
-            TransactionReference = p.TransactionReference,
-            AssistantName = p.CollectedByAssistant?.User?.Name ?? "Clinical Desk",
-            PaidAt = p.PaidAt,
-            Notes = p.Notes
-        }).ToList();
-
-        return new AssistantDailyFinanceSummaryDto
-        {
-            ReportDate = reportDate,
-            TotalAppointmentsToday = collectedPayments.Count + pendingCount,
-            PaidAppointmentsCount = collectedPayments.Count,
-            PendingPaymentsCount = pendingCount,
-            TotalCollected = totalCollected,
-            CashCollected = cashCollected,
-            OnlineCollected = onlineCollected,
-            IsReportSubmitted = existingReport != null,
-            ReportStatus = existingReport?.Status,
-            ReportNumber = existingReport?.ReportNumber,
-            SubmittedAt = existingReport?.SubmittedAt,
-            Transactions = transactions
-        };
-    }
 
     public async Task<SettlementReportResponseDto> SubmitDailySettlement(int userId, SubmitDailySettlementDto dto)
     {
@@ -379,68 +378,86 @@ public class PaymentService : IPaymentService
         }
 
         var reportDate = dto.ReportDate ?? GetPktToday();
+        var startUtc = reportDate.ToDateTime(TimeOnly.MinValue).AddHours(-5);
+        var endUtc = reportDate.ToDateTime(TimeOnly.MaxValue).AddHours(-5);
 
-        var summary = await GetAssistantDailyFinanceSummary(userId, reportDate);
+        var doctorId = assistant.DoctorId;
+        var assistantDepts = await _context.AssistantDepartments
+            .Where(ad => ad.AssistantId == assistant.Id)
+            .Select(ad => ad.DepartmentId)
+            .ToListAsync();
 
-        var existingReport = await _context.DailySettlementReports
-            .Include(r => r.VerifiedByAdmin)
-            .FirstOrDefaultAsync(r => r.AssistantId == assistant.Id && r.ReportDate == reportDate);
-
-        if (existingReport != null && existingReport.Status == "Verified")
+        var deptIds = new HashSet<int>(assistantDepts);
+        if (assistant.DepartmentId.HasValue && assistant.DepartmentId.Value > 0)
         {
-            throw new InvalidOperationException("This daily settlement report has already been verified and closed by the Administrator.");
+            deptIds.Add(assistant.DepartmentId.Value);
         }
 
-        var reportNumber = existingReport?.ReportNumber ?? $"CF-SETTLE-{reportDate:yyyyMMdd}-AST{assistant.Id:D2}";
+        var unsettledPayments = await _context.Payments
+            .Include(p => p.Appointment)
+                .ThenInclude(a => a!.Doctor)
+                    .ThenInclude(d => d!.User)
+            .Include(p => p.Appointment)
+                .ThenInclude(a => a!.Doctor)
+                    .ThenInclude(d => d!.Department)
+            .Include(p => p.Appointment)
+                .ThenInclude(a => a!.Patient)
+                    .ThenInclude(pt => pt!.User)
+            .Include(p => p.CollectedByAssistant)
+                .ThenInclude(ast => ast!.User)
+            .Where(p => p.CollectedByAssistantId == assistant.Id &&
+                       ((p.PaidAt >= startUtc && p.PaidAt <= endUtc) || (p.Appointment != null && p.Appointment.AppointmentDate == reportDate)) &&
+                       p.Status == "Paid" &&
+                       p.SettlementReportId == null)
+            .OrderBy(p => p.PaidAt)
+            .ToListAsync();
 
-        if (existingReport == null)
+        if (unsettledPayments.Count == 0)
         {
-            existingReport = new DailySettlementReport
-            {
-                ReportNumber = reportNumber,
-                ReportDate = reportDate,
-                AssistantId = assistant.Id,
-                TotalAppointments = summary.PaidAppointmentsCount,
-                TotalAmount = summary.TotalCollected,
-                CashAmount = summary.CashCollected,
-                OnlineAmount = summary.OnlineCollected,
-                Status = "Submitted",
-                AssistantNotes = dto.Notes?.Trim(),
-                SubmittedAt = DateTime.UtcNow
-            };
-            await _context.DailySettlementReports.AddAsync(existingReport);
+            throw new InvalidOperationException("No unsettled collections currently in your drawer to submit.");
         }
-        else
+
+        var existingReportsCount = await _context.DailySettlementReports
+            .CountAsync(r => r.AssistantId == assistant.Id && r.ReportDate == reportDate);
+
+        var batchNumber = existingReportsCount + 1;
+        var reportNumber = $"CF-SETTLE-{reportDate:yyyyMMdd}-AST{assistant.Id:D2}-{batchNumber:D2}";
+        while (await _context.DailySettlementReports.AnyAsync(r => r.ReportNumber == reportNumber))
         {
-            existingReport.TotalAppointments = summary.PaidAppointmentsCount;
-            existingReport.TotalAmount = summary.TotalCollected;
-            existingReport.CashAmount = summary.CashCollected;
-            existingReport.OnlineAmount = summary.OnlineCollected;
-            existingReport.Status = "Submitted";
-            existingReport.AssistantNotes = dto.Notes?.Trim();
-            existingReport.SubmittedAt = DateTime.UtcNow;
+            batchNumber++;
+            reportNumber = $"CF-SETTLE-{reportDate:yyyyMMdd}-AST{assistant.Id:D2}-{batchNumber:D2}";
+        }
+
+        decimal totalAmount = unsettledPayments.Sum(p => p.Amount);
+        decimal cashAmount = unsettledPayments.Where(p => p.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        decimal onlineAmount = totalAmount - cashAmount;
+
+        var newReport = new DailySettlementReport
+        {
+            ReportNumber = reportNumber,
+            ReportDate = reportDate,
+            AssistantId = assistant.Id,
+            TotalAppointments = unsettledPayments.Count,
+            TotalAmount = totalAmount,
+            CashAmount = cashAmount,
+            OnlineAmount = onlineAmount,
+            Status = "Submitted",
+            AssistantNotes = dto.Notes?.Trim(),
+            SubmittedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.DailySettlementReports.AddAsync(newReport);
+        await _context.SaveChangesAsync();
+
+        foreach (var p in unsettledPayments)
+        {
+            p.SettlementReportId = newReport.Id;
         }
 
         await _context.SaveChangesAsync();
 
-        return new SettlementReportResponseDto
-        {
-            Id = existingReport.Id,
-            ReportNumber = existingReport.ReportNumber,
-            ReportDate = existingReport.ReportDate,
-            AssistantId = assistant.Id,
-            AssistantName = assistant.User?.Name ?? "Assistant",
-            DoctorName = assistant.Doctor?.User?.Name,
-            DepartmentName = assistant.Department?.Name,
-            TotalAppointments = existingReport.TotalAppointments,
-            TotalAmount = existingReport.TotalAmount,
-            CashAmount = existingReport.CashAmount,
-            OnlineAmount = existingReport.OnlineAmount,
-            Status = existingReport.Status,
-            AssistantNotes = existingReport.AssistantNotes,
-            SubmittedAt = existingReport.SubmittedAt,
-            Transactions = summary.Transactions
-        };
+        return await GetSettlementReportById(newReport.Id);
     }
 
     public async Task<List<SettlementReportResponseDto>> GetAssistantSettlementHistory(int userId)
@@ -448,12 +465,11 @@ public class PaymentService : IPaymentService
         var assistant = await _context.Assistants.FirstOrDefaultAsync(a => a.UserId == userId);
         if (assistant == null)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user != null && (user.Role == "Admin" || user.Role == "SuperAdmin"))
+            assistant = await _context.Assistants.FirstOrDefaultAsync();
+            if (assistant == null)
             {
-                return await GetAdminSettlementReports(null, null, null);
+                return new List<SettlementReportResponseDto>();
             }
-            return new List<SettlementReportResponseDto>();
         }
 
         return await _context.DailySettlementReports
@@ -464,6 +480,7 @@ public class PaymentService : IPaymentService
                     .ThenInclude(d => d!.User)
             .Include(r => r.Assistant)
                 .ThenInclude(a => a!.Department)
+            .Include(r => r.Cashier)
             .Include(r => r.VerifiedByAdmin)
             .Where(r => r.AssistantId == assistant.Id)
             .OrderByDescending(r => r.ReportDate)
@@ -484,6 +501,11 @@ public class PaymentService : IPaymentService
                 Status = r.Status,
                 AssistantNotes = r.AssistantNotes,
                 SubmittedAt = r.SubmittedAt,
+                CashierId = r.CashierId,
+                CashierName = r.Cashier != null ? r.Cashier.Name : null,
+                CashierVerifiedAt = r.CashierVerifiedAt,
+                CashierNotes = r.CashierNotes,
+                BankDepositId = r.BankDepositId,
                 VerifiedByAdminId = r.VerifiedByAdminId,
                 VerifiedByAdminName = r.VerifiedByAdmin != null ? r.VerifiedByAdmin.Name : null,
                 VerifiedAt = r.VerifiedAt,
@@ -502,6 +524,7 @@ public class PaymentService : IPaymentService
                     .ThenInclude(d => d!.User)
             .Include(r => r.Assistant)
                 .ThenInclude(a => a!.Department)
+            .Include(r => r.Cashier)
             .Include(r => r.VerifiedByAdmin)
             .AsQueryable();
 
@@ -542,9 +565,7 @@ public class PaymentService : IPaymentService
                 .Include(p => p.Appointment)
                     .ThenInclude(a => a!.Patient)
                         .ThenInclude(pt => pt!.User)
-                .Where(p => (p.CollectedByAssistantId == r.AssistantId || (p.Appointment != null && r.Assistant != null && r.Assistant.DoctorId.HasValue && p.Appointment.DoctorId == r.Assistant.DoctorId.Value)) && 
-                           ((p.PaidAt >= startUtc && p.PaidAt <= endUtc) || (p.Appointment != null && p.Appointment.AppointmentDate == r.ReportDate)) && 
-                           p.Status == "Paid")
+                .Where(p => p.SettlementReportId == r.Id && p.Status == "Paid")
                 .OrderBy(p => p.PaidAt)
                 .Select(p => new PaymentReceiptDto
                 {
@@ -563,7 +584,10 @@ public class PaymentService : IPaymentService
                     TransactionReference = p.TransactionReference,
                     AssistantName = r.Assistant != null && r.Assistant.User != null ? r.Assistant.User.Name : "Assistant",
                     PaidAt = p.PaidAt,
-                    Notes = p.Notes
+                    Notes = p.Notes,
+                    SettlementReportId = p.SettlementReportId,
+                    SettlementReportNumber = r.ReportNumber,
+                    IsSettled = true
                 })
                 .ToListAsync();
 
@@ -583,6 +607,11 @@ public class PaymentService : IPaymentService
                 Status = r.Status,
                 AssistantNotes = r.AssistantNotes,
                 SubmittedAt = r.SubmittedAt,
+                CashierId = r.CashierId,
+                CashierName = r.Cashier?.Name,
+                CashierVerifiedAt = r.CashierVerifiedAt,
+                CashierNotes = r.CashierNotes,
+                BankDepositId = r.BankDepositId,
                 VerifiedByAdminId = r.VerifiedByAdminId,
                 VerifiedByAdminName = r.VerifiedByAdmin?.Name,
                 VerifiedAt = r.VerifiedAt,
@@ -604,6 +633,7 @@ public class PaymentService : IPaymentService
                     .ThenInclude(d => d!.User)
             .Include(r => r.Assistant)
                 .ThenInclude(a => a!.Department)
+            .Include(r => r.Cashier)
             .Include(r => r.VerifiedByAdmin)
             .FirstOrDefaultAsync(r => r.Id == reportId);
 
@@ -625,9 +655,7 @@ public class PaymentService : IPaymentService
             .Include(p => p.Appointment)
                 .ThenInclude(a => a!.Patient)
                     .ThenInclude(pt => pt!.User)
-            .Where(p => (p.CollectedByAssistantId == report.AssistantId || (p.Appointment != null && report.Assistant != null && report.Assistant.DoctorId.HasValue && p.Appointment.DoctorId == report.Assistant.DoctorId.Value)) && 
-                       ((p.PaidAt >= startUtc && p.PaidAt <= endUtc) || (p.Appointment != null && p.Appointment.AppointmentDate == report.ReportDate)) && 
-                       p.Status == "Paid")
+            .Where(p => p.SettlementReportId == report.Id && p.Status == "Paid")
             .OrderBy(p => p.PaidAt)
             .Select(p => new PaymentReceiptDto
             {
@@ -646,7 +674,10 @@ public class PaymentService : IPaymentService
                 TransactionReference = p.TransactionReference,
                 AssistantName = report.Assistant != null && report.Assistant.User != null ? report.Assistant.User.Name : "Assistant",
                 PaidAt = p.PaidAt,
-                Notes = p.Notes
+                Notes = p.Notes,
+                SettlementReportId = p.SettlementReportId,
+                SettlementReportNumber = report.ReportNumber,
+                IsSettled = true
             })
             .ToListAsync();
 
@@ -666,6 +697,11 @@ public class PaymentService : IPaymentService
             Status = report.Status,
             AssistantNotes = report.AssistantNotes,
             SubmittedAt = report.SubmittedAt,
+            CashierId = report.CashierId,
+            CashierName = report.Cashier?.Name,
+            CashierVerifiedAt = report.CashierVerifiedAt,
+            CashierNotes = report.CashierNotes,
+            BankDepositId = report.BankDepositId,
             VerifiedByAdminId = report.VerifiedByAdminId,
             VerifiedByAdminName = report.VerifiedByAdmin?.Name,
             VerifiedAt = report.VerifiedAt,
@@ -701,5 +737,417 @@ public class PaymentService : IPaymentService
         await _context.SaveChangesAsync();
 
         return await GetSettlementReportById(report.Id);
+    }
+
+    public async Task<List<SettlementReportResponseDto>> GetCashierPendingHandovers(DateOnly? date)
+    {
+        return await GetAdminSettlementReports(date, null, null);
+    }
+
+    public async Task<SettlementReportResponseDto> CashierVerifyAssistantHandover(int cashierUserId, int reportId, CashierVerifyHandoverDto dto)
+    {
+        var report = await _context.DailySettlementReports
+            .Include(r => r.Assistant)
+                .ThenInclude(a => a!.User)
+            .FirstOrDefaultAsync(r => r.Id == reportId);
+
+        if (report == null)
+        {
+            throw new KeyNotFoundException("Daily settlement report not found.");
+        }
+
+        if (report.BankDepositId.HasValue && report.BankDepositId.Value > 0)
+        {
+            throw new InvalidOperationException("This handover has already been bundled into an executive bank deposit and cannot be altered.");
+        }
+
+        var status = dto.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) ? "Rejected" : "CashierVerified";
+        report.Status = status;
+        report.CashierId = cashierUserId;
+        report.CashierVerifiedAt = DateTime.UtcNow;
+        report.CashierNotes = dto.CashierNotes?.Trim();
+
+        await _context.SaveChangesAsync();
+
+        return await GetSettlementReportById(report.Id);
+    }
+
+    public async Task<CashierDailySummaryDto> GetCashierDailySummary(int cashierUserId, DateOnly? date)
+    {
+        var targetDate = date ?? GetPktToday();
+        var handovers = await GetAdminSettlementReports(targetDate, null, null);
+
+        var depositsForDate = await _context.CashierBankDeposits
+            .Where(b => b.DepositDate == targetDate)
+            .ToListAsync();
+
+        decimal totalDeposited = depositsForDate.Sum(b => b.TotalCashDeposited);
+
+        var unbankedVerifiedHandovers = handovers
+            .Where(h => (h.Status == "CashierVerified") && (!h.BankDepositId.HasValue || h.BankDepositId.Value == 0))
+            .ToList();
+
+        var pendingHandovers = handovers.Where(h => h.Status == "Submitted").ToList();
+
+        decimal cashInHand = unbankedVerifiedHandovers.Sum(h => h.CashAmount);
+        decimal onlineInflow = handovers.Sum(h => h.OnlineAmount);
+        decimal grandTotal = handovers.Sum(h => h.TotalAmount);
+
+        var existingDeposit = depositsForDate
+            .OrderByDescending(b => b.DepositedAt)
+            .FirstOrDefault();
+
+        bool isFullyBankDeposited = depositsForDate.Count > 0 && cashInHand <= 0 && pendingHandovers.Count == 0;
+
+        return new CashierDailySummaryDto
+        {
+            Date = targetDate,
+            TotalHandovers = handovers.Count,
+            VerifiedHandoversCount = unbankedVerifiedHandovers.Count,
+            PendingHandoversCount = pendingHandovers.Count,
+            TotalCashInHand = cashInHand,
+            TotalOnlineInflow = onlineInflow,
+            GrandTotal = grandTotal,
+            TotalDepositedInBank = totalDeposited,
+            IsBankDeposited = isFullyBankDeposited,
+            BankDepositReference = existingDeposit?.DepositReference,
+            BankDepositStatus = existingDeposit?.Status,
+            Handovers = handovers
+        };
+    }
+
+    public async Task<CashierBankDepositResponseDto> SubmitBankDeposit(int cashierUserId, SubmitBankDepositDto dto)
+    {
+        var depositDate = dto.DepositDate ?? GetPktToday();
+
+        var eligibleHandovers = await _context.DailySettlementReports
+            .Where(r => r.ReportDate == depositDate && 
+                       (r.Status == "CashierVerified" || r.Status == "Submitted") &&
+                       r.BankDepositId == null)
+            .ToListAsync();
+
+        if (eligibleHandovers.Count == 0)
+        {
+            throw new InvalidOperationException("No verified assistant handovers available to deposit for this date. Please verify OPD assistant envelopes first.");
+        }
+
+        decimal totalCash = eligibleHandovers.Sum(h => h.CashAmount);
+        decimal totalOnline = eligibleHandovers.Sum(h => h.OnlineAmount);
+        decimal grandTotal = totalCash + totalOnline;
+
+        var count = await _context.CashierBankDeposits.CountAsync(b => b.DepositDate == depositDate);
+        var depositReference = $"CF-BNK-{depositDate:yyyyMMdd}-{count + 1:D2}";
+
+        var bankDeposit = new CashierBankDeposit
+        {
+            DepositReference = depositReference,
+            DepositDate = depositDate,
+            CashierId = cashierUserId,
+            BankName = string.IsNullOrWhiteSpace(dto.BankName) ? "Meezan Bank" : dto.BankName.Trim(),
+            BankAccountNumber = dto.BankAccountNumber?.Trim() ?? string.Empty,
+            BankDepositSlipNumber = dto.BankDepositSlipNumber.Trim(),
+            DepositedAt = dto.DepositedAt ?? DateTime.UtcNow,
+            TotalHandoversIncluded = eligibleHandovers.Count,
+            TotalCashDeposited = totalCash,
+            TotalOnlineAmount = totalOnline,
+            GrandTotal = grandTotal,
+            Status = "SubmittedToAdmin",
+            CashierNotes = dto.CashierNotes?.Trim(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.CashierBankDeposits.AddAsync(bankDeposit);
+        await _context.SaveChangesAsync();
+
+        foreach (var h in eligibleHandovers)
+        {
+            h.BankDepositId = bankDeposit.Id;
+            h.Status = "CashierVerified";
+            h.CashierId = cashierUserId;
+            h.CashierVerifiedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return await GetBankDepositById(bankDeposit.Id);
+    }
+
+    public async Task<List<CashierBankDepositResponseDto>> GetBankDeposits(DateOnly? date)
+    {
+        var query = _context.CashierBankDeposits
+            .Include(b => b.Cashier)
+            .Include(b => b.VerifiedByAdmin)
+            .Include(b => b.HandoverReports)
+                .ThenInclude(h => h.Assistant)
+                    .ThenInclude(a => a!.User)
+            .Include(b => b.HandoverReports)
+                .ThenInclude(h => h.Assistant)
+                    .ThenInclude(a => a!.Department)
+            .AsQueryable();
+
+        if (date.HasValue)
+        {
+            query = query.Where(b => b.DepositDate == date.Value);
+        }
+
+        var list = await query
+            .OrderByDescending(b => b.DepositDate)
+            .ThenByDescending(b => b.DepositedAt)
+            .ToListAsync();
+
+        return list.Select(b => MapBankDepositToDto(b)).ToList();
+    }
+
+    public async Task<CashierBankDepositResponseDto> GetBankDepositById(int depositId)
+    {
+        var deposit = await _context.CashierBankDeposits
+            .Include(b => b.Cashier)
+            .Include(b => b.VerifiedByAdmin)
+            .Include(b => b.HandoverReports)
+                .ThenInclude(h => h.Assistant)
+                    .ThenInclude(a => a!.User)
+            .Include(b => b.HandoverReports)
+                .ThenInclude(h => h.Assistant)
+                    .ThenInclude(a => a!.Department)
+            .FirstOrDefaultAsync(b => b.Id == depositId);
+
+        if (deposit == null)
+        {
+            throw new KeyNotFoundException("Bank deposit record not found.");
+        }
+
+        return MapBankDepositToDto(deposit);
+    }
+
+    public async Task<CashierBankDepositResponseDto> AdminVerifyBankDeposit(int adminUserId, int depositId, AdminVerifyBankDepositDto dto)
+    {
+        var deposit = await _context.CashierBankDeposits
+            .Include(b => b.HandoverReports)
+            .FirstOrDefaultAsync(b => b.Id == depositId);
+
+        if (deposit == null)
+        {
+            throw new KeyNotFoundException("Bank deposit record not found.");
+        }
+
+        var todayPkt = GetPktToday();
+        if (deposit.Status == "AdminApproved" && deposit.DepositDate < todayPkt)
+        {
+            throw new InvalidOperationException("Past approved bank deposits are sealed and locked for fiscal audit compliance.");
+        }
+
+        var status = dto.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) ? "Rejected" : "AdminApproved";
+        deposit.Status = status;
+        deposit.VerifiedByAdminId = adminUserId;
+        deposit.AdminVerifiedAt = DateTime.UtcNow;
+        deposit.AdminNotes = dto.AdminNotes?.Trim();
+
+        foreach (var h in deposit.HandoverReports)
+        {
+            h.Status = status == "AdminApproved" ? "Verified" : "Rejected";
+            h.VerifiedByAdminId = adminUserId;
+            h.VerifiedAt = DateTime.UtcNow;
+            h.AdminNotes = dto.AdminNotes?.Trim();
+        }
+
+        await _context.SaveChangesAsync();
+
+        return await GetBankDepositById(deposit.Id);
+    }
+
+    private static CashierBankDepositResponseDto MapBankDepositToDto(CashierBankDeposit b)
+    {
+        return new CashierBankDepositResponseDto
+        {
+            Id = b.Id,
+            DepositReference = b.DepositReference,
+            DepositDate = b.DepositDate,
+            CashierId = b.CashierId,
+            CashierName = b.Cashier?.Name ?? "Main Cashier",
+            BankName = b.BankName,
+            BankAccountNumber = b.BankAccountNumber,
+            BankDepositSlipNumber = b.BankDepositSlipNumber,
+            DepositedAt = b.DepositedAt,
+            TotalHandoversIncluded = b.TotalHandoversIncluded,
+            TotalCashDeposited = b.TotalCashDeposited,
+            TotalOnlineAmount = b.TotalOnlineAmount,
+            GrandTotal = b.GrandTotal,
+            Status = b.Status,
+            CashierNotes = b.CashierNotes,
+            VerifiedByAdminId = b.VerifiedByAdminId,
+            VerifiedByAdminName = b.VerifiedByAdmin?.Name,
+            AdminVerifiedAt = b.AdminVerifiedAt,
+            AdminNotes = b.AdminNotes,
+            CreatedAt = b.CreatedAt,
+            HandoverReports = b.HandoverReports.Select(h => new SettlementReportResponseDto
+            {
+                Id = h.Id,
+                ReportNumber = h.ReportNumber,
+                ReportDate = h.ReportDate,
+                AssistantId = h.AssistantId,
+                AssistantName = h.Assistant?.User?.Name ?? "Assistant",
+                DepartmentName = h.Assistant?.Department?.Name,
+                TotalAppointments = h.TotalAppointments,
+                TotalAmount = h.TotalAmount,
+                CashAmount = h.CashAmount,
+                OnlineAmount = h.OnlineAmount,
+                Status = h.Status,
+                AssistantNotes = h.AssistantNotes,
+                SubmittedAt = h.SubmittedAt,
+                CashierId = h.CashierId,
+                CashierVerifiedAt = h.CashierVerifiedAt,
+                CashierNotes = h.CashierNotes,
+                BankDepositId = h.BankDepositId,
+                VerifiedByAdminId = h.VerifiedByAdminId,
+                VerifiedByAdminName = h.VerifiedByAdmin?.Name,
+                VerifiedAt = h.VerifiedAt,
+                AdminNotes = h.AdminNotes
+            }).ToList()
+        };
+    }
+
+    public async Task<List<CashierUserDto>> GetCashiers()
+    {
+        var cashiers = await _context.Users
+            .Where(u => u.Role == "Cashier")
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync();
+
+        var cashierIds = cashiers.Select(c => c.Id).ToList();
+
+        var deposits = await _context.CashierBankDeposits
+            .Where(d => cashierIds.Contains(d.CashierId))
+            .ToListAsync();
+
+        var handovers = await _context.DailySettlementReports
+            .Where(r => r.CashierId.HasValue && cashierIds.Contains(r.CashierId.Value))
+            .ToListAsync();
+
+        var today = GetPktToday();
+
+        return cashiers.Select(c => {
+            var cashierDeposits = deposits.Where(d => d.CashierId == c.Id).OrderByDescending(d => d.DepositedAt).ToList();
+            var latestDeposit = cashierDeposits.FirstOrDefault();
+            var todayDeposits = cashierDeposits.Where(d => d.DepositDate == today).ToList();
+
+            return new CashierUserDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Email = c.Email,
+                IsVerified = c.IsVerified,
+                CreatedAt = c.CreatedAt,
+                TodayDepositsCount = todayDeposits.Count,
+                TodayCashDeposited = todayDeposits.Sum(d => d.TotalCashDeposited),
+                TotalDepositsCount = cashierDeposits.Count,
+                TotalCashDeposited = cashierDeposits.Sum(d => d.TotalCashDeposited),
+                TotalHandoversAudited = handovers.Count(r => r.CashierId == c.Id),
+                LatestDepositReference = latestDeposit?.DepositReference,
+                LatestBankName = latestDeposit?.BankName,
+                LatestSlipNumber = latestDeposit?.BankDepositSlipNumber,
+                LatestDepositDate = latestDeposit?.DepositedAt
+            };
+        }).ToList();
+    }
+
+    public async Task<CashierUserDto> CreateCashier(RegisterCashierDto dto)
+    {
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+        var exists = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
+        if (exists)
+        {
+            throw new InvalidOperationException("A user with this email address already exists.");
+        }
+
+        var user = new User
+        {
+            Name = dto.Name.Trim(),
+            Email = normalizedEmail,
+            Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            Role = "Cashier",
+            IsVerified = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        return new CashierUserDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            IsVerified = user.IsVerified,
+            CreatedAt = user.CreatedAt,
+            TotalDepositsCount = 0,
+            TotalCashDeposited = 0,
+            TotalHandoversAudited = 0
+        };
+    }
+
+    public async Task<CashierUserDto> UpdateCashier(int id, UpdateCashierDto dto)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.Role == "Cashier");
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Cashier user not found.");
+        }
+
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+        var emailTaken = await _context.Users.AnyAsync(u => u.Id != id && u.Email.ToLower() == normalizedEmail);
+        if (emailTaken)
+        {
+            throw new InvalidOperationException("Email address is already in use by another user.");
+        }
+
+        user.Name = dto.Name.Trim();
+        user.Email = normalizedEmail;
+        user.IsVerified = dto.IsVerified;
+
+        if (!string.IsNullOrWhiteSpace(dto.NewPassword))
+        {
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword.Trim());
+        }
+
+        await _context.SaveChangesAsync();
+
+        var depositsCount = await _context.CashierBankDeposits.CountAsync(d => d.CashierId == id);
+        var cashDeposited = await _context.CashierBankDeposits.Where(d => d.CashierId == id).SumAsync(d => d.TotalCashDeposited);
+        var handoversCount = await _context.DailySettlementReports.CountAsync(r => r.CashierId == id);
+
+        return new CashierUserDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            IsVerified = user.IsVerified,
+            CreatedAt = user.CreatedAt,
+            TotalDepositsCount = depositsCount,
+            TotalCashDeposited = cashDeposited,
+            TotalHandoversAudited = handoversCount
+        };
+    }
+
+    public async Task<bool> DeleteCashier(int id)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.Role == "Cashier");
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Cashier user not found.");
+        }
+
+        var hasFinancialHistory = await _context.CashierBankDeposits.AnyAsync(d => d.CashierId == id) ||
+                                  await _context.DailySettlementReports.AnyAsync(r => r.CashierId == id);
+
+        if (hasFinancialHistory)
+        {
+            user.IsVerified = false;
+            await _context.SaveChangesAsync();
+            return false;
+        }
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

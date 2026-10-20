@@ -36,6 +36,8 @@ import DoctorPublicProfile from "./Pages/DoctorPublicProfile"
 import DoctorSchedule from "./Pages/Doctor/DoctorSchedule"
 import AdminGovernance from "./Pages/Admin/AdminGovernance"
 import AdminSettlements from "./Pages/Admin/AdminSettlements"
+import AdminCashiers from "./Pages/Admin/AdminCashiers"
+import CashierDashboard from "./Pages/Cashier/CashierDashboard"
 
 const App = () => {
     return (
@@ -82,6 +84,10 @@ const App = () => {
                 </Route>
             </Route>
 
+            <Route element={<ProtectedRoute allowedRoles={['Cashier', 'SuperAdmin', 'Admin']} />}>
+                <Route path="/cashier/dashboard" element={<CashierDashboard />} />
+            </Route>
+
             <Route element={<ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']} />}>
                 <Route path="/admin/dashboard" element={<AdminDashBoard />}>
                     <Route index element={<AdminOverview />} />
@@ -92,6 +98,7 @@ const App = () => {
                     <Route path="appointments" element={<AdminAppointments />} />
                     <Route path="patients" element={<AdminPatients />} />
                     <Route path="settlements" element={<AdminSettlements />} />
+                    <Route path="cashiers" element={<AdminCashiers />} />
                     <Route path="governance" element={<AdminGovernance />} />
                 </Route>
             </Route>

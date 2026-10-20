@@ -850,9 +850,10 @@ const AssistantTriageQueue = () => {
                                     <input
                                         type="text"
                                         required
+                                        maxLength={7}
                                         placeholder="e.g. 120/80"
                                         value={vitalsForm.bloodPressure}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodPressure: e.target.value }))}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodPressure: e.target.value.slice(0, 7) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -868,7 +869,8 @@ const AssistantTriageQueue = () => {
                                         max="250"
                                         placeholder="e.g. 72"
                                         value={vitalsForm.heartRate}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, heartRate: e.target.value }))}
+                                        onInput={(e) => { if (e.target.value.length > 3) e.target.value = e.target.value.slice(0, 3) }}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, heartRate: e.target.value.slice(0, 3) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -894,7 +896,8 @@ const AssistantTriageQueue = () => {
                                         max="115"
                                         placeholder="e.g. 98.6"
                                         value={vitalsForm.temperature}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, temperature: e.target.value }))}
+                                        onInput={(e) => { if (e.target.value.length > 5) e.target.value = e.target.value.slice(0, 5) }}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, temperature: e.target.value.slice(0, 5) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -917,7 +920,8 @@ const AssistantTriageQueue = () => {
                                         max="100"
                                         placeholder="e.g. 98"
                                         value={vitalsForm.spO2}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, spO2: e.target.value }))}
+                                        onInput={(e) => { if (e.target.value.length > 3) e.target.value = e.target.value.slice(0, 3) }}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, spO2: e.target.value.slice(0, 3) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -936,7 +940,8 @@ const AssistantTriageQueue = () => {
                                         max="350"
                                         placeholder="e.g. 70.5"
                                         value={vitalsForm.weightKg}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, weightKg: e.target.value }))}
+                                        onInput={(e) => { if (e.target.value.length > 5) e.target.value = e.target.value.slice(0, 5) }}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, weightKg: e.target.value.slice(0, 5) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -948,9 +953,12 @@ const AssistantTriageQueue = () => {
                                     <input
                                         type="number"
                                         step="0.5"
+                                        min="20"
+                                        max="260"
                                         placeholder="e.g. 175"
                                         value={vitalsForm.heightCm}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, heightCm: e.target.value }))}
+                                        onInput={(e) => { if (e.target.value.length > 5) e.target.value = e.target.value.slice(0, 5) }}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, heightCm: e.target.value.slice(0, 5) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-mono bg-white"
                                     />
                                 </div>
@@ -961,9 +969,10 @@ const AssistantTriageQueue = () => {
                                     </label>
                                     <input
                                         type="text"
+                                        maxLength={15}
                                         placeholder="e.g. 110 mg/dL"
                                         value={vitalsForm.bloodSugar}
-                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodSugar: e.target.value }))}
+                                        onChange={(e) => setVitalsForm(prev => ({ ...prev, bloodSugar: e.target.value.slice(0, 15) }))}
                                         className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 bg-white"
                                     />
                                 </div>

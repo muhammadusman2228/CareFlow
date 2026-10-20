@@ -1,4 +1,4 @@
-
+﻿
 import { Link, useNavigate, useLocation } from 'react-router'
 import LoginImage from '../assets/LoginImage.png'
 import AppLogo from '../components/Home/AppLogo.Home'
@@ -45,6 +45,7 @@ const Login=()=>{
      (userRole === 'admin' && from.startsWith('/admin')) ||
      (userRole === 'doctor' && from.startsWith('/doctor')) ||
      (userRole === 'assistant' && from.startsWith('/assistant')) ||
+     (userRole === 'cashier' && from.startsWith('/cashier')) ||
      (userRole === 'patient' && from.startsWith('/patient'))
  )
 
@@ -56,6 +57,8 @@ const Login=()=>{
      navigate('/doctor/dashboard', { replace: true })
  } else if (userRole === 'assistant') {
      navigate('/assistant/dashboard', { replace: true })
+ } else if (userRole === 'cashier') {
+     navigate('/cashier/dashboard', { replace: true })
  } else {
      navigate('/patient/dashboard', { replace: true })
  }

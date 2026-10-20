@@ -16,7 +16,8 @@ import {
     X,
     ShieldCheck,
     ShieldAlert,
-    Receipt
+    Receipt,
+    Wallet
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import axios from '../../api/axios'
@@ -33,6 +34,7 @@ const AdminDashBoard = () => {
         { name: 'Appointments', path: '/admin/dashboard/appointments', icon: CalendarCheck },
         { name: 'Patients', path: '/admin/dashboard/patients', icon: Users },
         { name: 'Financial Settlements', path: '/admin/dashboard/settlements', icon: Receipt },
+        { name: 'Cashiers Management', path: '/admin/dashboard/cashiers', icon: Wallet },
         ...(isSuperAdmin ? [{ name: 'Admin Governance', path: '/admin/dashboard/governance', icon: ShieldCheck }] : [])
     ]
     const navigate = useNavigate()
@@ -56,6 +58,8 @@ const AdminDashBoard = () => {
             navigate('/admin/dashboard/appointments')
         } else if (query.includes('settle') || query.includes('finance') || query.includes('payment') || query.includes('cash') || query.includes('receipt') || query.includes('audit')) {
             navigate('/admin/dashboard/settlements')
+        } else if (query.includes('cashier') || query.includes('treasury')) {
+            navigate('/admin/dashboard/cashiers')
         } else if (query.includes('sched') || query.includes('shift') || query.includes('timing') || query.includes('hour')) {
             navigate('/admin/dashboard/schedules')
         } else if (query.includes('pat') || query.includes('client')) {
