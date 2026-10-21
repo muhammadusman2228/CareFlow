@@ -1,47 +1,64 @@
-# CareFlow: Enterprise Hospital Management and Clinical Consultation Platform
+# CareFlow: Enterprise Hospital Management & Clinical Operations Platform
 
-CareFlow is a full-stack, enterprise-grade Hospital Management System (HMS) and Clinical Consultation Platform engineered with ASP.NET Core 10 Web API and React 19. Designed for modern healthcare networks, multi-department polyclinics, and high-volume outpatient departments (OPD), CareFlow coordinates physician shift rosters, date-specific scheduling, pre-consultation triage vitals acquisition, diagnostic laboratory workflows, real-time consultation scheduling with multi-user concurrency protection, digital Electronic Medical Records (EMR), active appointment diversion guards, automated patient no-show detection, and hospital operational analytics.
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![React 19](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4.0-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![MySQL 8.4](https://img.shields.io/badge/MySQL-8.4_LTS-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2_Ubuntu-FF9900?logo=amazonec2&logoColor=white)](https://aws.amazon.com/ec2/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+CareFlow is a full-stack, enterprise-grade Hospital Management System (HMS), Clinical Operations Engine, and Multi-Tier Financial Treasury Platform engineered with **ASP.NET Core 10 Web API** and **React 19**. 
+
+Architected for multi-department healthcare networks and high-throughput outpatient clinics (OPD), CareFlow coordinates physician shift rosters, pre-consultation triage vitals, diagnostic pathology requisitions, real-time consultation scheduling with multi-user concurrency protection, digital Electronic Medical Records (EMR), active appointment diversion guards, automated patient no-show detection, and a **four-tier hospital cash reconciliation and commercial bank deposit pipeline**.
+
+---
+
+## Live Demo Credentials & Testing Matrix
+
+For evaluators, recruiters, and auditors reviewing CareFlow's role-based workflows, the platform provides dedicated pre-configured test personas across all clinical, administrative, and treasury tiers:
+
+| Role | Demo Email | Demo Password | Primary Operational Scope |
+| :--- | :--- | :--- | :--- |
+| 👑 **SuperAdmin / Admin** | `admin@careflow.com` | `Password123!` | Executive Governance, Staff Credentialing, Roster Matrix, Settlement Auditing & Final Sealing |
+| 🩺 **Doctor (Physician)** | `dr.farhan@careflow.com` | `Password123!` | OPD Clinical Console, Patient Encounter Queue, Vital Sign Review, EMR Prescriptions & Lab Orders |
+| 🩺 **Assistant (Triage Nurse)** | `assistant@careflow.com` | `Password123!` | Walk-in Intake, Triage Vitals Acquisition (BP/Pulse/SpO2), Consultation Fee Collection & Shift Closing Handover |
+| 💵 **Main Cashier (Treasury)** | `cashier@careflow.com` | `Password123!` | Multi-Assistant Handover Envelope Verification, Bill Counting, Consolidated Commercial Bank Deposits |
+| 👤 **Patient (Care Portal)** | `patient@careflow.com` | `Password123!` | Self-Service Specialist Discovery, Dynamic Slot Picker, Shift Delay Alerts, Prescription History & Invoices |
+
+*Note: All passwords across testing accounts are standardized to `Password123!` for friction-free cross-role evaluation.*
 
 ---
 
 ## Table of Contents
 
 1. [Architectural Overview](#architectural-overview)
-2. [Role-Based Access Control (RBAC) & Key Features](#role-based-access-control-rbac--key-features)
+2. [Role-Based Access Control (RBAC) & Portals](#role-based-access-control-rbac--portals)
    * [1. SuperAdmin (Institutional Governance)](#1-superadmin-institutional-governance)
    * [2. Administrative Operations (Admin)](#2-administrative-operations-admin)
    * [3. Clinical Provider Portal (Doctor)](#3-clinical-provider-portal-doctor)
    * [4. Clinical Assistant & Triage Desk](#4-clinical-assistant--triage-desk)
-   * [5. Patient Care Portal](#5-patient-care-portal)
-3. [Engineering Highlights and Edge Case Defenses](#engineering-highlights-and-edge-case-defenses)
-   * [1. Intelligent Appointment Diversion Engine & Active Booking Guard](#1-intelligent-appointment-diversion-engine--active-booking-guard)
-   * [2. Date-Specific Doctor Schedule & Weekly Roster Architecture](#2-date-specific-doctor-schedule--weekly-roster-architecture)
-   * [3. Multi-Department Doctor Affiliation & Clinical Coverage Matrix](#3-multi-department-doctor-affiliation--clinical-coverage-matrix)
-   * [4. Department-Centric Clinical Assistant Triage Pooling](#4-department-centric-clinical-assistant-triage-pooling)
-   * [5. Real-Time Slot Locking and Concurrency Protection](#5-real-time-slot-locking-and-concurrency-protection)
-   * [6. Temporal Parity: Pakistan Standard Time (PKT, UTC+5)](#6-temporal-parity-pakistan-standard-time-pkt-utc5)
-   * [7. Idempotent Pre-Consultation Vitals Upsert](#7-idempotent-pre-consultation-vitals-upsert)
-   * [8. Post-Consultation Diagnostic Immutability Rule](#8-post-consultation-diagnostic-immutability-rule)
-   * [9. Multi-Entity System Activities Aggregation](#9-multi-entity-system-activities-aggregation)
-   * [10. Chronological Queue Priority & Instant Consultation Launcher](#10-chronological-queue-priority--instant-consultation-launcher)
-   * [11. Rate Limiting & Cryptographic Identity Lifecycle](#11-rate-limiting--cryptographic-identity-lifecycle)
-   * [12. Assisted Booking Hotline & Phone Dispatch Architecture](#12-assisted-booking-hotline--phone-dispatch-architecture)
-   * [13. Pure SVG Zero-Dependency Visualizations](#13-pure-svg-zero-dependency-visualizations)
-   * [14. Strict Institutional Design System & Bounded Sanitation](#14-strict-institutional-design-system--bounded-sanitation)
-   * [15. Decoupling Relational Primary Keys from UI (IDOR Defense)](#15-decoupling-relational-primary-keys-from-ui-idor-defense)
+   * [5. Main Cashier & Treasury Desk](#5-main-cashier--treasury-desk)
+   * [6. Patient Care Portal](#6-patient-care-portal)
+3. [Engineering Highlights & Enterprise Defenses](#engineering-highlights--enterprise-defenses)
+   * [1. Four-Tier Cash Reconciliation & Treasury Pipeline](#1-four-tier-cash-reconciliation--treasury-pipeline)
+   * [2. AWS Cloud Architecture & Remote Database Resilience](#2-aws-cloud-architecture--remote-database-resilience)
+   * [3. Intelligent Appointment Diversion Engine & Active Booking Guard](#3-intelligent-appointment-diversion-engine--active-booking-guard)
+   * [4. Date-Specific Doctor Schedule & Weekly Roster Architecture](#4-date-specific-doctor-schedule--weekly-roster-architecture)
+   * [5. Multi-Department Doctor Affiliation Matrix](#5-multi-department-doctor-affiliation-matrix)
+   * [6. Real-Time Slot Locking & Concurrency Protection](#6-real-time-slot-locking--concurrency-protection)
+   * [7. Temporal Parity: Pakistan Standard Time (PKT, UTC+5)](#7-temporal-parity-pakistan-standard-time-pkt-utc5)
+   * [8. Idempotent Pre-Consultation Vitals Upsert](#8-idempotent-pre-consultation-vitals-upsert)
+   * [9. Post-Consultation Diagnostic Immutability Rule](#9-post-consultation-diagnostic-immutability-rule)
+   * [10. Rate Limiting & Cryptographic Identity Lifecycle](#10-rate-limiting--cryptographic-identity-lifecycle)
+   * [11. Composite Multi-Factor MPI Deduplication](#11-composite-multi-factor-mpi-deduplication)
+   * [12. Decoupling Relational Primary Keys from UI (IDOR Defense)](#12-decoupling-relational-primary-keys-from-ui-idor-defense)
 4. [Technology Stack](#technology-stack)
-5. [Database Architecture & Entity Relationships](#database-architecture--entity-relationships)
-6. [Complete API Reference](#complete-api-reference)
-   * [Authentication & Security (`/api/Auth`)](#authentication--security-apiauth)
-   * [Administration & Governance (`/api/Admin`)](#administration--governance-apiadmin)
-   * [Clinical Assistant & Triage Desk (`/api/Assistant`)](#clinical-assistant--triage-desk-apiassistant)
-   * [Clinical Provider Operations (`/api/Doctor`)](#clinical-provider-operations-apidoctor)
-   * [Public Consultations & Scheduling (`/api/Appointment`)](#public-consultations--scheduling-apiappointment)
-   * [Patient Operations (`/api/Patient`)](#patient-operations-apipatient)
-   * [Department Management (`/api/Department`)](#department-management-apidepartment)
-7. [Getting Started and Local Setup](#getting-started-and-local-setup)
-8. [Directory Structure](#directory-structure)
-9. [License](#license)
+5. [Database Architecture & Complete ER Diagram (18 Tables)](#database-architecture--complete-er-diagram-18-tables)
+6. [Complete REST API Reference](#complete-rest-api-reference)
+7. [Getting Started & Local Setup](#getting-started--local-setup)
+8. [AWS EC2 Production Deployment Guide](#aws-ec2-production-deployment-guide)
+9. [Directory Structure](#directory-structure)
+10. [License](#license)
 
 ---
 
@@ -71,12 +88,13 @@ flowchart TD
         DIVERT_ENG["Intelligent Diversion Engine (Guard & Routing)"]
         DOC_SVC["DoctorService / DoctorApis (Rosters & EMR)"]
         ASST_SVC["AssistantService (Triage Vitals & Lab Desk)"]
+        PAY_SVC["PaymentService (Till, Settlement & Bank Deposits)"]
         ADMIN_SVC["AdminExtraService (Financials, Governance & Schedules)"]
     end
 
-    subgraph Data ["Persistence Layer (EF Core 10 / MySQL 8.0)"]
+    subgraph Data ["Persistence Layer (EF Core 10 / MySQL 8.4)"]
         DBCONTEXT["AppDbContext (Unit of Work)"]
-        MYSQL[("MySQL 8.0 InnoDB Database (ACID Transactions)")]
+        MYSQL[("MySQL 8.4 InnoDB Database (ACID Transactions)")]
     end
 
     UI --> AXIOS
@@ -90,176 +108,147 @@ flowchart TD
     AUTH_MW --> DIVERT_ENG
     AUTH_MW --> DOC_SVC
     AUTH_MW --> ASST_SVC
+    AUTH_MW --> PAY_SVC
     AUTH_MW --> ADMIN_SVC
     AUTH_SVC --> DBCONTEXT
     APPT_SVC --> DBCONTEXT
     DIVERT_ENG --> DBCONTEXT
     DOC_SVC --> DBCONTEXT
     ASST_SVC --> DBCONTEXT
+    PAY_SVC --> DBCONTEXT
     ADMIN_SVC --> DBCONTEXT
     DBCONTEXT --> MYSQL
 ```
 
 ---
 
-## Role-Based Access Control (RBAC) & Key Features
-
-CareFlow strictly partitions access across five distinct institutional personas:
-
-```
-[SuperAdmin] ──> Institutional Governance & Administrator Provisioning
-       └──> [Admin] ──> Operational Roster, Staff Management, Leave & Future Diversions
-              ├──> [Doctor] ──> Weekly Shifts, EMR Consultation, Diagnostics & Digital Rx
-              ├──> [Assistant] ──> Walk-In Intake, Vitals Triage & Same-Day Diversions
-              └──> [Patient] ──> Public Profiles, Slot Booking, Telehealth Ledger & Labs
-```
+## Role-Based Access Control (RBAC) & Portals
 
 ### 1. SuperAdmin (Institutional Governance)
-* **Exclusive Administrator Provisioning:** Sole authority capable of registering new hospital administrators (`POST /api/Admin/register-admin`).
-* **Two-Step Cryptographic OTP Verification:** Newly registered administrators must be activated through a secure one-time passcode verification flow (`POST /api/Admin/verify-admin-otp`).
-* **Governance Console (`AdminGovernance.jsx`):** Audit active administrators, track onboarding timestamps, issue credentials, and manage administrative privileges.
+* **Staff Provisioning:** Provision, suspend, and credential secondary Administrative Officers, Clinical Specialists, Triage Assistants, and Main Cashiers.
+* **Master Governance Audit:** Inspect system-wide security logs, refresh token revocation events, and institutional activity streams.
 
 ### 2. Administrative Operations (Admin)
-* **Financial & Capacity Telemetry:** Real-time metrics on daily hospital revenue, active consultations, doctor roster status, and department bed allocation.
-* **Rolling Weekly Trend Visualizer:** Pure SVG bar chart rendering 7-day completed consultation volumes without external dependencies.
-* **Specialist Credentialing:** Account verification, license validation, primary and multi-department assignments, and on-demand duty activation.
-* **Date-Specific Schedule Roster (`AdminSchedules.jsx`):** Calendar-aware shift roster (`DoctorDateSchedule`) allowing per-day shift timing adjustments and on-duty/off-duty overrides.
-* **Active Booking Guard Modal:** Intercepts physician leave requests and off-duty toggles if active bookings exist, forcing administrators to divert future consultations (`Tomorrow and beyond`) before leave can be granted.
-* **Clinical Assistant Management:** Onboard, assign, and manage triage staff with multi-department pooling.
-* **Unified System Activities Audit:** Real-time chronological audit trail aggregating appointment creations, triage recordings, lab orders, finalized findings, and staff onboarding.
+* **Clinical Department Management:** Add, configure, and manage medical specialties (Cardiology, Neurology, Pediatrics, etc.).
+* **Doctor Credentialing & Roster Allocation:** Assign consulting physicians to primary and secondary specialties, configure consultation fees, and schedule weekly shift templates.
+* **Active Booking Leave Guard:** Prevent unauthorized doctor schedule deletions when active patient appointments exist.
+* **Financial Reconciliation Audit:** Audit daily cash settlement reports submitted by assistants and verified bank deposits uploaded by the Cashier.
 
 ### 3. Clinical Provider Portal (Doctor)
-* **Weekly Schedule & Shift Console (`DoctorSchedule.jsx`):** Direct visibility into weekly clinical duty rosters, assigned shifts, primary and secondary departments, and operational status.
-* **Delay & Operational Status Reporting:** Report clinical delays (`IsLate`, `DelayMinutes`, `DelayReason`) directly from the portal, alerting triage assistants in real time.
-* **Single-Screen Clinical Console:** Integrated shift schedule, queue summary with Checked-In priority, and longitudinal consultation records.
-* **Instant 1-Click Consultation Launcher:** Direct consultation launch for patients marked `CheckedIn` by the triage station.
-* **Pre-Consultation Vitals Review:** Automatic pre-load of nurse-captured physiological parameters (BP, Pulse, SpO2, Temperature, Blood Sugar, BMI) inside the consultation modal.
-* **Digital EMR Prescription Writer:** Comprehensive prescription composer capturing primary diagnoses, medications, dosages, duration, and follow-up directives.
-* **Diagnostic Lab Ordering:** Prescribe pathology panels (CBC, LFT, RFT, Lipid Profile, X-Ray) with specialized clinical notes for the laboratory desk.
-* **Longitudinal Patient Pathology Archive:** Direct access to past laboratory diagnostic tests and analyzer findings across all previous visits.
+* **OPD Clinical Console:** Real-time patient queue sorted chronologically with live status tags (`Pending`, `Confirmed`, `CheckedIn`, `Completed`).
+* **Instant Encounter Launcher:** Launch patient consultations with immediate access to pre-consultation triage vitals recorded by nurses.
+* **Electronic Medical Records (EMR):** Author diagnoses, prescriptions with pharmacological directives, and diagnostic pathology laboratory orders.
+* **Dynamic Delay Broadcast:** Report expected operational delays (e.g., 20 mins due to emergency surgery) with patient notifications.
 
 ### 4. Clinical Assistant & Triage Desk
-* **OPD Patient Queue & Check-In:** View today's scheduled consultations scoped by assigned doctor or department, with instant physical arrival check-in.
-* **Same-Day Appointment Diversion:** In the event of physician delay, emergency surgery, or unexpected leave, triage assistants can consult the patient and divert today's queue (`AppointmentDate == Today`) to an available peer doctor in the same department or reschedule to a later free slot with the same doctor.
-* **Assisted Booking & Walk-In Intake:** Schedule consultations directly on behalf of illiterate, elderly, or phone-in patients (`POST /api/Assistant/book-appointment`). Unifies repeat patient charts via phone deduplication or auto-provisions verified patient identities without requiring user self-registration.
-* **Pre-Consultation Vitals Capture:** Record multi-parameter physiological vitals with real-time clinical warnings (Hypertension alerts, Fever indicators, Hypoxemia warnings).
-* **Idempotent Re-Measurement:** Seamlessly re-take and update patient vitals to resolve White Coat Hypertension without constraint collisions.
-* **Diagnostic Lab Desk:** Manage specimen collection (Blood, Urine, Swab) and enter finalized quantitative laboratory results.
-* **Tamper-Evident State Lock:** Diagnostic orders and vitals for completed or past consultations are locked authoritatively against modification.
+* **Patient Walk-In Intake:** Register on-site patients with composite multi-factor MPI deduplication.
+* **Triage Vitals Capture:** Record physiological parameters (Blood Pressure, Heart Rate, Body Temperature, SpO2, Weight, Height, Blood Sugar, Clinical Triage Notes).
+* **Consultation Fee Collection (Till):** Process consultation payments (Cash, Card, JazzCash, EasyPaisa, Raast), generating standardized thermal receipts (`CF-REC-YYYYMMDD-XXXX`).
+* **Shift Closing Handover:** Seal daily collections into a formal physical cash envelope and submit an immutable `DailySettlementReport` (`CF-SETTLE-YYYYMMDD-ASTXX`).
 
-### 5. Patient Care Portal
-* **Physician Discovery & Clinical Profile:** Browse certified specialists by medical department, clinical focus, experience, and consultation fees.
-* **Live Shift Slot Selector:** Dynamic time picker displaying accessible consultation windows while immediately disabling occupied or past slots.
-* **Appointment Management Ledger:** Filter personal ledger by status (`Pending`, `Confirmed`, `CheckedIn`, `Completed`, `Cancelled`, `Missed`).
-* **Automated No-Show Detection:** Consultations where the time slot has elapsed without check-in are automatically projected as `Missed`.
-* **Digital Prescription & Lab Archive:** View and download issued EMR prescriptions and finalized diagnostic laboratory reports.
-* **Self-Service Cancellation:** Cancel pending or confirmed bookings, immediately releasing the slot back into the public scheduling pool.
+### 5. Main Cashier & Treasury Desk
+* **Assistant Handover Ingestion:** Receive and audit physical cash settlement envelopes delivered by departmental assistants at shift end.
+* **Physical Currency Verification:** Verify physical currency count against digital audit logs and mark handovers as `VerifiedByCashier`.
+* **Consolidated Bank Deposit Batching:** Group multiple assistant handovers into a single commercial bank deposit dossier (`CF-DEP-YYYYMMDD-XXXX`).
+* **Bank Deposit Slip Attachment:** Record the official commercial bank deposit slip number, deposit date, and bank branch details for Admin reconciliation.
+
+### 6. Patient Care Portal
+* **Physician Discovery & Clinical Profiles:** Search accredited specialists by specialty, qualifications, experience, and consultation fees.
+* **Dynamic Time Slot Picker:** Real-time slot selector displaying open consultation windows while disabling occupied or past slots.
+* **Appointment Tracking Ledger:** View upcoming, completed, and missed appointments.
+* **Digital Prescription & Invoices:** Access and download issued EMR prescriptions and payment receipts.
 
 ---
 
-## Engineering Highlights and Edge Case Defenses
+## Engineering Highlights & Enterprise Defenses
 
-### 1. Intelligent Appointment Diversion Engine & Active Booking Guard
-* **The Clinical Vulnerability:** When a physician is granted leave, marked off-duty, or delayed by an emergency surgery, patients who already booked consultations are stranded. Abrupt cancellations damage patient trust and hospital clinical continuity.
-* **The Solution — Granular Two-Tier Diversion Architecture:**
-  1. **Assistant-Level Same-Day Diversion (`POST /api/Assistant/divert-appointment`):**
-     * Scoped strictly to **today's appointments** (`AppointmentDate == TodayInPKT`).
-     * When a doctor is delayed, the triage assistant consults the waiting patient and evaluates options via `/api/Assistant/diversion/candidates/{appointmentId}`:
-       * **Option A (Peer Doctor Diversion):** Reassign the consultation to an on-duty peer physician within the assistant's clinical department who has an open slot at that time.
-       * **Option B (Same Doctor Re-slotting):** Shift the consultation to a later open slot on the same day when the doctor's delay resolves.
-  2. **Admin-Level Future Diversion (`POST /api/Admin/divert-appointment`):**
-     * Scoped to **tomorrow and subsequent calendar dates** (`AppointmentDate > TodayInPKT`).
-     * Administrators handle advance schedule disruptions and reallocate appointments across departmental peers.
-  3. **Active Booking Guard Modal:**
-     * Attempting to mark a doctor off-duty or assign leave via `AdminSchedules.jsx` triggers a pre-flight query (`GET /api/Admin/doctor/{id}/appointments?date={date}`).
-     * If active appointments (`Pending`, `Confirmed`, `CheckedIn`) exist, the toggle is intercepted by the **Active Appointments Detected Guard Modal**.
-     * Administrators must review candidate peer doctors and divert or reschedule every active booking before leave is finalized, ensuring zero orphaned appointments.
-  4. **Forensic Audit Traceability on Entity:**
-     * Every diverted consultation is permanently flagged with `IsDiverted = true`, storing `OriginalDoctorId`, `DiversionReason`, `DivertedAt`, and `DivertedBy` for legal and clinical auditing.
+### 1. Four-Tier Cash Reconciliation & Treasury Pipeline
 
-### 2. Date-Specific Doctor Schedule & Weekly Roster Architecture
-* Standard hospital management systems rely on static recurring shift columns on the `Doctor` entity (`ShiftStart`, `ShiftEnd`), making it impossible to handle planned leaves, temporary schedule swaps, or day-specific shifts.
-* CareFlow introduces `DoctorDateSchedule`:
-  * Enables granular, date-specific shift timings and duty statuses (`OnDuty`, `OnLeave`, `OffDuty`).
-  * Tracks operational delays with `IsLate`, `DelayMinutes`, and `DelayReason`.
-  * Preserves default doctor shift templates while permitting seamless calendar-specific overrides.
-  * Dedicated Weekly Roster view in both Admin (`AdminSchedules.jsx`) and Doctor (`DoctorSchedule.jsx`) portals.
+In hospital operations, payments cannot be handled like a generic e-commerce transaction. Cash collected at scattered clinic desks creates extreme risk of leakage, drawer shortages, and lost revenue. CareFlow enforces a **Four-Tier Chain of Custody**:
 
-### 3. Multi-Department Doctor Affiliation & Clinical Coverage Matrix
-* Many senior consultants practice across multiple specialties (e.g., an Interventional Cardiologist also consulting in Internal Medicine, or a Pediatric Surgeon consulting in General Surgery).
-* CareFlow decouples physicians from single foreign keys via the `DoctorDepartment` join entity:
-  * Each physician has a designated **Primary Department** (`IsPrimary = true`) alongside authorized **Secondary Departmental Affiliations**.
-  * Managed via `PATCH /api/Admin/doctor/{id}/departments`.
-  * Public portal physician filters, triage queues, and diversion engines automatically respect cross-department qualifications while preventing cross-specialty clinical mismatches.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Patient
+    actor Assistant as Triage Assistant (Desk)
+    actor Cashier as Main Cashier (Vault)
+    actor Admin as Finance Admin (Auditor)
 
-### 4. Department-Centric Clinical Assistant Triage Pooling
-* Traditional systems couple each assistant directly to a single physician. If that doctor is off-duty, the assistant is idle while other clinic queues overflow.
-* CareFlow implements departmental assistant pooling via `AssistantDepartment`:
-  * Assistants are assigned to clinical departments (e.g., Cardiology OPD, Orthopedics Desk), allowing them to manage triage, check-in, vitals, and phone intake for all doctors within their assigned department.
+    Patient->>Assistant: Consultation Fee (Cash or Digital Transfer)
+    Assistant->>Assistant: Issue Official Receipt (CF-REC-YYYYMMDD-XXXX)
+    Note over Assistant: Physical bills stored in desk cash drawer
+    
+    Note over Assistant: End of Shift: Assistant Closes Register
+    Assistant->>Assistant: Seal Cash Envelope & Submit DailySettlementReport (CF-SETTLE)
+    Assistant->>Cashier: Deliver Physical Envelope + Settlement Dossier
+    
+    Note over Cashier: Cashier Counts Bills & Checks Digital TRX References
+    Cashier->>Cashier: Sign Off Handover (VerifiedByCashier)
+    
+    Note over Cashier: Cashier Bundles All Department Envelopes
+    Cashier->>Cashier: Generate CashierBankDeposit (CF-DEP-YYYYMMDD-XXXX)
+    Cashier->>Cashier: Deposit Physical Cash at Hospital Commercial Bank
+    Cashier->>Cashier: Attach Official Bank Deposit Slip Reference
+    
+    Cashier->>Admin: Submit Consolidated Deposit Dossier
+    Admin->>Admin: Verify Bank Statement Against Deposit Slip
+    Admin->>Admin: Lock & Seal Batch (VerifiedByAdmin / Locked)
+```
 
-### 5. Real-Time Slot Locking and Concurrency Protection
-* **The Vulnerability:** Multiple patients attempting to reserve the identical time slot concurrently, or reserving a slot that is currently in a `Pending` state awaiting physician confirmation.
-* **The Solution:** The backend query `GetBookedSlots` evaluates all slots where `(Status == "Confirmed" || Status == "Pending" || Status == "Completed")`.
-* **Database Isolation:** When two patients submit a booking request for the identical slot at the same millisecond:
-  * Thread 1 acquires the transactional write lock, commits the row with `Status = "Pending"`, and returns `HTTP 201 Created`.
-  * Thread 2's `AnyAsync` validation catches the committed row, aborts the insert, and throws a `DuplicateNameException`.
-  * The API responds with `HTTP 400 Bad Request` (`"This Time slot is already Booked"`).
-  * The frontend client intercepts the error, renders an alert notification, and immediately refetches `/api/Appointment/booked-slots`, visibly disabling the occupied slot on screen.
+1. **Tier 1 (Point of Collection):** The assistant accepts payment at the department desk, enters the digital transaction reference (for digital transfers) or marks Cash, generating receipt `CF-REC-YYYYMMDD-XXXX`.
+2. **Tier 2 (Shift Closing Dossier):** At shift end, `PaymentService.SubmitSettlementReport` aggregates all payments collected by that assistant, separating physical cash (`CashAmount`) from digital bank transfers (`OnlineAmount`), creating `CF-SETTLE-YYYYMMDD-ASTXX`.
+3. **Tier 3 (Cashier Verification & Bank Deposit):** The Main Cashier counts the cash in the physical envelope, signs off the handover, bundles multiple handovers into a single `CashierBankDeposit`, deposits the currency into the hospital corporate account, and records the bank teller slip number.
+4. **Tier 4 (Executive Audit & Locking):** The Finance Administrator matches the bank slip against the corporate bank ledger and executes final cryptographic sign-off (`VerifiedByAdmin`).
 
-### 6. Temporal Parity: Pakistan Standard Time (PKT, UTC+5)
-* Server clocks running on UTC frequently corrupt boundary dates during late night hours (for example, 02:00 AM PKT is 09:00 PM UTC of the previous calendar day).
-* CareFlow standardizes all operational timestamps to **Pakistan Standard Time (PKT, UTC+5)** across:
-  * **Server Service Layer:** `DateTime.UtcNow.AddHours(5)` across revenue sums, audit timestamps, OPD queues, schedule rosters, and daily metrics.
-  * **Frontend Client:** `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' })` ensuring timezone consistency regardless of client location.
+### 2. AWS Cloud Architecture & Remote Database Resilience
 
-### 7. Idempotent Pre-Consultation Vitals Upsert
-* Patients frequently experience elevated blood pressure upon initial hospital arrival ("White Coat Hypertension"). Triage nurses instruct patients to rest and take a second reading 15 minutes later.
-* `AssistantService.RecordVitals` checks for an existing record on `AppointmentId`. If present, it updates the row in-place rather than attempting a duplicate `INSERT`, avoiding MySQL unique constraint collisions on `IX_PatientVitals_AppointmentId`.
+CareFlow's production environment runs on **Amazon Web Services (AWS EC2)** in the `ap-southeast-1` region:
+* **Operating System:** Ubuntu 24.04 LTS on AWS EC2.
+* **Database Engine:** MySQL Server 8.4 Enterprise with systemd daemon management and remote security groups.
+* **Zero-Downtime Migration Pipeline:** Code-first migrations compiled and applied remotely using `dotnet ef database update --connection "..."` over encrypted TLS sockets.
+* **CORS & 500 Disguise Defense:** Configured dedicated ASP.NET Core exception handlers to ensure CORS headers (`Access-Control-Allow-Origin`) are preserved during unhandled database timeouts, preventing misleading browser CORS errors.
 
-### 8. Post-Consultation Diagnostic Immutability Rule
-* Once a doctor completes an examination and issues the prescription, clinical and legal standards mandate that diagnostic orders become immutable.
-* Both `CreateLabOrder` and `UpdateLabOrderStatus` in `AssistantService.cs` enforce `if (appointment.Status == "Completed") throw new InvalidOperationException(...)`.
-* The DTO projects `IsAppointmentCompleted` and `AppointmentStatus`, dynamically locking frontend buttons in `AssistantLabDesk.jsx` to render `"Locked (Completed)"`.
+### 3. Intelligent Appointment Diversion Engine & Active Booking Guard
+* **Assistant Same-Day Diversion:** When a doctor is delayed by an emergency, assistants reallocate today's waiting consultations to on-duty departmental peers or shift slots via `/api/Assistant/divert-appointment`.
+* **Admin Advance Diversion:** Administrators reassign appointments for future dates when physicians are granted extended leave.
+* **Active Booking Guard Modal:** Intercepts attempts to toggle doctor leave or delete schedules when active appointments exist, preventing orphaned patient bookings.
+* **Forensic Audit Traceability:** Diverted consultations retain `OriginalDoctorId`, `DiversionReason`, `DivertedAt`, and `DivertedBy`.
 
-### 9. Multi-Entity System Activities Aggregation
-* Operational audit requirements demand that the administrative dashboard displays all clinical actions across roles.
-* `AdminExtraService.cs` aggregates five asynchronous event streams into `RecentActivities`:
-  1. Appointment bookings, diversions, and confirmations
-  2. Patient triage vitals recordings
-  3. Pathology lab tests ordered
-  4. Finalized laboratory test findings
-  5. Assistant staff registrations
-* The aggregated stream is projected into a unified schema and sorted descending by timestamp.
+### 4. Date-Specific Doctor Schedule & Weekly Roster Architecture
+* CareFlow introduces `DoctorDateSchedule` to decouple doctors from static weekly shift tables:
+  * Enables day-specific shift timings, planned leaves, and operational delays (`IsLate`, `DelayMinutes`, `DelayReason`).
+  * Weekly roster management in both Admin (`AdminSchedules.jsx`) and Doctor (`DoctorSchedule.jsx`) portals.
 
-### 10. Chronological Queue Priority & Instant Consultation Launcher
-* In high-volume outpatient clinics, walk-ins, emergency additions, and newly checked-in patients must appear at the top of the queue.
-* All queries across Doctor, Assistant, and Patient dashboards enforce `.OrderByDescending(a => a.AppointmentDate).ThenByDescending(a => a.TimeSlot).ThenByDescending(a => a.Id)`.
-* When a patient is checked in at triage, their status updates to `CheckedIn`, displaying an instant **Start Consultation** trigger on the attending doctor's dashboard.
+### 5. Multi-Department Doctor Affiliation Matrix
+* Many senior consultants practice across multiple specialties. CareFlow models this via the `DoctorDepartment` join entity:
+  * Each physician has one **Primary Department** (`IsPrimary = true`) alongside authorized **Secondary Affiliations**, preventing cross-specialty clinical mismatches.
 
-### 11. Rate Limiting & Cryptographic Identity Lifecycle
-* **Rate Limiting:** ASP.NET Core `FixedWindowRateLimiter` configured with IP partitioning protects authentication endpoints (`/api/Auth/login`, `/api/Auth/patient/register`, `/api/Auth/resend-otp`, `/api/Auth/forgot-password`) against automated brute-force and credential-stuffing attacks.
-* **Tokenized Email Verification:** Token-based verification (`/api/Auth/patient/verify-email`, `VerifyEmail.jsx`, `ResendMail.jsx`) ensures patient email validity before full platform access.
-* **Silent Refresh & Revocation:** Dual-token JWT architecture with cryptographic refresh tokens stored in secure, HttpOnly, SameSite cookies. Supports granular single-session logout (`/api/Auth/logout`) and enterprise-wide revocation (`/api/Auth/logout-all`).
+### 6. Real-Time Slot Locking & Concurrency Protection
+* When multiple patients attempt to book the identical slot simultaneously:
+  * Thread 1 acquires the transactional lock and commits the row with `Status = "Pending"`.
+  * Thread 2's validation catches the committed row and throws a concurrency conflict.
+  * The API returns `HTTP 400 Bad Request` (`"This time slot is already booked"`), and the frontend client immediately refetches `/api/Appointment/booked-slots`, visibly locking the slot on screen.
 
-### 12. Assisted Booking Hotline & Phone Dispatch Architecture
-* **The Reality:** A large demographic of hospital patients, especially the elderly, rural visitors, and non-tech-savvy individuals, cannot self-register online accounts.
-* **The Solution:** Clinical assistants act as digital dispatchers equipped with direct phone lines:
-  * **Institutional Hotline & Physician Cards:** Dedicated `PhoneNumber` hotlines are exposed prominently on the home page (`/`) and directly within each specialist's card (`Call Assistant: [Phone]`).
-  * **Composite Multi-Factor MPI Deduplication:** To prevent medical chart overlay corruption when multiple family members share a household phone (e.g., father and son sharing `03001234567`), the engine matches by composite `(PhoneNumber, Name)`. Returning patients reuse their existing longitudinal record, while distinct family members receive dedicated patient charts and unique collision-free synthetic emails (`walkin.{phone}.{name}@careflow.hospital`).
-  * **Department-Scoped Scheduling Governance:** Enforces clinical governance where assistants can only schedule appointments for physicians within their assigned clinical department.
+### 7. Temporal Parity: Pakistan Standard Time (PKT, UTC+5)
+* Standardizes all operational timestamps to **Pakistan Standard Time (PKT, UTC+5)** across:
+  * **Backend Service Layer:** `DateTime.UtcNow.AddHours(5)` across revenue sums, settlement reports, and roster calculations.
+  * **Frontend Client:** `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' })`.
 
-### 13. Pure SVG Zero-Dependency Visualizations
-* **Donut Chart:** Built using mathematical circle circumference geometry ($C = 2\pi r$), dynamic `strokeDasharray`, and cumulative `strokeDashoffset` rotations.
-* **Weekly Bar Chart:** Built using pure SVG `<rect>` elements normalized dynamically against `Math.max(...completedCount, 1)` within a responsive `<svg viewBox="0 0 500 200">` canvas.
+### 8. Idempotent Pre-Consultation Vitals Upsert
+* `AssistantService.RecordVitals` checks for an existing record on `AppointmentId`. If present, it updates the record in-place rather than generating duplicate inserts, avoiding MySQL unique constraint collisions on `IX_PatientVitals_AppointmentId`.
 
-### 14. Strict Institutional Design System & Bounded Sanitation
-* **Universal Typography:** Enforced the `Inter` font globally across all HTML tags, form controls, inputs, and buttons.
-* **Bounded Input Sanitation:** Mandatory boundary guards are enforced across all form inputs (names $\le 50$, search queries $\le 100$, medical license $\le 30$, lab notes $\le 300$, prescription advice $\le 1500$, telephone numbers $\le 15$).
-* **Scrollbar Optimization:** Implemented `.scrollbar-none` to eliminate horizontal scrollbar tracks on Windows Chromium while preserving scrolling behavior.
+### 9. Post-Consultation Diagnostic Immutability Rule
+* Once a doctor completes an examination and signs the prescription, clinical and legal standards mandate that diagnostic orders become immutable. Both `CreateLabOrder` and `UpdateLabOrderStatus` enforce `if (appointment.Status == "Completed") throw new InvalidOperationException(...)`.
 
-### 15. Decoupling Relational Primary Keys from UI (IDOR Defense)
-* Raw database primary keys (e.g., `#PID-14`, `ID: #14`, `#CF-02`, `#RX-3800`) were expunged from the presentation layer to defend against OWASP Insecure Direct Object Reference (IDOR) and business volume harvesting attacks.
-* Medical staff reference queues using intuitive, volatile sequential serial numbers (`#1`, `#2`, `#3`) that decouple front-end presentation from MySQL relational schemas.
+### 10. Rate Limiting & Cryptographic Identity Lifecycle
+* **Rate Limiting:** ASP.NET Core `FixedWindowRateLimiter` configured with IP partitioning protects authentication endpoints (`/api/Auth/login`, `/api/Auth/patient/register`) against credential-stuffing attacks.
+* **Silent Refresh & Revocation:** Dual-token JWT architecture with cryptographic refresh tokens stored in secure, HttpOnly, SameSite cookies. Supports single-session logout (`/api/Auth/logout`) and enterprise-wide revocation (`/api/Auth/logout-all`).
+
+### 11. Composite Multi-Factor MPI Deduplication
+* To support assisted bookings via phone hotlines for non-tech-savvy patients without corrupting medical records when family members share a phone, the engine deduplicates by composite `(PhoneNumber, Name)`. Returning patients reuse their longitudinal record, while distinct family members receive dedicated charts and collision-free synthetic identifiers (`walkin.{phone}.{name}@careflow.hospital`).
+
+### 12. Decoupling Relational Primary Keys from UI (IDOR Defense)
+* Raw database auto-increment keys are expunged from the presentation layer to defend against OWASP Insecure Direct Object Reference (IDOR) attacks. Medical staff reference appointments using volatile sequential queue serial numbers (`#1`, `#2`, `#3`).
 
 ---
 
@@ -269,8 +258,8 @@ CareFlow strictly partitions access across five distinct institutional personas:
 | Technology | Version | Purpose |
 | :--- | :--- | :--- |
 | **ASP.NET Core Web API** | 10.0 | High-performance enterprise REST API framework |
-| **C#** | 13.0 | Modern language features (Pattern matching, records, primary constructors, null safety) |
-| **Entity Framework Core** | 10.0 | ORM and data access layer with LINQ expressions |
+| **C#** | 13.0 | Pattern matching, records, primary constructors, null safety |
+| **Entity Framework Core** | 10.0 | Object-Relational Mapping (ORM) and LINQ queries |
 | **Pomelo.EntityFrameworkCore.MySql** | 9.0 | High-throughput MySQL database connector |
 | **BCrypt.Net-Next** | 4.0.3 | Salted cryptographic password hashing |
 | **System.IdentityModel.Tokens.Jwt** | 8.x | Cryptographic JWT token generation and validation |
@@ -283,283 +272,334 @@ CareFlow strictly partitions access across five distinct institutional personas:
 | **Vite** | 6.0 | Sub-second HMR build tooling and asset bundler |
 | **Tailwind CSS** | 4.0 | Utility-first responsive design framework |
 | **React Router** | 7.x | Client-side routing with guarded RBAC route wrappers |
-| **Axios** | 1.8 | HTTP client configured with request & 401 silent refresh response interceptors |
+| **Axios** | 1.8 | HTTP client with automatic 401 silent refresh interceptors |
 | **Lucide React** | 1.16 | High-contrast clinical and institutional iconography |
 
 ---
 
-## Database Architecture & Entity Relationships
+## Database Architecture & Complete ER Diagram (18 Tables)
+
+The live MySQL database consists of **18 tables** (17 business tables + `__EFMigrationsHistory`):
 
 ```mermaid
 erDiagram
-    USERS ||--o| DOCTORS : "specializes as"
-    USERS ||--o| PATIENTS : "registers as"
-    USERS ||--o| ASSISTANTS : "operates as"
-    DEPARTMENTS ||--o{ DOCTORS : "primary department"
-    DEPARTMENTS ||--o{ DOCTOR_DEPARTMENTS : "affiliated with"
-    DOCTORS ||--o{ DOCTOR_DEPARTMENTS : "practices in"
-    DEPARTMENTS ||--o{ ASSISTANT_DEPARTMENTS : "assigns"
-    ASSISTANTS ||--o{ ASSISTANT_DEPARTMENTS : "staffs"
-    DOCTORS ||--o{ DOCTOR_DATE_SCHEDULES : "rostered on"
-    PATIENTS ||--o{ APPOINTMENTS : "schedules"
-    DOCTORS ||--o{ APPOINTMENTS : "attends"
-    DOCTORS ||--o{ APPOINTMENTS : "originally booked (diverted)"
-    APPOINTMENTS ||--o| PATIENT_VITALS : "captures"
-    ASSISTANTS ||--o{ PATIENT_VITALS : "records"
-    APPOINTMENTS ||--o{ LABS : "orders"
-    APPOINTMENTS ||--o| PRESCRIPTIONS : "generates"
-    PATIENTS ||--o{ PRESCRIPTIONS : "receives"
-    DOCTORS ||--o{ PRESCRIPTIONS : "issues"
+    Users ||--o| Doctors : "has profile"
+    Users ||--o| Assistants : "has profile"
+    Users ||--o| Patient : "has profile"
+    Users ||--o{ Session : "maintains"
+    Users ||--o{ DailySettlementReports : "verified by Cashier / Admin"
+    Users ||--o{ CashierBankDeposits : "deposited by Cashier / sealed by Admin"
+    
+    Departments ||--o{ Doctors : "primary unit"
+    Departments ||--o{ Assistants : "primary unit"
+    Departments ||--o{ DoctorDepartments : "allocates"
+    Doctors ||--o{ DoctorDepartments : "operates in"
+    Departments ||--o{ AssistantDepartments : "allocates"
+    Assistants ||--o{ AssistantDepartments : "operates in"
+    
+    Doctors ||--o{ DoctorDateSchedules : "schedules"
+    Doctors ||--o{ Appointments : "conducts"
+    Patient ||--o{ Appointments : "books"
+    
+    Appointments ||--o| PatientVitals : "triaged with"
+    Assistants ||--o{ PatientVitals : "records"
+    Patient ||--o{ PatientVitals : "undergoes"
+    
+    Appointments ||--o| Prescriptions : "generates"
+    Doctors ||--o{ Prescriptions : "authors"
+    Patient ||--o{ Prescriptions : "receives"
+    
+    Appointments ||--o{ Labs : "requests"
+    Doctors ||--o{ Labs : "orders"
+    Patient ||--o{ Labs : "undergoes"
+    
+    Appointments ||--o| Payments : "billed by"
+    Assistants ||--o{ Payments : "collects in drawer"
+    DailySettlementReports ||--o{ Payments : "seals batch of"
+    
+    Assistants ||--o{ DailySettlementReports : "dispatches handover"
+    CashierBankDeposits ||--o{ DailySettlementReports : "bundles handovers"
 
-    USERS {
+    Users {
         int Id PK
-        string Name
-        string Email UK
-        string Password
-        string Role "SuperAdmin | Admin | Doctor | Assistant | Patient"
-        bool IsVerified
+        varchar Name
+        varchar Password
+        varchar Email UK
+        longtext Role
+        tinyint IsVerified
         datetime CreatedAt
     }
 
-    DEPARTMENTS {
-        int Id PK
-        string Name
-        string Description
-    }
-
-    DOCTORS {
+    Session {
         int Id PK
         int UserId FK
-        int DepartmentId FK
-        string Specialization
-        string LicenseNumber UK
-        decimal ConsultationFee
-        time ShiftStart
-        time ShiftEnd
-        bool IsAvailable
+        varchar RefreshToken
+        varchar UserAgent
+        varchar IP
+        tinyint IsRevoked
+        datetime ExpiresAt
+        datetime CreatedAt
     }
 
-    DOCTOR_DEPARTMENTS {
+    Verification {
+        int Id PK
+        varchar Email
+        varchar Code
+        tinyint IsUsed
+        datetime ExpiresAt
+        datetime CreatedAt
+    }
+
+    Departments {
+        int Id PK
+        varchar Name UK
+        varchar Description
+        datetime CreatedAt
+    }
+
+    Doctors {
+        int Id PK
+        int UserId FK "UNIQUE"
+        int DepartmentId FK
+        varchar Specialization
+        varchar Qualifications
+        varchar LicenseNumber UK
+        int ExperienceYears
+        decimal ConsultationFee
+        tinyint IsAvailable
+        time ShiftStart
+        time ShiftEnd
+        varchar DailyStatus
+        date DailyStatusDate
+        tinyint IsLateToday
+        int DelayMinutes
+        varchar DelayReason
+        datetime CreatedAt
+    }
+
+    DoctorDepartments {
         int Id PK
         int DoctorId FK
         int DepartmentId FK
-        bool IsPrimary
+        tinyint IsPrimary
         datetime CreatedAt
     }
 
-    DOCTOR_DATE_SCHEDULES {
+    DoctorDateSchedules {
         int Id PK
         int DoctorId FK
         date ScheduleDate
-        bool IsAvailable
-        string DailyStatus "OnDuty | OnLeave | OffDuty"
-        bool IsLate
+        tinyint IsAvailable
+        varchar DailyStatus
+        tinyint IsLate
         int DelayMinutes
-        string DelayReason
+        varchar DelayReason
+        time ShiftStart
+        time ShiftEnd
         datetime UpdatedAt
     }
 
-    ASSISTANTS {
+    Patient {
         int Id PK
-        int UserId FK
+        int UserId FK "UNIQUE"
+        varchar PhoneNumber
+        date DateOfBirth
+        varchar Gender
+        varchar BloodGroup
+        varchar EmergencyContact
+        datetime CreatedAt
+    }
+
+    Assistants {
+        int Id PK
+        int UserId FK "UNIQUE"
         int DepartmentId FK
         int DoctorId FK
-        string PhoneNumber
-        string Qualifications
+        varchar PhoneNumber
+        varchar Qualifications
         time ShiftStart
         time ShiftEnd
-        bool IsActive
+        tinyint IsActive
+        datetime CreatedAt
     }
 
-    ASSISTANT_DEPARTMENTS {
+    AssistantDepartments {
         int Id PK
         int AssistantId FK
         int DepartmentId FK
         datetime CreatedAt
     }
 
-    PATIENTS {
+    Appointments {
         int Id PK
-        int UserId FK
-        date DateOfBirth
-        string Gender
-        string BloodGroup
-        string Allergies
-    }
-
-    APPOINTMENTS {
-        int Id PK
-        int DoctorId FK
         int PatientId FK
+        int DoctorId FK
         date AppointmentDate
         time TimeSlot
-        string Symptoms
-        string Status "Pending | Confirmed | CheckedIn | Completed | Cancelled | Missed"
-        bool IsDiverted
-        int OriginalDoctorId FK
-        string DiversionReason
+        varchar Status
+        varchar Symptoms
+        tinyint IsDiverted
+        int OriginalDoctorId
+        varchar DiversionReason
         datetime DivertedAt
-        string DivertedBy
+        varchar DiversionBy
         datetime CreatedAt
     }
 
-    PATIENT_VITALS {
+    PatientVitals {
         int Id PK
-        int AppointmentId FK
+        int AppointmentId FK "UNIQUE"
         int PatientId FK
         int AssistantId FK
-        string BloodPressure
+        varchar BloodPressure
         int HeartRate
         decimal Temperature
         decimal WeightKg
         decimal HeightCm
         int SpO2
-        string BloodSugar
-        string TriageNotes
+        varchar BloodSugar
+        varchar TriageNotes
         datetime RecordedAt
     }
 
-    LABS {
+    Prescriptions {
+        int Id PK
+        int AppointmentId FK "UNIQUE"
+        int PatientId FK
+        int DoctorId FK
+        varchar Title
+        varchar Note
+        datetime CreatedAt
+    }
+
+    Labs {
         int Id PK
         int AppointmentId FK
-        string TestName
-        string ClinicalNotes
-        string Status
-        string ResultsSummary
+        int PatientId FK
+        int DoctorId FK
+        varchar TestName
+        varchar Status
+        varchar ClinicalNotes
+        varchar ResultsSummary
         datetime CreatedAt
         datetime CompletedAt
     }
 
-    PRESCRIPTIONS {
+    Payments {
         int Id PK
-        int AppointmentId FK
-        int DoctorId FK
-        int PatientId FK
-        string Diagnosis
-        string Medications
-        string Instructions
+        int AppointmentId FK "UNIQUE"
+        decimal Amount
+        varchar PaymentMethod
+        varchar Status
+        varchar ReceiptNumber UK
+        varchar TransactionReference
+        int CollectedByAssistantId FK
+        int SettlementReportId FK
+        datetime PaidAt
+        varchar Notes
+        datetime CreatedAt
+    }
+
+    DailySettlementReports {
+        int Id PK
+        varchar ReportNumber UK
+        date ReportDate
+        int AssistantId FK
+        int TotalAppointments
+        decimal TotalAmount
+        decimal CashAmount
+        decimal OnlineAmount
+        varchar Status
+        varchar AssistantNotes
+        datetime SubmittedAt
+        int CashierId FK
+        varchar CashierNotes
+        datetime CashierVerifiedAt
+        int BankDepositId FK
+        int VerifiedByAdminId FK
+        datetime VerifiedAt
+        varchar AdminNotes
+        datetime CreatedAt
+    }
+
+    CashierBankDeposits {
+        int Id PK
+        varchar DepositReference UK
+        date DepositDate
+        int CashierId FK
+        varchar BankName
+        varchar BankAccountNumber
+        varchar BankDepositSlipNumber
+        datetime DepositedAt
+        int TotalHandoversIncluded
+        decimal TotalCashDeposited
+        decimal TotalOnlineAmount
+        decimal GrandTotal
+        varchar Status
+        varchar CashierNotes
+        int VerifiedByAdminId FK
+        datetime AdminVerifiedAt
+        varchar AdminNotes
         datetime CreatedAt
     }
 ```
 
 ---
 
-## Complete API Reference
+## Complete REST API Reference
 
-### Authentication & Security (`/api/Auth`)
-*Protected by IP-partitioned rate limiting middleware (`[EnableRateLimiting("auth")]`).*
-
+### Authentication & Identity (`/api/Auth`)
 | Method | Route | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/Auth/patient/register` | Public | Register a new patient account with credentials |
-| `POST` | `/api/Auth/patient/verify-email` | Public | Verify patient account via cryptographic email token |
-| `POST` | `/api/Auth/login` | Public | Authenticate user; returns Access Token and sets HttpOnly Refresh Token cookie |
-| `POST` | `/api/Auth/refresh-token` | Public | Silent refresh: exchanges valid refresh token cookie for new access token |
-| `POST` | `/api/Auth/logout` | Public | Invalidate current user refresh session and clear cookie |
-| `POST` | `/api/Auth/logout-all` | Public | Invalidate all active user sessions across all devices |
-| `POST` | `/api/Auth/resend-otp` | Public | Resend email verification passcode to unverified account |
-| `POST` | `/api/Auth/forgot-password` | Public | Dispatch password reset token to registered email |
-| `POST` | `/api/Auth/reset-password` | Public | Validate reset token and establish new salted password |
+| `POST` | `/api/Auth/login` | Public | Authenticate credentials; issues access JWT & refresh token |
+| `POST` | `/api/Auth/refresh-token` | Public | Silent token refresh via HttpOnly cookie |
+| `POST` | `/api/Auth/logout` | Authorized | Revoke active session and clear cookies |
+| `POST` | `/api/Auth/logout-all` | Authorized | Enterprise session invalidation across all devices |
+| `POST` | `/api/Auth/patient/register` | Public | Patient self-registration with OTP dispatch |
+| `POST` | `/api/Auth/patient/verify-email` | Public | Validate 6-digit email activation passcode |
 
----
-
-### Administration & Governance (`/api/Admin`)
-
+### Main Cashier & Treasury Desk (`/api/Cashier`)
 | Method | Route | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/Admin/register-admin` | **SuperAdmin** | Onboard a new hospital administrator (triggers OTP verification) |
-| `POST` | `/api/Admin/verify-admin-otp` | **SuperAdmin** | Validate administrator onboarding OTP and activate administrative account |
-| `GET` | `/api/Admin/admins-list` | **SuperAdmin** | Retrieve list of all registered administrators and verification states |
-| `POST` | `/api/Admin` | SuperAdmin, Admin | Register and credential a new physician |
-| `GET` | `/api/Admin/admin` | SuperAdmin, Admin | Retrieve administrative listing of all doctors with credentials and shifts |
-| `GET` | `/api/Admin` | Public | Query verified physicians for public directory |
-| `GET` | `/api/Admin/doctor/{id}` | Public | Retrieve public physician clinical profile and fees |
-| `GET` | `/api/Admin/dashboard` | SuperAdmin, Admin | Operational telemetry: daily revenue sums, active consultations, 7-day trend |
-| `GET` | `/api/Admin/patient` | SuperAdmin, Admin | Retrieve registered patient master ledger |
-| `GET` | `/api/Admin/audit-logs` | SuperAdmin, Admin | Aggregated system audit activity stream sorted descending |
-| `GET` | `/api/Admin/schedules` | SuperAdmin, Admin | Query calendar-aware schedule roster (`DoctorDateSchedule`) by date |
-| `PATCH`| `/api/Admin/doctor/{id}/shift` | SuperAdmin, Admin | Update doctor shift hours for default template or specific calendar date |
-| `PATCH`| `/api/Admin/doctor/{id}/availability` | SuperAdmin, Admin | Toggle doctor on-duty/off-duty (intercepted if active bookings exist) |
-| `PATCH`| `/api/Admin/doctor/{id}/departments` | SuperAdmin, Admin | Update doctor primary and secondary clinical department affiliations |
-| `GET` | `/api/Admin/diversion/candidates/{appointmentId}` | SuperAdmin, Admin | Retrieve candidate peer doctors and free slots for future diversion |
-| `POST` | `/api/Admin/divert-appointment` | SuperAdmin, Admin | Execute future consultation diversion (`AppointmentDate > Today`) |
-| `GET` | `/api/Admin/doctor/{doctorId}/appointments` | SuperAdmin, Admin | Pre-flight query: check active appointments for doctor on specific date |
-
----
+| `GET` | `/api/Cashier/pending-handovers` | Cashier, SuperAdmin | Retrieve unverified assistant shift envelopes |
+| `GET` | `/api/Cashier/verified-handovers` | Cashier, SuperAdmin | Retrieve verified handovers ready for bank deposit |
+| `POST` | `/api/Cashier/verify-handover/{reportId}` | Cashier, SuperAdmin | Count physical notes & verify assistant settlement |
+| `POST` | `/api/Cashier/create-bank-deposit` | Cashier, SuperAdmin | Bundle verified envelopes into consolidated bank deposit |
+| `GET` | `/api/Cashier/bank-deposits` | Cashier, SuperAdmin | Historical bank deposits with deposit slip references |
+| `GET` | `/api/Cashier/statistics` | Cashier, SuperAdmin | Daily treasury summary: cash in vault, banked funds |
 
 ### Clinical Assistant & Triage Desk (`/api/Assistant`)
-
 | Method | Route | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/Assistant/queue` | Assistant, SuperAdmin, Admin | Today's OPD patient queue in PKT, ordered descending |
-| `PATCH`| `/api/Assistant/check-in/{appointmentId}` | Assistant, SuperAdmin, Admin | Mark physical arrival of patient at triage desk (`CheckedIn`) |
-| `POST` | `/api/Assistant/book-appointment` | Assistant, SuperAdmin, Admin | Assisted intake for phone/walk-in patients with automatic deduplication |
-| `GET` | `/api/Assistant/schedulable-doctors` | Assistant, SuperAdmin, Admin | Retrieve authorized specialists within assistant's assigned department |
-| `GET` | `/api/Assistant/department-doctors` | Assistant, SuperAdmin, Admin | List all physicians assigned to the assistant's clinical department |
-| `GET` | `/api/Assistant/diversion/candidates/{appointmentId}` | Assistant, SuperAdmin, Admin | Retrieve same-day diversion candidates (peer doctors & same-doctor slots) |
-| `POST` | `/api/Assistant/divert-appointment` | Assistant, SuperAdmin, Admin | Execute same-day appointment diversion (`AppointmentDate == Today`) |
-| `POST` | `/api/Assistant/vitals` | Assistant, SuperAdmin, Admin | Record or idempotently update pre-consultation triage vitals |
-| `GET` | `/api/Assistant/vitals/{appointmentId}` | Assistant, Doctor, Admin | Retrieve recorded triage vitals for consultation |
-| `POST` | `/api/Assistant/lab-order` | Doctor, SuperAdmin, Admin | Prescribe a diagnostic laboratory panel |
-| `GET` | `/api/Assistant/lab-orders/{appointmentId}` | Assistant, Doctor, Patient, Admin | Retrieve lab orders associated with an appointment |
-| `GET` | `/api/Assistant/pending-lab-orders` | Assistant, SuperAdmin, Admin | Laboratory desk queue for pending specimens and results |
-| `PUT` | `/api/Assistant/lab-order/{id}/status` | Assistant, Doctor, Admin | Update specimen collection state and record finalized findings |
-| `GET` | `/api/Assistant/patient-lab-history/{patientId}` | Doctor, Assistant, Admin | Longitudinal pathology archive across all historical patient visits |
-| `POST` | `/api/Assistant/register` | SuperAdmin, Admin | Register and onboard a new clinical assistant |
-| `GET` | `/api/Assistant/all` | SuperAdmin, Admin | List all registered clinical assistants with shift assignments |
-| `PUT` | `/api/Assistant/{id}` | SuperAdmin, Admin | Update assistant shift, department, doctor assignment, or active status |
-| `DELETE`| `/api/Assistant/{id}` | SuperAdmin, Admin | Delete assistant profile (restricted if triage history exists) |
-| `GET` | `/api/Assistant/my-assistants` | Doctor | Retrieve assistants assigned to the calling physician |
-
----
+| `GET` | `/api/Assistant/triage-queue` | Assistant, SuperAdmin | Department triage list with vital sign statuses |
+| `POST` | `/api/Assistant/vitals` | Assistant, SuperAdmin | Record pre-consultation vitals (BP, SpO2, Temp, etc.) |
+| `POST` | `/api/Assistant/checkin/{id}` | Assistant, SuperAdmin | Mark patient CheckedIn; launches physician alert |
+| `POST` | `/api/Assistant/book-walkin` | Assistant, SuperAdmin | Assisted walk-in booking with MPI deduplication |
+| `POST` | `/api/Assistant/divert-appointment` | Assistant, SuperAdmin | Same-day diversion to departmental peer doctor |
+| `GET` | `/api/Assistant/settlement/summary` | Assistant, SuperAdmin | Live shift revenue breakdown (Cash vs Online) |
+| `POST` | `/api/Assistant/settlement/submit` | Assistant, SuperAdmin | Seal drawer till and dispatch settlement envelope |
 
 ### Clinical Provider Operations (`/api/Doctor`)
-
 | Method | Route | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/Doctor/doctor-dashboard` | Doctor | Telemetry: today's consultations, checked-in count, completed count |
-| `GET` | `/api/Doctor/doctor-appointments` | Doctor | Retrieve physician consultation roster in descending order |
-| `PATCH`| `/api/Doctor/appointment-status` | Doctor | Transition consultation state (`Confirmed`, `Missed`) |
-| `POST` | `/api/Doctor/prescription` | Doctor | Issue digital EMR prescription and mark consultation `Completed` |
-| `GET` | `/api/Doctor/medical-history/{patientId}` | Doctor | View patient longitudinal medical, vitals, and diagnostic history |
-| `GET` | `/api/Doctor/my-schedule` | Doctor | Retrieve weekly date-specific schedule, shift timings, and department matrix |
-| `GET` | `/api/Doctor/daily-status` | Doctor | Retrieve today's operational duty status, delay minutes, and delay reason |
-| `POST` | `/api/Doctor/daily-status` | Doctor | Set today's operational duty status and broadcast clinical delay |
+| `GET` | `/api/Doctor/overview` | Doctor | Consultation metrics, active queue & weekly stats |
+| `GET` | `/api/Doctor/appointments` | Doctor | Chronological OPD patient queue |
+| `POST` | `/api/Doctor/prescription` | Doctor | Submit diagnosis, medication dosage & advice |
+| `POST` | `/api/Doctor/lab-order` | Doctor | Request diagnostic pathology investigations |
+| `PATCH` | `/api/Doctor/daily-status` | Doctor | Report operational delays or emergency duty status |
+
+### Institutional Governance & Administration (`/api/Admin`)
+| Method | Route | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/Admin/overview` | SuperAdmin, Admin | Hospital telemetry, revenue totals & activity feed |
+| `GET` | `/api/Admin/settlements` | SuperAdmin, Admin | Review assistant shift handovers |
+| `POST` | `/api/Admin/settlement/{id}/verify` | SuperAdmin, Admin | Audit and lock assistant settlement report |
+| `GET` | `/api/Admin/bank-deposits` | SuperAdmin, Admin | Review cashier commercial bank deposit dossiers |
+| `POST` | `/api/Admin/bank-deposit/{id}/verify`| SuperAdmin, Admin | Match bank slip with statement and permanently seal |
 
 ---
 
-### Public Consultations & Scheduling (`/api/Appointment`)
-
-| Method | Route | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/Appointment/availability` | Public | Query verified physicians by department, date, and time slot |
-| `GET` | `/api/Appointment/booked-slots` | Public | Retrieve occupied shift slots for a doctor on a specific date |
-| `POST` | `/api/Appointment/booking` | Patient | Submit consultation booking with transactional concurrency protection |
-
----
-
-### Patient Operations (`/api/Patient`)
-
-| Method | Route | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/Patient/my-appointment` | Patient | View scheduled personal consultations (auto-classifies missed appointments) |
-| `GET` | `/api/Patient/prescription` | Patient | Access and download issued digital prescriptions |
-| `PATCH`| `/api/Patient/cancel-appointment/{id}` | Patient | Cancel pending or confirmed booking, immediately freeing the slot |
-| `GET` | `/api/Patient/profile` | Patient | Retrieve patient profile, blood group, and emergency demographics |
-| `PATCH`| `/api/Patient/profile` | Patient | Update personal medical profile and allergy history |
-
----
-
-### Department Management (`/api/Department`)
-
-| Method | Route | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/Department` | Public | Retrieve all clinical departments |
-| `POST` | `/api/Department` | SuperAdmin, Admin | Register a new hospital clinical department |
-
----
-
-## Getting Started and Local Setup
+## Getting Started & Local Setup
 
 ### Prerequisites
 * **.NET 10 SDK**
@@ -567,48 +607,51 @@ erDiagram
 * **MySQL Server** (v8.0 or higher)
 
 ### 1. Database Configuration
-1. Ensure your local MySQL instance is running.
-2. In `backend/appsettings.json`, configure your connection string and JWT credentials:
-   ```json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=localhost;Port=3306;Database=hospital;User=root;Password=YOUR_PASSWORD;"
-     },
-     "Jwt": {
-       "Key": "YOUR_STRONG_SECRET_KEY_MIN_32_CHARACTERS",
-       "Issuer": "CareFlowServer",
-       "Audience": "CareFlowClient",
-       "DurationMinutes": 60
-     }
-   }
-   ```
+In `backend/appsettings.json`, set your connection string:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Port=3306;Database=hospital;User Id=root;Password=YOUR_PASSWORD;"
+  }
+}
+```
 
 ### 2. Backend Initialization
 ```bash
 cd backend
-
-# Restore NuGet dependencies
 dotnet restore
-
-# Build solution
-dotnet build
-
-# Apply database migrations
 dotnet ef database update
-
-# Launch Web API server (Runs on http://localhost:5282)
 dotnet run
+# Listening on http://localhost:5282
 ```
 
 ### 3. Frontend Initialization
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start Vite development server (Runs on http://localhost:5173)
 npm run dev
+# Listening on http://localhost:5173
+```
+
+---
+
+## AWS EC2 Production Deployment Guide
+
+CareFlow's production environment is hosted on an **AWS EC2 Ubuntu 24.04 LTS** instance:
+
+```bash
+# 1. SSH into the AWS EC2 Instance
+ssh -i "Careflow.pem" ubuntu@YOUR_EC2_PUBLIC_IP
+
+# 2. Check and ensure MySQL service health
+sudo systemctl daemon-reload
+sudo systemctl restart mysql
+sudo systemctl status mysql --no-pager
+
+# 3. Apply EF Core Migrations remotely from local machine
+dotnet ef database update \
+  --connection "Server=YOUR_EC2_PUBLIC_IP;Port=3306;Database=hospital;User Id=careflow_user;Password=YOUR_PROD_PASSWORD;" \
+  --project backend/backend.csproj
 ```
 
 ---
@@ -623,6 +666,7 @@ Hospital Management System/
 │   │   ├── AppointmentControllers.cs # Public Availability & Concurrency Slot Booking
 │   │   ├── AssistantController.cs    # Triage Queue, Vitals, Lab Desk & Same-Day Diversion
 │   │   ├── AuthControllers.cs       # Rate-Limited Auth, Tokens, Email Verification & Password Reset
+│   │   ├── CashierController.cs      # Treasury Desk, Handover Verification & Bank Deposits
 │   │   ├── DepartmentController.cs   # Clinical Departments Management
 │   │   ├── DoctorController.cs       # Doctor Console, EMR Prescriptions, History & Weekly Schedule
 │   │   └── PatientController.cs      # Patient Bookings, Prescriptions, History & Profile
@@ -631,59 +675,60 @@ Hospital Management System/
 │   │   ├── AdminDto.cs               # Governance, Schedule Rosters & Diversion DTOs
 │   │   ├── AssistantDtos.cs          # Triage, Vitals, Lab Desk & Diversion DTOs
 │   │   ├── AuthDtos.cs               # Registration, Login, Token & Password DTOs
-│   │   └── DoctorDto.cs              # EMR Prescriptions, Schedule & Status DTOs
-│   ├── Interfaces/              # Business Service Contracts (IAdminExtra, IAssistant, IDoctorApis, etc.)
-│   ├── Migrations/              # Entity Framework Database Migrations
+│   │   ├── CashierDtos.cs            # Bank Deposit & Handover Verification DTOs
+│   │   ├── DoctorDto.cs              # EMR Prescriptions, Schedule & Status DTOs
+│   │   └── PaymentDtos.cs            # Consultation Receipts & Settlement DTOs
+│   ├── Interfaces/              # Business Service Contracts
+│   ├── Migrations/              # Entity Framework Database Migrations (18 tables)
 │   ├── Models/                  # Domain Entities
-│   │   ├── Appointment.cs            # Consultations with Forensic Diversion Audit Columns
+│   │   ├── CashierBankDeposits.cs    # Consolidated Bank Deposit Dossier
+│   │   ├── DailySettlementReports.cs # Departmental Shift Settlement Register
+│   │   ├── Payments.cs               # Consultation Fee Receipt with Drawer Till Isolation
+│   │   ├── Appointment.cs            # Consultations with Forensic Diversion Columns
 │   │   ├── Assistant.cs              # Triage Nurse Staff Entity
-│   │   ├── AssistantDepartment.cs    # Departmental Assistant Pooling Join Entity
-│   │   ├── Departments.cs            # Clinical Specialty Departments
 │   │   ├── Doctor.cs                 # Certified Physician Profile
-│   │   ├── DoctorDateSchedule.cs     # Date-Specific Calendar Schedules & Operational Status
-│   │   ├── DoctorDepartment.cs       # Multi-Department Affiliation Join Entity
-│   │   ├── Labs.cs                   # Diagnostic Pathology Orders & Findings
+│   │   ├── DoctorDateSchedule.cs     # Date-Specific Calendar Schedules & Delays
 │   │   ├── Patient.cs                # Patient Demographic Profile
-│   │   ├── PatientVitals.cs          # Physiological Parameters (BP, Pulse, SpO2, Temp, Sugar)
+│   │   ├── PatientVitals.cs          # Triage Physiological Parameters
 │   │   ├── Prescriptions.cs          # Digital EMR Prescriptions
-│   │   └── User.cs                   # Central Identity Entity with 5-Tier RBAC Roles
+│   │   └── User.cs                   # Central Identity Entity with 5-Tier RBAC
 │   ├── Services/                # Core Business Logic & Domain Services
-│   │   ├── AdminExtraService.cs      # Telemetry, Governance, Schedules & Future Diversion Engine
+│   │   ├── PaymentService.cs         # Till Management, Shift Settlement & Treasury Logic
+│   │   ├── AdminExtraService.cs      # Telemetry, Governance, Schedules & Future Diversion
 │   │   ├── AppointmentService.cs     # Real-Time Slot Locking & Concurrency Protection
-│   │   ├── AssistantService.cs       # Triage Desk, Vitals, Labs & Same-Day Diversion Engine
-│   │   ├── AuthService.cs            # BCrypt Hashing, JWT Minting & Refresh Token Lifecycle
-│   │   └── DoctorApis.cs / DoctorService.cs # EMR Prescriptions, History & Daily Status
-│   ├── appsettings.json         # Database & JWT Configuration
+│   │   ├── AssistantService.cs       # Triage Desk, Vitals, Labs & Walk-in MPI Engine
+│   │   ├── AuthService.cs            # BCrypt Hashing, JWT Minting & Refresh Token Rotation
+│   │   └── DoctorApis.cs             # EMR Prescriptions, History & Daily Delays
+│   ├── appsettings.json         # Development Configuration
+│   ├── appsettings.Production.json # AWS Cloud Production Configuration
 │   └── Program.cs               # Middleware Pipeline, Rate Limiter & DI Registration
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── api/                 # Axios Base Instance & Public Clients
-│   │   ├── components/          # Reusable UI Elements (Modals, Pagination, ProtectedRoutes, GuestRoute)
+│   │   ├── components/          # Reusable UI Elements (Modals, Pagination, ProtectedRoutes)
 │   │   ├── context/             # Global AuthContext & Role Hydration
 │   │   ├── hooks/               # Custom Hooks (useAuth, useAxiosPrivate)
 │   │   ├── Pages/
-│   │   │   ├── Admin/           # Admin Analytics, Governance, Schedules, Doctors, Assistants
-│   │   │   │   ├── AdminGovernance.jsx # SuperAdmin Console: Onboard Admins & OTP Verification
-│   │   │   │   ├── AdminSchedules.jsx  # Weekly Schedule Roster & Active Booking Guard Modal
-│   │   │   │   ├── AdminOverview.jsx   # Financial KPI Telemetry & SVG 7-Day Trend Chart
-│   │   │   │   ├── AdminDoctors.jsx    # Specialist Credentialing & Department Matrix
-│   │   │   │   └── AdminAssistants.jsx # Triage Staff Management & Pool Assignment
-│   │   │   ├── Doctor/          # Clinical Overview, Appointments, EHR, Prescriptions, Schedule
-│   │   │   │   ├── DoctorSchedule.jsx  # Doctor Weekly Schedule & Delay Reporting
-│   │   │   │   ├── DoctorOverview.jsx  # Single-Screen Clinical Console
-│   │   │   │   └── DoctorAppointments.jsx # Patient Queue & 1-Click Consultation Launcher
+│   │   │   ├── Admin/           # Admin Analytics, Governance, Schedules, Settlements
+│   │   │   │   ├── AdminSettlements.jsx # Shift Handover Auditing & Bank Deposit Sealing
+│   │   │   │   ├── AdminCashiers.jsx    # Cashier Staff Provisioning
+│   │   │   │   ├── AdminSchedules.jsx   # Weekly Roster & Active Booking Guard Modal
+│   │   │   │   └── AdminOverview.jsx    # Financial Telemetry & SVG Revenue Charts
+│   │   │   ├── Cashier/         # Hospital Treasury Desk
+│   │   │   │   └── CashierDashboard.jsx # Handover Counting, Bank Deposits & Slip Logging
 │   │   │   ├── Assistant/       # Triage Queue, Vitals Capture, Lab Desk, Walk-In Intake
-│   │   │   │   ├── AssistantTriageQueue.jsx # OPD Queue, Check-In, Vitals & Same-Day Diversion
-│   │   │   │   └── AssistantLabDesk.jsx     # Specimen Collection & Results Reporting
+│   │   │   │   ├── AssistantBillingReports.jsx # Daily Shift Settlement Register
+│   │   │   │   ├── AssistantTriageQueue.jsx    # OPD Queue, Vitals & Same-Day Diversion
+│   │   │   │   └── AssistantLabDesk.jsx        # Specimen Collection & Results
+│   │   │   ├── Doctor/          # Clinical Overview, Appointments, EHR, Prescriptions
+│   │   │   │   ├── DoctorOverview.jsx      # Single-Screen Clinical Console
+│   │   │   │   ├── DoctorAppointments.jsx  # Patient Queue & 1-Click Consultation
+│   │   │   │   └── DoctorSchedule.jsx      # Doctor Weekly Schedule & Delays
 │   │   │   ├── Patient/         # Patient Dashboard, Booking Flow, History, Prescriptions
-│   │   │   ├── DoctorPublicProfile.jsx      # Public Specialist Profile & Live Slot Selector
-│   │   │   ├── VerifyEmail.jsx              # Token-Based Email Verification
-│   │   │   ├── ResendMail.jsx               # Passcode Re-dispatch Portal
-│   │   │   └── Login.jsx / Register.jsx     # Authentication Portals
-│   │   ├── App.jsx              # Application Route Registry with Strict RBAC Wrappers
-│   │   ├── index.css            # Global Typography (Inter), Utilities (.scrollbar-none)
-│   │   └── main.jsx             # React Application Entry Point
+│   │   │   └── Login.jsx        # Unified Authentication Portal
+│   │   ├── App.jsx              # Route Registry with Strict RBAC Wrappers
+│   │   └── index.css            # Global Typography (Inter), Utilities (.scrollbar-none)
 │   ├── package.json
 │   └── vite.config.js
 │
@@ -693,4 +738,5 @@ Hospital Management System/
 ---
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

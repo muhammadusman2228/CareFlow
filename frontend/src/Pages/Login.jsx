@@ -1,4 +1,4 @@
-﻿
+
 import { Link, useNavigate, useLocation } from 'react-router'
 import LoginImage from '../assets/LoginImage.png'
 import AppLogo from '../components/Home/AppLogo.Home'
@@ -42,7 +42,7 @@ const Login=()=>{
  const from = location.state?.from?.pathname
 
  const isFromAllowed = from && (
-     (userRole === 'admin' && from.startsWith('/admin')) ||
+     ((userRole === 'admin' || userRole === 'superadmin') && from.startsWith('/admin')) ||
      (userRole === 'doctor' && from.startsWith('/doctor')) ||
      (userRole === 'assistant' && from.startsWith('/assistant')) ||
      (userRole === 'cashier' && from.startsWith('/cashier')) ||
@@ -51,7 +51,7 @@ const Login=()=>{
 
  if (isFromAllowed) {
      navigate(from, { replace: true })
- } else if (userRole === 'admin') {
+ } else if (userRole === 'admin' || userRole === 'superadmin') {
      navigate('/admin/dashboard', { replace: true })
  } else if (userRole === 'doctor') {
      navigate('/doctor/dashboard', { replace: true })
